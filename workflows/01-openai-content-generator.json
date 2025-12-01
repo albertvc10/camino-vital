@@ -1,0 +1,108 @@
+{
+  "name": "OpenAI - Generador de Contenido",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "f6c5e2a0-1234-4567-89ab-cdef12345678",
+      "name": "Trigger Manual",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "content": "## 🎯 ¿Qué hace este workflow?\n\nEste flujo de ejemplo te permite:\n1. Generar contenido creativo usando OpenAI GPT-4\n2. Obtener títulos para artículos de blog\n3. Ver cómo configurar y usar la API de OpenAI\n\n## 📝 Instrucciones:\n1. Configura tu API Key de OpenAI en las credenciales del nodo\n2. Modifica el prompt en el nodo \"OpenAI Request\" según tus necesidades\n3. Haz clic en \"Execute Workflow\" para probar\n\n## 💡 Tip:\nPuedes cambiar el modelo, la temperatura y otros parámetros en el nodo OpenAI",
+        "height": 464,
+        "width": 565
+      },
+      "id": "a1b2c3d4-5678-9012-3456-7890abcdef01",
+      "name": "Nota Informativa",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [240, 60]
+    },
+    {
+      "parameters": {
+        "resource": "text",
+        "operation": "message",
+        "model": "gpt-4o-mini",
+        "messages": {
+          "values": [
+            {
+              "role": "user",
+              "content": "Genera 3 títulos creativos y llamativos para un artículo de blog sobre inteligencia artificial y automatización de flujos de trabajo. Los títulos deben ser en español y orientados a desarrolladores."
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.8,
+          "maxTokens": 500
+        }
+      },
+      "id": "b2c3d4e5-6789-0123-4567-890abcdef012",
+      "name": "OpenAI Request",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.3,
+      "position": [470, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "1",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Procesar la respuesta de OpenAI\nconst response = $input.first().json;\n\nreturn {\n  json: {\n    generated_at: new Date().toISOString(),\n    model: 'gpt-4o-mini',\n    content: response.choices[0].message.content,\n    usage: response.usage\n  }\n};"
+      },
+      "id": "c3d4e5f6-7890-1234-5678-90abcdef0123",
+      "name": "Formatear Resultado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [690, 300]
+    }
+  ],
+  "connections": {
+    "Trigger Manual": {
+      "main": [
+        [
+          {
+            "node": "OpenAI Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Request": {
+      "main": [
+        [
+          {
+            "node": "Formatear Resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "AI",
+      "id": "1"
+    },
+    {
+      "name": "OpenAI",
+      "id": "2"
+    }
+  ],
+  "meta": {
+    "instanceId": "local"
+  },
+  "pinData": {},
+  "versionId": "1"
+}

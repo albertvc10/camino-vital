@@ -1,0 +1,157 @@
+{
+  "name": "Anthropic Claude - Analizador de Texto",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "a1234567-89ab-cdef-0123-456789abcdef",
+      "name": "Trigger Manual",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "content": "## 🤖 ¿Qué hace este workflow?\n\nEste flujo usa **Claude de Anthropic** para:\n1. Analizar el sentimiento de un texto\n2. Extraer puntos clave\n3. Generar un resumen\n4. Identificar temas principales\n\n## 📝 Instrucciones:\n1. Configura tu API Key de Anthropic en las credenciales\n2. Modifica el texto de entrada en el nodo \"Texto de Ejemplo\"\n3. Ejecuta el workflow y observa el análisis completo\n\n## 💡 Claude vs GPT:\n- Claude es excelente para análisis detallado y seguir instrucciones\n- Suele dar respuestas más estructuradas\n- Muy bueno para extraer información de textos largos",
+        "height": 464,
+        "width": 565
+      },
+      "id": "b2345678-9abc-def0-1234-56789abcdef0",
+      "name": "Nota Informativa",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [240, 60]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "texto",
+              "value": "La inteligencia artificial está transformando radicalmente la forma en que trabajamos. Las herramientas de automatización como n8n permiten a los desarrolladores crear flujos de trabajo complejos sin escribir miles de líneas de código. Esto democratiza el acceso a la tecnología y permite que equipos pequeños compitan con grandes corporaciones. Sin embargo, también presenta desafíos éticos y de privacidad que debemos abordar cuidadosamente."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c3456789-abcd-ef01-2345-6789abcdef01",
+      "name": "Texto de Ejemplo",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "anthropicApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "claude-3-5-sonnet-20241022"
+            },
+            {
+              "name": "max_tokens",
+              "value": "1024"
+            },
+            {
+              "name": "messages",
+              "value": "={{ [{\"role\": \"user\", \"content\": \"Analiza el siguiente texto y proporciona:\\n1. Sentimiento general (positivo/negativo/neutral)\\n2. 3 puntos clave\\n3. Resumen en una frase\\n4. Temas principales\\n\\nTexto: \" + $json.texto + \"\\n\\nResponde en formato JSON.\"}] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d4567890-bcde-f012-3456-789abcdef012",
+      "name": "Claude API Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [690, 300],
+      "credentials": {
+        "anthropicApi": {
+          "id": "2",
+          "name": "Anthropic API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extraer y formatear la respuesta de Claude\nconst response = $input.first().json;\nconst content = response.content[0].text;\n\n// Intentar parsear el JSON si Claude lo devolvió en formato JSON\nlet analysis;\ntry {\n  analysis = JSON.parse(content);\n} catch (e) {\n  // Si no es JSON válido, guardar como texto plano\n  analysis = { raw_response: content };\n}\n\nreturn {\n  json: {\n    analyzed_at: new Date().toISOString(),\n    model: response.model,\n    analysis: analysis,\n    usage: {\n      input_tokens: response.usage.input_tokens,\n      output_tokens: response.usage.output_tokens\n    },\n    original_text: $('Texto de Ejemplo').first().json.texto\n  }\n};"
+      },
+      "id": "e5678901-cdef-0123-4567-89abcdef0123",
+      "name": "Formatear Análisis",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [910, 300]
+    }
+  ],
+  "connections": {
+    "Trigger Manual": {
+      "main": [
+        [
+          {
+            "node": "Texto de Ejemplo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Texto de Ejemplo": {
+      "main": [
+        [
+          {
+            "node": "Claude API Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude API Request": {
+      "main": [
+        [
+          {
+            "node": "Formatear Análisis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "AI",
+      "id": "1"
+    },
+    {
+      "name": "Anthropic",
+      "id": "3"
+    },
+    {
+      "name": "Claude",
+      "id": "4"
+    }
+  ],
+  "meta": {
+    "instanceId": "local"
+  },
+  "pinData": {},
+  "versionId": "1"
+}

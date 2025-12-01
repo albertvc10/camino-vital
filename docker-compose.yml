@@ -1,0 +1,103 @@
+version: '3.8'
+
+services:
+  # ============================================
+  # POSTGRESQL - La base de datos
+  # ============================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: n8n_postgres
+    restart: unless-stopped
+
+    # Variables de entorno: lee del archivo .env automáticamente
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_NON_ROOT_USER=${POSTGRES_NON_ROOT_USER}
+      - POSTGRES_NON_ROOT_PASSWORD=${POSTGRES_NON_ROOT_PASSWORD}
+
+    # Volúmenes: aquí se guardan los DATOS de PostgreSQL
+    # ./data/postgres es una carpeta en tu Mac
+    # /var/lib/postgresql/data es donde PostgreSQL guarda datos dentro del contenedor
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+      - ./init-data.sh:/docker-entrypoint-initdb.d/init-data.sh
+
+    # Puerto (opcional, solo para debugging)
+    # Si quieres conectarte con un cliente SQL externo, descomenta esto
+    # ports:
+    #   - "5432:5432"
+
+    # Healthcheck: Docker verifica cada 10s si PostgreSQL está listo
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+    networks:
+      - n8n-network
+
+  # ============================================
+  # N8N - La estrella del show
+  # ============================================
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: unless-stopped
+
+    # Importante: n8n arranca DESPUÉS de que PostgreSQL esté sano
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    environment:
+      # Configuración de n8n
+      - N8N_HOST=${N8N_HOST}
+      - N8N_PORT=${N8N_PORT}
+      - N8N_PROTOCOL=${N8N_PROTOCOL}
+      - N8N_BASIC_AUTH_ACTIVE=${N8N_BASIC_AUTH_ACTIVE}
+      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
+      - EXECUTIONS_PROCESS=${EXECUTIONS_PROCESS}
+
+      # Configuración de la base de datos
+      - DB_TYPE=${DB_TYPE}
+      - DB_POSTGRESDB_DATABASE=${DB_POSTGRESDB_DATABASE}
+      - DB_POSTGRESDB_HOST=${DB_POSTGRESDB_HOST}
+      - DB_POSTGRESDB_PORT=${DB_POSTGRESDB_PORT}
+      - DB_POSTGRESDB_USER=${DB_POSTGRESDB_USER}
+      - DB_POSTGRESDB_PASSWORD=${DB_POSTGRESDB_PASSWORD}
+
+      # Encriptación
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+
+      # API Keys (para usar en tus workflows)
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+
+    # Puerto: mapea el puerto 5678 del contenedor al 5678 de tu Mac
+    # Accederás a n8n en http://localhost:5678
+    ports:
+      - "${N8N_PORT}:5678"
+
+    # Volúmenes: persistencia de datos de n8n
+    volumes:
+      # Workflows, credenciales, configuraciones
+      - ./data/n8n:/home/node/.n8n
+      # Flujos de ejemplo (los montamos para importarlos fácilmente)
+      - ./workflows:/workflows
+
+    networks:
+      - n8n-network
+
+# ============================================
+# NETWORKS: La red privada entre contenedores
+# ============================================
+networks:
+  n8n-network:
+    driver: bridge
+    name: n8n-network
