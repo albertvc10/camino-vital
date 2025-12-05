@@ -1,0 +1,378 @@
+{
+  "name": "Vizard AI - Video Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 🎬 Workflow: Vizard AI Video Automation\n\n**Flujo completo:**\n1. Detecta nuevo video en Google Drive\n2. Envía a Vizard.ai para procesamiento\n3. Vizard crea clips en múltiples formatos:\n   - 9:16 para Instagram Reels y YouTube Shorts\n   - 16:9 para YouTube horizontal\n4. Webhook de Vizard notifica cuando está listo\n5. Envía notificación a Telegram con preview\n6. Usuario aprueba/rechaza desde Telegram\n7. Si aprobado → programa publicación\n\n**Configuración necesaria:**\n- API Key de Vizard.ai en: Workspace Settings > API\n- Telegram Bot Token (crear con @BotFather)\n- Google Drive credenciales\n- YouTube API credentials (para publicación)\n\n**Formatos generados:**\n- ratioOfClip: 1 (9:16) → Reels & Shorts\n- ratioOfClip: 4 (16:9) → YouTube\n\n**Opciones avanzadas:**\n- Subtítulos automáticos\n- Remove silences\n- Auto B-roll\n- Emojis\n- Keywords para detectar temas específicos",
+        "height": 600,
+        "width": 600
+      },
+      "id": "sticky-note-vizard",
+      "name": "📝 Info del Workflow",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [240, -100]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "list",
+        "folderToWatch": "",
+        "event": "fileCreated",
+        "options": {
+          "fileType": "video"
+        }
+      },
+      "id": "google-drive-trigger",
+      "name": "🎥 Nuevo Video en Drive",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [460, 300],
+      "webhookId": "google-drive-video-upload"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extraer información del video subido a Google Drive\nconst file = $input.first().json;\n\n// Construir URL directa de Google Drive para Vizard\nconst fileId = file.id;\nconst driveUrl = `https://drive.google.com/file/d/${fileId}/view`;\n\nreturn {\n  json: {\n    videoName: file.name,\n    videoId: fileId,\n    videoUrl: driveUrl,\n    mimeType: file.mimeType,\n    size: file.size,\n    createdTime: file.createdTime\n  }\n};"
+      },
+      "id": "extract-video-info",
+      "name": "📋 Extraer Info",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://elb-api.vizard.ai/hvizard-server-front/open-api/v1/project/create",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "VIZARDAI_API_KEY",
+              "value": "378973e2b1604524bd4a2e25bce1c6fe"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"lang\": \"es\",\n  \"videoUrl\": \"{{ $json.videoUrl }}\",\n  \"videoType\": 3,\n  \"preferLength\": [2, 3],\n  \"ratioOfClip\": 1,\n  \"subtitleSwitch\": 1,\n  \"autoBrollSwitch\": 1,\n  \"removeSilenceSwitch\": 1,\n  \"emojiSwitch\": 1,\n  \"maxClipNumber\": 10\n}",
+        "options": {}
+      },
+      "id": "submit-to-vizard",
+      "name": "🚀 Enviar a Vizard",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Guardar projectId para tracking\nconst response = $input.first().json;\n\nreturn {\n  json: {\n    projectId: response.projectId,\n    videoName: $('Extraer Info').first().json.videoName,\n    videoUrl: $('Extraer Info').first().json.videoUrl,\n    status: 'processing',\n    submittedAt: new Date().toISOString()\n  }\n};"
+      },
+      "id": "save-project-id",
+      "name": "💾 Guardar Project ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "vizard-webhook",
+        "options": {
+          "rawBody": true
+        },
+        "responseMode": "responseNode"
+      },
+      "id": "vizard-webhook",
+      "name": "🔔 Webhook Vizard",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [460, 600],
+      "webhookId": "vizard-completion"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Procesar notificación de Vizard cuando los clips están listos\nconst webhook = $input.first().json.body;\n\nreturn {\n  json: {\n    projectId: webhook.projectId,\n    status: webhook.status,\n    clipsReady: webhook.clipsReady || [],\n    processingTime: webhook.processingTime,\n    receivedAt: new Date().toISOString()\n  }\n};"
+      },
+      "id": "process-webhook",
+      "name": "⚙️ Procesar Webhook",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 600]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://elb-api.vizard.ai/hvizard-server-front/open-api/v1/project/query/{{ $json.projectId }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "VIZARDAI_API_KEY",
+              "value": "378973e2b1604524bd4a2e25bce1c6fe"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-clips",
+      "name": "📥 Obtener Clips",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 600]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extraer URLs de los clips generados\nconst response = $input.first().json;\nconst clips = response.data.clips || [];\n\n// Separar por aspect ratio\nconst verticalClips = clips.filter(c => c.ratio === '9:16');\nconst horizontalClips = clips.filter(c => c.ratio === '16:9');\n\nreturn {\n  json: {\n    projectId: response.data.projectId,\n    projectName: response.data.projectName,\n    totalClips: clips.length,\n    verticalClips: verticalClips.map(c => ({\n      id: c.id,\n      url: c.videoUrl,\n      thumbnail: c.thumbnailUrl,\n      duration: c.duration,\n      title: c.title\n    })),\n    horizontalClips: horizontalClips.map(c => ({\n      id: c.id,\n      url: c.videoUrl,\n      thumbnail: c.thumbnailUrl,\n      duration: c.duration,\n      title: c.title\n    }))\n  }\n};"
+      },
+      "id": "organize-clips",
+      "name": "📂 Organizar Clips",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 600]
+    },
+    {
+      "parameters": {
+        "chatId": "TU_TELEGRAM_CHAT_ID",
+        "text": "=🎬 **Clips listos para revisar**\n\n📹 Proyecto: {{ $json.projectName }}\n📊 Total de clips: {{ $json.totalClips }}\n\n**Verticales (9:16)** - Instagram Reels / YouTube Shorts:\n{{ $json.verticalClips.length }} clips\n\n**Horizontales (16:9)** - YouTube:\n{{ $json.horizontalClips.length }} clips\n\n👉 Revisa los clips y aprueba los que quieras publicar.",
+        "additionalFields": {
+          "replyMarkup": "inlineKeyboard",
+          "inlineKeyboard": "={{ \n  {\n    \"inline_keyboard\": [\n      [\n        {\"text\": \"✅ Aprobar todos\", \"callback_data\": \"approve_all_\" + $json.projectId},\n        {\"text\": \"❌ Rechazar todos\", \"callback_data\": \"reject_all_\" + $json.projectId}\n      ],\n      [\n        {\"text\": \"🔍 Ver clips\", \"url\": \"https://app.vizard.ai/project/\" + $json.projectId}\n      ]\n    ]\n  }\n}}"
+        }
+      },
+      "id": "send-telegram",
+      "name": "📱 Notificar Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1340, 600]
+    },
+    {
+      "parameters": {
+        "updates": [
+          "callback_query"
+        ]
+      },
+      "id": "telegram-trigger",
+      "name": "📲 Respuesta Telegram",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1,
+      "position": [460, 900],
+      "webhookId": "telegram-approval"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.callback_query.data }}",
+              "operation": "contains",
+              "value2": "approve_all"
+            }
+          ]
+        }
+      },
+      "id": "if-approved",
+      "name": "✅ Aprobado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 900]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extraer projectId de callback_data\nconst callbackData = $input.first().json.callback_query.data;\nconst projectId = callbackData.split('_')[2];\n\nreturn {\n  json: {\n    projectId: projectId,\n    action: callbackData.includes('approve') ? 'approved' : 'rejected',\n    approvedAt: new Date().toISOString()\n  }\n};"
+      },
+      "id": "process-approval",
+      "name": "⚙️ Procesar Aprobación",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 800]
+    },
+    {
+      "parameters": {
+        "content": "## 📅 Publicación Programada\n\nDesde aquí puedes:\n1. Programar publicación en YouTube\n2. Guardar clips para publicación manual en Instagram\n3. Integrar con Buffer/Hootsuite para auto-publicación\n\n**Próximos pasos:**\n- Configurar YouTube API\n- Integrar calendario de publicación\n- Añadir generación de captions con IA",
+        "height": 300,
+        "width": 400
+      },
+      "id": "sticky-note-publish",
+      "name": "📝 Nota: Publicación",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [1120, 800]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.callback_query.from.id }}",
+        "text": "=✅ Clips aprobados para publicación!\n\nSe programarán automáticamente en:\n📱 Instagram Reels\n📺 YouTube Shorts\n🎬 YouTube (formato horizontal)\n\nRecibirás confirmación cuando se publiquen.",
+        "additionalFields": {}
+      },
+      "id": "confirm-telegram",
+      "name": "✅ Confirmar Aprobación",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [900, 1000]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "OK",
+        "options": {}
+      },
+      "id": "respond-webhook",
+      "name": "✅ Responder OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1340, 300]
+    }
+  ],
+  "connections": {
+    "🎥 Nuevo Video en Drive": {
+      "main": [
+        [
+          {
+            "node": "📋 Extraer Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📋 Extraer Info": {
+      "main": [
+        [
+          {
+            "node": "🚀 Enviar a Vizard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🚀 Enviar a Vizard": {
+      "main": [
+        [
+          {
+            "node": "💾 Guardar Project ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "💾 Guardar Project ID": {
+      "main": [
+        [
+          {
+            "node": "✅ Responder OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔔 Webhook Vizard": {
+      "main": [
+        [
+          {
+            "node": "⚙️ Procesar Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚙️ Procesar Webhook": {
+      "main": [
+        [
+          {
+            "node": "📥 Obtener Clips",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📥 Obtener Clips": {
+      "main": [
+        [
+          {
+            "node": "📂 Organizar Clips",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📂 Organizar Clips": {
+      "main": [
+        [
+          {
+            "node": "📱 Notificar Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📲 Respuesta Telegram": {
+      "main": [
+        [
+          {
+            "node": "✅ Aprobado?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✅ Aprobado?": {
+      "main": [
+        [
+          {
+            "node": "⚙️ Procesar Aprobación",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "⚙️ Procesar Aprobación": {
+      "main": [
+        [
+          {
+            "node": "✅ Confirmar Aprobación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "Vizard",
+      "id": "vizard-1"
+    },
+    {
+      "name": "Video",
+      "id": "video-1"
+    },
+    {
+      "name": "Automation",
+      "id": "auto-2"
+    }
+  ],
+  "meta": {
+    "instanceId": "local"
+  },
+  "pinData": {},
+  "versionId": "1"
+}

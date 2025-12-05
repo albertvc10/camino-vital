@@ -1,0 +1,316 @@
+{
+  "name": "Instagram Auto-Responder - GUÍA",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "=GET,POST",
+        "path": "instagram-webhook",
+        "options": {
+          "rawBody": true
+        },
+        "responseMode": "responseNode"
+      },
+      "id": "webhook-node-1",
+      "name": "Webhook Instagram",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "instagram-webhook"
+    },
+    {
+      "parameters": {
+        "content": "## 🎯 Workflow: Auto-responder Instagram\n\n**Qué hace:**\n1. Recibe webhooks de Instagram cuando hay comentarios\n2. Detecta si el comentario contiene \"GUÍA\"\n3. Envía un DM automático con el enlace\n\n**Configuración necesaria:**\n- URL del webhook en Facebook: https://TU-NGROK-URL.ngrok-free.app/webhook/instagram-webhook\n- Token de verificación: habitos_vitales_2024\n- Access Token de Instagram en el nodo de HTTP Request\n\n**Nota:** Este workflow responde a la verificación inicial de Facebook y procesa los comentarios.",
+        "height": 400,
+        "width": 500
+      },
+      "id": "sticky-note-1",
+      "name": "Nota Informativa",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [240, -100]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false
+          },
+          "conditions": [
+            {
+              "id": "condition-1",
+              "leftValue": "={{ $json.query['hub.mode'] }}",
+              "rightValue": "subscribe",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-2",
+              "leftValue": "={{ $json.query['hub.verify_token'] }}",
+              "rightValue": "habitos_vitales_2024",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combineOperation": "all"
+        }
+      },
+      "id": "if-verification",
+      "name": "Es verificación?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.query['hub.challenge'] }}",
+        "options": {}
+      },
+      "id": "respond-verification",
+      "name": "Responder Verificación",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [680, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false
+          },
+          "conditions": [
+            {
+              "id": "condition-comment",
+              "leftValue": "={{ $json.body.entry[0].changes[0].field }}",
+              "rightValue": "comments",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      },
+      "id": "if-comment",
+      "name": "Es comentario?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extraer información del comentario\nconst entry = $input.first().json.body.entry[0];\nconst change = entry.changes[0];\nconst value = change.value;\n\nreturn {\n  json: {\n    comment_id: value.id,\n    comment_text: value.text,\n    from_user_id: value.from.id,\n    from_username: value.from.username,\n    media_id: value.media?.id,\n    timestamp: value.timestamp\n  }\n};"
+      },
+      "id": "extract-comment-data",
+      "name": "Extraer Datos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 500]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false
+          },
+          "conditions": [
+            {
+              "id": "condition-guia",
+              "leftValue": "={{ $json.comment_text }}",
+              "rightValue": "guia",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ]
+        }
+      },
+      "id": "if-contains-guia",
+      "name": "Contiene GUÍA?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1120, 500]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v18.0/me/messages",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "access_token",
+              "value": "TU_ACCESS_TOKEN_AQUI"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "recipient",
+              "value": "={{ {\"id\": $json.from_user_id} }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ {\"text\": \"¡Hola! 👋 Gracias por tu interés.\\n\\n📚 Aquí está tu guía completa sobre hábitos vitales: https://habitos-vitales.com\\n\\n¿Te gustaría recibir más contenido exclusivo? ¡Suscríbete a mi newsletter!\\n\\n✨ Nos vemos dentro!\"} }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-dm",
+      "name": "Enviar DM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "OK",
+        "options": {}
+      },
+      "id": "respond-ok-comment",
+      "name": "Responder OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "Ignored",
+        "options": {}
+      },
+      "id": "respond-ignored",
+      "name": "Ignorar",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1340, 600]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "DM Sent",
+        "options": {}
+      },
+      "id": "respond-dm-sent",
+      "name": "Responder Enviado",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1560, 400]
+    }
+  ],
+  "connections": {
+    "Webhook Instagram": {
+      "main": [
+        [
+          {
+            "node": "Es verificación?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es verificación?": {
+      "main": [
+        [
+          {
+            "node": "Responder Verificación",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Es comentario?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es comentario?": {
+      "main": [
+        [
+          {
+            "node": "Responder OK",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extraer Datos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Datos": {
+      "main": [
+        [
+          {
+            "node": "Contiene GUÍA?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contiene GUÍA?": {
+      "main": [
+        [
+          {
+            "node": "Enviar DM",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ignorar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar DM": {
+      "main": [
+        [
+          {
+            "node": "Responder Enviado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "Instagram",
+      "id": "ig-1"
+    },
+    {
+      "name": "Automation",
+      "id": "auto-1"
+    }
+  ],
+  "meta": {
+    "instanceId": "local"
+  },
+  "pinData": {},
+  "versionId": "1"
+}

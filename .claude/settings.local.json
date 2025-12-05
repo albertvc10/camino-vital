@@ -5,7 +5,19 @@
       "Bash(chmod:*)",
       "Bash(tree:*)",
       "Bash(git init:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(./start.sh)",
+      "Bash(docker-compose ps:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker-compose logs:*)",
+      "Bash(docker-compose restart:*)",
+      "Bash(brew install:*)",
+      "Bash(ngrok config add-authtoken:*)",
+      "Bash(ngrok http:*)",
+      "Bash(curl:*)",
+      "WebFetch(domain:docs.vizard.ai)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []
