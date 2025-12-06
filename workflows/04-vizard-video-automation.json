@@ -70,7 +70,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Guardar projectId para tracking\nconst response = $input.first().json;\n\nreturn {\n  json: {\n    projectId: response.projectId,\n    videoName: $('Extraer Info').first().json.videoName,\n    videoUrl: $('Extraer Info').first().json.videoUrl,\n    status: 'processing',\n    submittedAt: new Date().toISOString()\n  }\n};"
+        "jsCode": "// Guardar projectId para tracking\nconst response = $input.first().json;\nconst videoInfo = $('📋 Extraer Info').first().json;\n\nreturn {\n  json: {\n    projectId: response.projectId,\n    shareLink: response.shareLink,\n    videoName: videoInfo.videoName,\n    videoUrl: videoInfo.videoUrl,\n    status: 'processing',\n    submittedAt: new Date().toISOString()\n  }\n};"
       },
       "id": "save-project-id",
       "name": "💾 Guardar Project ID",
@@ -85,7 +85,7 @@
         "options": {
           "rawBody": true
         },
-        "responseMode": "responseNode"
+        "responseMode": "onReceived"
       },
       "id": "vizard-webhook",
       "name": "🔔 Webhook Vizard",
@@ -127,7 +127,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Extraer URLs de los clips generados\nconst response = $input.first().json;\nconst clips = response.data.clips || [];\n\n// Separar por aspect ratio\nconst verticalClips = clips.filter(c => c.ratio === '9:16');\nconst horizontalClips = clips.filter(c => c.ratio === '16:9');\n\nreturn {\n  json: {\n    projectId: response.data.projectId,\n    projectName: response.data.projectName,\n    totalClips: clips.length,\n    verticalClips: verticalClips.map(c => ({\n      id: c.id,\n      url: c.videoUrl,\n      thumbnail: c.thumbnailUrl,\n      duration: c.duration,\n      title: c.title\n    })),\n    horizontalClips: horizontalClips.map(c => ({\n      id: c.id,\n      url: c.videoUrl,\n      thumbnail: c.thumbnailUrl,\n      duration: c.duration,\n      title: c.title\n    }))\n  }\n};"
+        "jsCode": "// Extraer URLs de los clips generados\nconst response = $input.first().json;\n\n// Vizard devuelve los clips en el array 'videos'\nconst data = response.data || response;\nconst videos = data.videos || [];\n\n// Procesar cada clip con la información disponible\nconst clips = videos.map(v => ({\n  id: v.videoId || v.clipEditorId,\n  clipEditorId: v.clipEditorId,\n  videoId: v.videoId,\n  title: v.title,\n  viralScore: v.viralScore,\n  duration: v.videoDuration,\n  transcript: v.transcript,\n  viralReason: v.viralReason\n}));\n\nreturn {\n  json: {\n    projectId: data.projectId,\n    projectName: data.projectName,\n    shareLink: data.shareLink,\n    totalClips: clips.length,\n    clips: clips,\n    // Por ahora todos los clips juntos (el ratio se configuró al crear el proyecto)\n    verticalClips: clips,\n    horizontalClips: []\n  }\n};"
       },
       "id": "organize-clips",
       "name": "📂 Organizar Clips",
@@ -137,7 +137,7 @@
     },
     {
       "parameters": {
-        "chatId": "TU_TELEGRAM_CHAT_ID",
+        "chatId": "124358563",
         "text": "=🎬 **Clips listos para revisar**\n\n📹 Proyecto: {{ $json.projectName }}\n📊 Total de clips: {{ $json.totalClips }}\n\n**Verticales (9:16)** - Instagram Reels / YouTube Shorts:\n{{ $json.verticalClips.length }} clips\n\n**Horizontales (16:9)** - YouTube:\n{{ $json.horizontalClips.length }} clips\n\n👉 Revisa los clips y aprueba los que quieras publicar.",
         "additionalFields": {
           "replyMarkup": "inlineKeyboard",
