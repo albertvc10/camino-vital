@@ -127,7 +127,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Extraer URLs de los clips generados\nconst response = $input.first().json;\n\n// Vizard devuelve los clips en el array 'videos'\nconst data = response.data || response;\nconst videos = data.videos || [];\n\n// Procesar cada clip con la información disponible\nconst clips = videos.map(v => ({\n  id: v.videoId || v.clipEditorId,\n  clipEditorId: v.clipEditorId,\n  videoId: v.videoId,\n  title: v.title,\n  viralScore: v.viralScore,\n  duration: v.videoDuration,\n  transcript: v.transcript,\n  viralReason: v.viralReason\n}));\n\nreturn {\n  json: {\n    projectId: data.projectId,\n    projectName: data.projectName,\n    shareLink: data.shareLink,\n    totalClips: clips.length,\n    clips: clips,\n    // Por ahora todos los clips juntos (el ratio se configuró al crear el proyecto)\n    verticalClips: clips,\n    horizontalClips: []\n  }\n};"
+        "jsCode": "// Extraer URLs de los clips generados\nconst response = $input.first().json;\n\n// Vizard devuelve los clips en el array 'videos'\nconst data = response.data || response;\nconst videos = data.videos || [];\n\n// Procesar cada clip con TODAS las URLs disponibles\nconst clips = videos.map(v => ({\n  id: v.videoId,\n  videoId: v.videoId,\n  videoUrl: v.videoUrl,  // URL de descarga (válida 7 días)\n  clipEditorUrl: v.clipEditorUrl,  // URL del editor web\n  title: v.title,\n  viralScore: v.viralScore,\n  duration: v.videoMsDuration || v.videoDuration,\n  transcript: v.transcript,\n  viralReason: v.viralReason,\n  relatedTopic: v.relatedTopic\n}));\n\nreturn {\n  json: {\n    projectId: data.projectId,\n    projectName: data.projectName,\n    shareLink: data.shareLink,\n    totalClips: clips.length,\n    clips: clips,\n    // Por ahora todos los clips juntos (el ratio se configuró al crear el proyecto)\n    verticalClips: clips,\n    horizontalClips: []\n  }\n};"
       },
       "id": "organize-clips",
       "name": "📂 Organizar Clips",
@@ -137,18 +137,28 @@
     },
     {
       "parameters": {
-        "chatId": "124358563",
-        "text": "=🎬 **Clips listos para revisar**\n\n📹 Proyecto: {{ $json.projectName }}\n📊 Total de clips: {{ $json.totalClips }}\n\n**Verticales (9:16)** - Instagram Reels / YouTube Shorts:\n{{ $json.verticalClips.length }} clips\n\n**Horizontales (16:9)** - YouTube:\n{{ $json.horizontalClips.length }} clips\n\n👉 Revisa los clips y aprueba los que quieras publicar.",
-        "additionalFields": {
-          "replyMarkup": "inlineKeyboard",
-          "inlineKeyboard": "={{ \n  {\n    \"inline_keyboard\": [\n      [\n        {\"text\": \"✅ Aprobar todos\", \"callback_data\": \"approve_all_\" + $json.projectId},\n        {\"text\": \"❌ Rechazar todos\", \"callback_data\": \"reject_all_\" + $json.projectId}\n      ],\n      [\n        {\"text\": \"🔍 Ver clips\", \"url\": \"https://app.vizard.ai/project/\" + $json.projectId}\n      ]\n    ]\n  }\n}}"
-        }
+        "jsCode": "// Preparar mensaje de Telegram con inline keyboard\nconst data = $input.first().json;\n\n// Bot Token de Telegram\nconst BOT_TOKEN = '8259013099:AAFj_RqFvA5tOGVPflq_WoDSl_LHivHj0TQ';\n\n// Construir texto del mensaje\nconst messageText = `🎬 *Clips listos para revisar*\\n\\n📹 Proyecto: ${data.projectName}\\n📊 Total de clips: ${data.totalClips}\\n\\n*Verticales (9:16)* - Instagram Reels / YouTube Shorts:\\n${data.verticalClips.length} clips\\n\\n` +\n  data.clips.map((clip, i) => \n    `📹 Clip ${i + 1}: ${clip.title}\\n🔥 Viral Score: ${clip.viralScore}/10\\n⬇️ [Descargar](${clip.videoUrl})\\n✏️ [Editar](${clip.clipEditorUrl})\\n`\n  ).join('\\n') +\n  `\\n👉 Revisa los clips y aprueba los que quieras publicar.`;\n\n// Construir inline keyboard con botones para cada clip\nconst inlineKeyboard = [\n  // Botones individuales para cada clip\n  ...data.clips.map((clip, i) => [\n    {text: `✅ Clip ${i + 1}`, callback_data: `approve_clip_${clip.videoId}_${data.projectId}`},\n    {text: `❌ Clip ${i + 1}`, callback_data: `reject_clip_${clip.videoId}_${data.projectId}`}\n  ]),\n  // Botones generales\n  [\n    {text: '✅ Aprobar todos', callback_data: `approve_all_${data.projectId}`},\n    {text: '❌ Rechazar todos', callback_data: `reject_all_${data.projectId}`}\n  ],\n  [\n    {text: '🔍 Ver en Vizard', url: `https://app.vizard.ai/project/${data.projectId}`}\n  ]\n];\n\nreturn {\n  json: {\n    bot_token: BOT_TOKEN,\n    chat_id: '124358563',\n    text: messageText,\n    parse_mode: 'Markdown',\n    reply_markup: {\n      inline_keyboard: inlineKeyboard\n    }\n  }\n};"
+      },
+      "id": "prepare-telegram-message",
+      "name": "🔧 Preparar Mensaje",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 550]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $('🔧 Preparar Mensaje').first().json.bot_token }}/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  chat_id: $json.chat_id,\n  text: $json.text,\n  parse_mode: $json.parse_mode,\n  reply_markup: $json.reply_markup\n} }}",
+        "options": {}
       },
       "id": "send-telegram",
-      "name": "📱 Notificar Telegram",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [1340, 600]
+      "name": "📱 Enviar a Telegram",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 650]
     },
     {
       "parameters": {
@@ -169,21 +179,21 @@
           "string": [
             {
               "value1": "={{ $json.callback_query.data }}",
-              "operation": "contains",
-              "value2": "approve_all"
+              "operation": "regex",
+              "value2": "(approve|reject)"
             }
           ]
         }
       },
       "id": "if-approved",
-      "name": "✅ Aprobado?",
+      "name": "✅ Es Acción de Clip?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [680, 900]
     },
     {
       "parameters": {
-        "jsCode": "// Extraer projectId de callback_data\nconst callbackData = $input.first().json.callback_query.data;\nconst projectId = callbackData.split('_')[2];\n\nreturn {\n  json: {\n    projectId: projectId,\n    action: callbackData.includes('approve') ? 'approved' : 'rejected',\n    approvedAt: new Date().toISOString()\n  }\n};"
+        "jsCode": "// Procesar aprobación individual o masiva\nconst callbackData = $input.first().json.callback_query.data;\nconst parts = callbackData.split('_');\n\n// Detectar tipo de acción\nconst isApproval = callbackData.includes('approve');\nconst isIndividual = callbackData.includes('clip');\n\nlet result = {\n  action: isApproval ? 'approved' : 'rejected',\n  approvedAt: new Date().toISOString()\n};\n\nif (isIndividual) {\n  // Formato: approve_clip_{videoId}_{projectId}\n  result.clipId = parts[2];\n  result.projectId = parts[3];\n  result.type = 'individual';\n} else {\n  // Formato: approve_all_{projectId}\n  result.projectId = parts[2];\n  result.type = 'all';\n}\n\nreturn { json: result };"
       },
       "id": "process-approval",
       "name": "⚙️ Procesar Aprobación",
@@ -205,15 +215,28 @@
     },
     {
       "parameters": {
-        "chatId": "={{ $json.callback_query.from.id }}",
-        "text": "=✅ Clips aprobados para publicación!\n\nSe programarán automáticamente en:\n📱 Instagram Reels\n📺 YouTube Shorts\n🎬 YouTube (formato horizontal)\n\nRecibirás confirmación cuando se publiquen.",
-        "additionalFields": {}
+        "jsCode": "// Preparar mensaje de confirmación\nconst data = $input.first().json;\nconst chatId = $('📲 Respuesta Telegram').first().json.callback_query.from.id;\nconst BOT_TOKEN = '8259013099:AAFj_RqFvA5tOGVPflq_WoDSl_LHivHj0TQ';\n\nconst isIndividual = data.type === 'individual';\nconst isApproval = data.action === 'approved';\n\nlet messageText;\n\nif (isIndividual) {\n  if (isApproval) {\n    messageText = `✅ Clip ${data.clipId} aprobado para publicación!\\n\\nSe programará automáticamente en Instagram Reels y YouTube Shorts.`;\n  } else {\n    messageText = `❌ Clip ${data.clipId} rechazado.\\n\\nNo se publicará este clip.`;\n  }\n} else {\n  if (isApproval) {\n    messageText = `✅ Todos los clips aprobados para publicación!\\n\\nSe programarán automáticamente en:\\n📱 Instagram Reels\\n📺 YouTube Shorts\\n🎬 YouTube (formato horizontal)\\n\\nRecibirás confirmación cuando se publiquen.`;\n  } else {\n    messageText = `❌ Todos los clips rechazados.\\n\\nNo se publicará ningún clip de este proyecto.`;\n  }\n}\n\nreturn {\n  json: {\n    bot_token: BOT_TOKEN,\n    chat_id: chatId.toString(),\n    text: messageText\n  }\n};"
+      },
+      "id": "prepare-confirmation",
+      "name": "🔧 Preparar Confirmación",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 950]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $json.bot_token }}/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  chat_id: $json.chat_id,\n  text: $json.text\n} }}",
+        "options": {}
       },
       "id": "confirm-telegram",
-      "name": "✅ Confirmar Aprobación",
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [900, 1000]
+      "name": "✅ Enviar Confirmación",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 1050]
     },
     {
       "parameters": {
@@ -226,6 +249,102 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Obtener información de los clips aprobados para descargarlos\nconst approvalData = $input.first().json;\nconst projectId = approvalData.projectId;\n\n// Hacer petición para obtener los clips del proyecto\nreturn {\n  json: {\n    projectId: projectId,\n    type: approvalData.type,\n    clipId: approvalData.clipId,\n    action: approvalData.action\n  }\n};"
+      },
+      "id": "get-approved-clips-info",
+      "name": "📋 Obtener Info Clips Aprobados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 1050]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://elb-api.vizard.ai/hvizard-server-front/open-api/v1/project/query/{{ $json.projectId }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "VIZARDAI_API_KEY",
+              "value": "378973e2b1604524bd4a2e25bce1c6fe"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fetch-clips-data",
+      "name": "📥 Obtener Datos Clips",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 1050]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filtrar solo los clips aprobados\nconst vizardData = $input.first().json;\nconst approvalInfo = $('📋 Obtener Info Clips Aprobados').first().json;\n\nconst allClips = vizardData.videos || [];\nlet clipsToSave = [];\n\nif (approvalInfo.type === 'individual') {\n  // Solo el clip específico aprobado\n  clipsToSave = allClips.filter(clip => clip.videoId === approvalInfo.clipId);\n} else if (approvalInfo.action === 'approved') {\n  // Todos los clips si se aprobaron todos\n  clipsToSave = allClips;\n}\n\n// Preparar datos para descarga\nconst projectName = vizardData.projectName || approvalInfo.projectId;\n\nreturn clipsToSave.map((clip, i) => ({\n  json: {\n    videoUrl: clip.videoUrl,\n    videoId: clip.videoId,\n    title: clip.title,\n    viralScore: clip.viralScore,\n    projectId: approvalInfo.projectId,\n    projectName: projectName,\n    clipNumber: i + 1\n  }\n}));"
+      },
+      "id": "filter-approved-clips",
+      "name": "🔍 Filtrar Clips Aprobados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 1050]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.videoUrl }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "download-clip",
+      "name": "⬇️ Descargar Clip",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1780, 1050]
+    },
+    {
+      "parameters": {
+        "resource": "folder",
+        "operation": "create",
+        "name": "=Vizard Clips/{{ $json.projectName }}_{{ $json.projectId }}",
+        "options": {
+          "googleFileId": {
+            "googleFileId": ""
+          }
+        }
+      },
+      "id": "create-project-folder",
+      "name": "📁 Crear Carpeta Proyecto",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [2000, 1050],
+      "continueOnFail": true,
+      "notes": "Continúa si la carpeta ya existe"
+    },
+    {
+      "parameters": {
+        "operation": "upload",
+        "name": "=Clip_{{ $json.clipNumber }}_{{ $json.title.substring(0, 50).replace(/[^a-zA-Z0-9]/g, '_') }}_VS{{ $json.viralScore }}.mp4",
+        "resolveData": true,
+        "parents": {
+          "mode": "list",
+          "folderIds": [
+            "={{ $('📁 Crear Carpeta Proyecto').first().json.id }}"
+          ]
+        },
+        "options": {}
+      },
+      "id": "upload-to-drive",
+      "name": "☁️ Subir a Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [2220, 1050]
     }
   ],
   "connections": {
@@ -310,7 +429,18 @@
       "main": [
         [
           {
-            "node": "📱 Notificar Telegram",
+            "node": "🔧 Preparar Mensaje",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔧 Preparar Mensaje": {
+      "main": [
+        [
+          {
+            "node": "📱 Enviar a Telegram",
             "type": "main",
             "index": 0
           }
@@ -344,7 +474,84 @@
       "main": [
         [
           {
-            "node": "✅ Confirmar Aprobación",
+            "node": "🔧 Preparar Confirmación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔧 Preparar Confirmación": {
+      "main": [
+        [
+          {
+            "node": "✅ Enviar Confirmación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✅ Enviar Confirmación": {
+      "main": [
+        [
+          {
+            "node": "📋 Obtener Info Clips Aprobados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📋 Obtener Info Clips Aprobados": {
+      "main": [
+        [
+          {
+            "node": "📥 Obtener Datos Clips",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📥 Obtener Datos Clips": {
+      "main": [
+        [
+          {
+            "node": "🔍 Filtrar Clips Aprobados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔍 Filtrar Clips Aprobados": {
+      "main": [
+        [
+          {
+            "node": "⬇️ Descargar Clip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⬇️ Descargar Clip": {
+      "main": [
+        [
+          {
+            "node": "📁 Crear Carpeta Proyecto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📁 Crear Carpeta Proyecto": {
+      "main": [
+        [
+          {
+            "node": "☁️ Subir a Drive",
             "type": "main",
             "index": 0
           }
