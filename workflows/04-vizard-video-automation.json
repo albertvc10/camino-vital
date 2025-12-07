@@ -252,7 +252,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Obtener información de los clips aprobados para descargarlos\nconst approvalData = $input.first().json;\nconst projectId = approvalData.projectId;\n\n// Hacer petición para obtener los clips del proyecto\nreturn {\n  json: {\n    projectId: projectId,\n    type: approvalData.type,\n    clipId: approvalData.clipId,\n    action: approvalData.action\n  }\n};"
+        "jsCode": "// Obtener información de los clips aprobados para descargarlos\n// Los datos vienen del nodo 'Procesar Aprobación'\nconst approvalData = $('⚙️ Procesar Aprobación').first().json;\nconst projectId = approvalData.projectId;\n\n// Hacer petición para obtener los clips del proyecto\nreturn {\n  json: {\n    projectId: projectId,\n    type: approvalData.type,\n    clipId: approvalData.clipId,\n    action: approvalData.action\n  }\n};"
       },
       "id": "get-approved-clips-info",
       "name": "📋 Obtener Info Clips Aprobados",
