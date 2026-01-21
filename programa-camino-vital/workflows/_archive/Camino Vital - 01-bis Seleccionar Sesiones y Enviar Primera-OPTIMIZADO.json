@@ -1,0 +1,500 @@
+{
+  "name": "Camino Vital - 01-bis Seleccionar Sesiones y Enviar Primera",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "seleccionar-sesiones",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "0f8ce8c0-df96-467b-afcc-e98ba93ac6db",
+      "name": "Webhook Seleccionar Sesiones",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -352,
+        -480
+      ],
+      "webhookId": "seleccionar-sesiones"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=-- Configurar schema\n-- Guardar elección y preparar primera sesión\nUPDATE programa_users\nSET \n  sesiones_objetivo_semana = {{ $json.query.sesiones }},\n  sesiones_completadas_semana = 0,\n  sesion_actual_dentro_semana = 1\nWHERE id = {{ $json.query.user_id }}\nRETURNING *;",
+        "options": {}
+      },
+      "id": "9746e94e-0691-45fa-8a54-8dddd0e41007",
+      "name": "Guardar Sesiones Objetivo",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        -192,
+        -480
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=-- Extraer limitaciones del perfil_inicial\nWITH limitaciones_usuario AS (\n  SELECT \n    COALESCE(\n      string_to_array(\n        NULLIF(perfil_inicial->>'limitaciones', ''),\n        ','\n      ),\n      ARRAY[]::text[]\n    ) as limitaciones_array\n  FROM programa_users\n  WHERE id = {{ $json.id }}\n)\nSELECT \n  e.id,\n  e.nombre_archivo,\n  e.nombre_espanol,\n  e.nivel,\n  e.areas_cuerpo,\n  e.tipo_ejercicio,\n  e.posicion,\n  e.requiere_equipo,\n  e.equipo_necesario,\n  e.evitar_si_limitacion,\n  e.objetivos,\n  e.descripcion_corta,\n  e.instrucciones_clave,\n  e.beneficios\nFROM ejercicios_biblioteca e, limitaciones_usuario lu\nWHERE\n    CASE\n      WHEN '{{ $json.nivel_actual }}' = 'iniciacion' THEN e.nivel IN ('iniciacion', 'intermedio')\n      WHEN '{{ $json.nivel_actual }}' = 'intermedio' THEN e.nivel IN ('iniciacion', 'intermedio', 'avanzado')\n      WHEN '{{ $json.nivel_actual }}' = 'avanzado' THEN e.nivel IN ('intermedio', 'avanzado')\n      ELSE e.nivel = '{{ $json.nivel_actual }}'\n    END\nORDER BY\n    CASE WHEN e.nivel = '{{ $json.nivel_actual }}' THEN 0 ELSE 1 END,\n    RANDOM()\n  LIMIT 100;",
+        "options": {}
+      },
+      "id": "5eab9019-0f52-46b2-a459-83062facad97",
+      "name": "Obtener Ejercicios Disponibles",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        -16,
+        -480
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar prompt para Claude con perfil del usuario y ejercicios disponibles\nconst usuario = $node[\"Guardar Sesiones Objetivo\"].json;\nconst ejercicios = $input.all();\n\nconsole.log(`📝 Preparando prompt para ${usuario.nombre}`);\nconsole.log(`📊 Ejercicios disponibles: ${ejercicios.length}`);\n\n// Parsear perfil_inicial\nconst perfil = typeof usuario.perfil_inicial === 'string'\n  ? JSON.parse(usuario.perfil_inicial)\n  : usuario.perfil_inicial;\n\nconst limitaciones = perfil.limitaciones || 'ninguna';\nconst objetivo = perfil.objetivo_principal || 'general';\nconst nivelMovilidad = perfil.nivel_movilidad || 'buena';\n\n// MATRIZ SIMPLIFICADA: SOLO FUERZA Y CARDIO\nconst matrizDistribucion = {\n  'movilidad': {\n    2: ['fuerza', 'fuerza'],\n    3: ['fuerza', 'cardio', 'fuerza'],\n    4: ['fuerza', 'cardio', 'fuerza', 'cardio'],\n    5: ['fuerza', 'cardio', 'fuerza', 'cardio', 'fuerza']\n  },\n  'fuerza': {\n    2: ['fuerza', 'cardio'],\n    3: ['fuerza', 'cardio', 'fuerza'],\n    4: ['fuerza', 'cardio', 'fuerza', 'cardio'],\n    5: ['fuerza', 'cardio', 'fuerza', 'cardio', 'fuerza']\n  },\n  'equilibrio': {\n    2: ['fuerza', 'fuerza'],\n    3: ['fuerza', 'cardio', 'fuerza'],\n    4: ['fuerza', 'cardio', 'fuerza', 'cardio'],\n    5: ['fuerza', 'cardio', 'fuerza', 'cardio', 'fuerza']\n  },\n  'cardio': {\n    2: ['cardio', 'fuerza'],\n    3: ['cardio', 'fuerza', 'cardio'],\n    4: ['cardio', 'fuerza', 'cardio', 'fuerza'],\n    5: ['cardio', 'fuerza', 'cardio', 'fuerza', 'cardio']\n  },\n  'general': {\n    2: ['fuerza', 'cardio'],\n    3: ['fuerza', 'cardio', 'fuerza'],\n    4: ['fuerza', 'cardio', 'fuerza', 'cardio'],\n    5: ['fuerza', 'cardio', 'fuerza', 'cardio', 'fuerza']\n  }\n};\n\n// Determinar tipo de sesión\nconst sesionesSemanales = parseInt(usuario.sesiones_objetivo_semana) || 3;\nconst numeroSesion = parseInt(usuario.sesion_actual_dentro_semana) || 1;\nconst objetivoNormalizado = objetivo.toLowerCase();\nconst objetivoKey = matrizDistribucion[objetivoNormalizado] ? objetivoNormalizado : 'general';\nconst patron = matrizDistribucion[objetivoKey][sesionesSemanales] || matrizDistribucion['general'][3];\nconst tipoSesion = patron[numeroSesion - 1] || 'fuerza';\n\nconsole.log(`🎯 Objetivo: ${objetivo} → Tipo: ${tipoSesion}`);\nconsole.log(`📅 Sesión ${numeroSesion} de ${sesionesSemanales}`);\nconsole.log(`📋 Patrón: [${patron.join(', ')}]`);\n\nlet prompt = '';\nlet infoTipo = {};\n\nif (tipoSesion === 'cardio') {\n  infoTipo = {\n    titulo: 'Cardio y Resistencia',\n    enfoque: 'cardio'\n  };\n\n  prompt = `Eres un experto en creación de programas de ejercicio cardiovascular para personas mayores y con movilidad limitada.\n\n**PERFIL DEL USUARIO:**\n- Nombre: ${usuario.nombre}\n- Nivel físico: ${usuario.nivel_actual}\n- Nivel de movilidad: ${nivelMovilidad}\n- Limitaciones físicas: ${limitaciones}\n- Objetivo principal: ${objetivo}\n\n**TIPO DE SESIÓN A CREAR:**\n🎯 **Cardio y Resistencia** (Sesión ${numeroSesion} de ${sesionesSemanales})\n\n**TU TAREA:**\nCrea un plan de actividad cardiovascular de 20-30 minutos que:\n\n1. **Sea seguro** para el nivel ${usuario.nivel_actual} con limitaciones: ${limitaciones}\n2. **Incluya calentamiento** (3-5 minutos de movilidad suave)\n3. **Especifique la actividad principal** (caminar, trotar suave, bici estática, etc.)\n4. **Proporcione guías claras de:**\n   - Duración total y por fases\n   - Intensidad (escala de esfuerzo 1-10)\n   - Cómo debe sentirse el usuario (frecuencia cardíaca, respiración)\n   - Señales de que debe parar o reducir intensidad\n   - Progresión sugerida (ej: empezar 5min, ir aumentando)\n\n**IMPORTANTE SOBRE LIMITACIONES:**\n${limitaciones !== 'ninguna' ? `El usuario tiene limitaciones en: ${limitaciones}. Adapta la actividad cardiovascular para evitar estrés en estas áreas.` : 'No hay limitaciones específicas reportadas.'}\n\n**FORMATO DE SALIDA:**\nDevuelve ÚNICAMENTE un objeto JSON válido (sin markdown, sin explicaciones adicionales):\n\n{\n  \"titulo\": \"Sesión ${numeroSesion}: Cardio y Resistencia - Nivel ${usuario.nivel_actual}\",\n  \"introduccion_personalizada\": \"Esta sesión está diseñada para ti, ${usuario.nombre}. Como estás en nivel ${usuario.nivel_actual} con objetivo de ${objetivo}, hoy trabajaremos tu resistencia cardiovascular de forma segura y progresiva. [Explicar beneficios del cardio y cómo respeta sus limitaciones]\",\n  \"enfoque\": \"cardio\",\n  \"duracion_estimada\": \"20-30 minutos\",\n  \"tipo_actividad\": \"caminata\" | \"trote_suave\" | \"bicicleta\" | \"escaleras\" | \"combinado\",\n  \"calentamiento_texto\": \"Descripción detallada del calentamiento de 3-5 minutos con ejercicios de movilidad\",\n  \"actividad_principal\": {\n    \"descripcion\": \"Descripción clara de la actividad cardiovascular principal\",\n    \"duracion\": \"15-20 minutos\",\n    \"intensidad_objetivo\": \"Moderada (5-6 en escala de 1-10)\",\n    \"como_debe_sentirse\": \"Descripción de sensaciones esperadas: ritmo cardíaco, respiración, energía\",\n    \"fases\": [\n      {\n        \"fase\": \"Inicio\",\n        \"duracion\": \"3-5 minutos\",\n        \"intensidad\": \"Baja (3-4/10)\",\n        \"descripcion\": \"Comenzar suave...\"\n      },\n      {\n        \"fase\": \"Intensidad moderada\",\n        \"duracion\": \"10-15 minutos\",\n        \"intensidad\": \"Moderada (5-6/10)\",\n        \"descripcion\": \"Mantener ritmo constante...\"\n      },\n      {\n        \"fase\": \"Enfriamiento\",\n        \"duracion\": \"3-5 minutos\",\n        \"intensidad\": \"Baja (3-4/10)\",\n        \"descripcion\": \"Reducir intensidad gradualmente...\"\n      }\n    ]\n  },\n  \"senales_de_alerta\": [\n    \"Dolor en el pecho o dificultad para respirar\",\n    \"Mareo o náuseas\",\n    \"Dolor articular intenso\",\n    \"[Otras señales específicas según limitaciones]\"\n  ],\n  \"consejos_seguridad\": [\n    \"Mantén una botella de agua cerca\",\n    \"Si necesitas parar, hazlo sin culpa\",\n    \"[Otros consejos específicos]\"\n  ],\n  \"progresion_sugerida\": \"Cómo aumentar la intensidad en las próximas sesiones\"\n}\n\n**VALIDACIÓN:**\n- SOLO devuelve el JSON, nada más\n- El enfoque DEBE ser: \"cardio\"\n- Adapta la actividad a las limitaciones: ${limitaciones}`;\n\n} else {\n  infoTipo = {\n    titulo: 'Fuerza Funcional',\n    enfoque: 'fuerza'\n  };\n\n  const ejerciciosFiltrados = ejercicios.slice(0, 50);\n  const listaEjercicios = ejerciciosFiltrados.map((e, idx) =>\n    `${idx + 1}. ${e.json.nombre_espanol} - \"${e.json.nombre_archivo}\" - ${e.json.descripcion_corta}`\n  ).join('\\\\n');\n\n  console.log(`🎯 Enviando ${ejerciciosFiltrados.length} ejercicios (reducido de ${ejercicios.length})`);\n\n  prompt = `Eres un experto en creación de programas de ejercicio de fuerza para personas mayores y con movilidad limitada.\n\n**PERFIL DEL USUARIO:**\n- Nombre: ${usuario.nombre}\n- Nivel físico: ${usuario.nivel_actual}\n- Nivel de movilidad: ${nivelMovilidad}\n- Limitaciones físicas: ${limitaciones}\n- Objetivo principal: ${objetivo}\n\n**TIPO DE SESIÓN A CREAR:**\n🎯 **Fuerza Funcional** (Sesión ${numeroSesion} de ${sesionesSemanales})\n\nEnfoque: Fortalecer músculos principales del cuerpo con peso corporal. Incluye trabajo de equilibrio (ejercicios unilaterales).\n\n**EJERCICIOS DISPONIBLES:**\n${listaEjercicios}\n\n**TU TAREA:**\nCrea una sesión de fuerza de 25-30 minutos que:\n\n1. **Calentamiento (2 ejercicios):** SIEMPRE ejercicios de movilidad articular y estiramientos dinámicos\n2. **Trabajo Principal (4-6 ejercicios):** Ejercicios de fuerza que trabajen diferentes áreas del cuerpo\n\n**REGLAS IMPORTANTES:**\n- El calentamiento DEBE ser de movilidad (preparación articular)\n- Balancea las áreas: piernas, core, brazos, equilibrio\n- Adapta repeticiones al nivel ${usuario.nivel_actual}\n- Respeta limitaciones: ${limitaciones}\n- La introducción debe explicar por qué esta sesión es importante para ${usuario.nombre}\n\n**FORMATO DE SALIDA:**\nDevuelve ÚNICAMENTE un objeto JSON válido:\n\n{\n  \"titulo\": \"Sesión ${numeroSesion}: Fuerza Funcional - Nivel ${usuario.nivel_actual}\",\n  \"introduccion_personalizada\": \"Esta sesión está diseñada para ti, ${usuario.nombre}. Como estás en nivel ${usuario.nivel_actual} con objetivo de ${objetivo}, hoy trabajaremos tu fuerza de forma segura. [Explicar beneficios y cómo respeta limitaciones ${limitaciones}]\",\n  \"enfoque\": \"fuerza\",\n  \"duracion_estimada\": \"25-30 minutos\",\n  \"calentamiento\": [\n    {\n      \"nombre_archivo\": \"archivo_exacto.mov\",\n      \"nombre_espanol\": \"Nombre en español\",\n      \"repeticiones\": \"10 repeticiones lentas\",\n      \"duracion_aprox\": \"2 minutos\",\n      \"notas\": \"Consejo breve de ejecución\"\n    }\n  ],\n  \"trabajo_principal\": [\n    {\n      \"nombre_archivo\": \"archivo_exacto.mov\",\n      \"nombre_espanol\": \"Nombre en español\",\n      \"repeticiones\": \"3 series de 10\" | \"30 segundos por lado\",\n      \"duracion_aprox\": \"4 minutos\",\n      \"notas\": \"Consejo breve\"\n    }\n  ]\n}\n\n**VALIDACIÓN:**\n- SOLO devuelve el JSON\n- Usa EXACTAMENTE los nombres de archivo de la lista\n- Calentamiento = ejercicios de movilidad\n- Trabajo principal = ejercicios de fuerza`;\n}\n\nreturn {\n  json: {\n    prompt: prompt,\n    user_id: usuario.id,\n    user_nombre: usuario.nombre,\n    user_email: usuario.email,\n    semana_actual: usuario.semana_actual,\n    sesiones_objetivo: usuario.sesiones_objetivo_semana,\n    tipo_sesion: tipoSesion,\n    numero_sesion: numeroSesion,\n    sesion: infoTipo\n  }\n};"
+      },
+      "id": "9e821f3a-7b52-47d0-a8e0-be881151ca6c",
+      "name": "Preparar Prompt Claude",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        176,
+        -480
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "anthropicApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  model: 'claude-sonnet-4-5-20250929',\n  max_tokens: 4096,\n  messages: [\n    {\n      role: 'user',\n      content: $json.prompt\n    }\n  ]\n} }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "af06cbb7-1cdb-4c3f-91f2-6fa6ae1d3bef",
+      "name": "Llamar Claude API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        400,
+        -480
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "GGPk1JGIxV4tqjD0",
+          "name": "anthropic-api"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parsear respuesta de Claude y preparar para guardar en DB\nconst datosPrompt = $node[\"Preparar Prompt Claude\"].json;\nconst respuestaClaude = $json.content[0].text;\n\nconsole.log('📝 Parseando respuesta de Claude...');\nconsole.log('Tipo de sesión:', datosPrompt.tipo_sesion);\n\n// Extraer JSON de la respuesta\nconst jsonMatch = respuestaClaude.match(/\\{[\\s\\S]*\\}/);\n\nif (!jsonMatch) {\n  throw new Error('No se encontró JSON válido en la respuesta de Claude');\n}\n\nconst sesion = JSON.parse(jsonMatch[0]);\n\n// Validar según tipo de sesión\nif (datosPrompt.tipo_sesion === 'cardio') {\n  // Validar estructura de cardio\n  if (!sesion.titulo || !sesion.introduccion_personalizada || !sesion.tipo_actividad || !sesion.actividad_principal) {\n    throw new Error('La sesión de cardio no tiene la estructura esperada');\n  }\n  console.log(`✅ Sesión CARDIO generada: ${sesion.titulo}`);\n  console.log(`🏃 Actividad: ${sesion.tipo_actividad}`);\n  console.log(`📊 Fases: ${sesion.actividad_principal.fases?.length || 0}`);\n} else {\n  // Validar estructura de fuerza\n  if (!sesion.titulo || !sesion.introduccion_personalizada || !sesion.calentamiento || !sesion.trabajo_principal) {\n    throw new Error('La sesión de fuerza no tiene la estructura esperada');\n  }\n  console.log(`✅ Sesión FUERZA generada: ${sesion.titulo}`);\n  console.log(`📋 Calentamiento: ${sesion.calentamiento.length} ejercicios`);\n  console.log(`💪 Trabajo principal: ${sesion.trabajo_principal.length} ejercicios`);\n}\n\nreturn {\n  json: {\n    // Datos del usuario\n    user_id: datosPrompt.user_id,\n    user_nombre: datosPrompt.user_nombre,\n    user_email: datosPrompt.user_email,\n    semana_actual: datosPrompt.semana_actual,\n    sesiones_objetivo: datosPrompt.sesiones_objetivo,\n    tipo_sesion: datosPrompt.tipo_sesion,\n\n    // Datos de la sesión\n    sesion: sesion\n  }\n};"
+      },
+      "id": "117eff0d-0f12-4008-af2c-1c46314b0344",
+      "name": "Parsear Respuesta Claude",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        -480
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=-- Detectar tipo y guardar apropiadamente\nINSERT INTO programa_sesiones (\n  user_id,\n  titulo,\n  introduccion_personalizada,\n  enfoque,\n  duracion_estimada,\n  -- Columnas condicionales según tipo\n  calentamiento,\n  trabajo_principal,\n  tipo_actividad,\n  calentamiento_texto,\n  actividad_principal,\n  senales_de_alerta,\n  consejos_seguridad,\n  progresion_sugerida,\n  -- Columnas comunes\n  numero_sesion,\n  semana,\n  generada_por\n)\nVALUES (\n  {{ $json.user_id }},\n  {{ $json.sesion.titulo ? \"'\" + $json.sesion.titulo.replace(/'/g, \"''\") + \"'\" : \"'Sesión personalizada'\" }},\n  {{ $json.sesion.introduccion_personalizada ? \"'\" + $json.sesion.introduccion_personalizada.replace(/'/g, \"''\") + \"'\" : \"''\" }},\n  '{{ $json.sesion.enfoque }}',\n  '{{ $json.sesion.duracion_estimada }}',\n  -- Fuerza: calentamiento y trabajo_principal\n  {{ $json.tipo_sesion === 'fuerza' ? \"'\" + JSON.stringify($json.sesion.calentamiento).replace(/'/g, \"''\") + \"'::jsonb\" : \"NULL\" }},\n  {{ $json.tipo_sesion === 'fuerza' ? \"'\" + JSON.stringify($json.sesion.trabajo_principal).replace(/'/g, \"''\") + \"'::jsonb\" : \"NULL\" }},\n  -- Cardio: tipo_actividad, calentamiento_texto, actividad_principal, etc\n  {{ $json.tipo_sesion === 'cardio' ? \"'\" + $json.sesion.tipo_actividad + \"'\" : \"NULL\" }},\n  {{ $json.tipo_sesion === 'cardio' && $json.sesion.calentamiento_texto ? \"'\" + $json.sesion.calentamiento_texto.replace(/'/g, \"''\") + \"'\" : \"NULL\" }},\n  {{ $json.tipo_sesion === 'cardio' && $json.sesion.actividad_principal ? \"'\" + JSON.stringify($json.sesion.actividad_principal).replace(/'/g, \"''\") + \"'::jsonb\" : \"NULL\" }},\n  {{ $json.tipo_sesion === 'cardio' && $json.sesion.senales_de_alerta ? \"ARRAY[\" + $json.sesion.senales_de_alerta.map(s => \"'\" + s.replace(/'/g, \"''\") + \"'\").join(',') + \"]\" : \"NULL\" }},\n  {{ $json.tipo_sesion === 'cardio' && $json.sesion.consejos_seguridad ? \"ARRAY[\" + $json.sesion.consejos_seguridad.map(c => \"'\" + c.replace(/'/g, \"''\") + \"'\").join(',') + \"]\" : \"NULL\" }},\n  {{ $json.tipo_sesion === 'cardio' && $json.sesion.progresion_sugerida ? \"'\" + $json.sesion.progresion_sugerida.replace(/'/g, \"''\") + \"'\" : \"NULL\" }},\n  -- Comunes\n  1,\n  {{ $json.semana_actual }},\n  'ia'\n)\nRETURNING id as sesion_id, titulo, introduccion_personalizada, enfoque, duracion_estimada;",
+        "options": {}
+      },
+      "id": "c0124c40-1675-49c9-83f1-8c4a9bd669d2",
+      "name": "Guardar Sesión en DB",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        768,
+        -480
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Obtener template de email desde DB\nSELECT * FROM get_email_template('sesion_ejercicios');",
+        "options": {}
+      },
+      "id": "270608db-a6c4-4590-b24d-e9b9b235549e",
+      "name": "Obtener Template Email",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        944,
+        -480
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar email con link a página de sesión personalizada\n\nconst usuario = $node[\"Guardar Sesiones Objetivo\"].json;\nconst sesion = $node[\"Guardar Sesión en DB\"].json;\nconst template = $node[\"Obtener Template Email\"].json.html_template;\n\nconsole.log('📧 Preparando email con sesión personalizada');\nconsole.log('🎯 Sesión ID:', sesion.sesion_id);\n\n// Variables para el template\nconst webhookUrl = process.env.WEBHOOK_URL || 'http://localhost:5678';\nconst sesionUrl = `${webhookUrl}/webhook/view-session/sesion/${sesion.sesion_id}?token=${usuario.auth_token}`;\n\n// Crear resumen breve de ejercicios para el email\nconst datosPrompt = $node[\"Preparar Prompt Claude\"].json;\nconst sesionCompleta = datosPrompt.sesion || JSON.parse(sesion.trabajo_principal);\nconst totalEjercicios = (sesionCompleta.calentamiento?.length || 0) + (sesionCompleta.trabajo_principal?.length || 0);\n\n// HTML del email (versión resumida con botón CTA)\nconst emailHTML = `\n<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n</head>\n<body style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333; background: #f5f5f5;\">\n  \n  <!-- Header -->\n  <div style=\"background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 30px; text-align: center; border-radius: 12px 12px 0 0;\">\n    <h1 style=\"margin: 0; font-size: 28px;\">🎯 Tu Sesión 1 de ${usuario.sesiones_objetivo_semana}</h1>\n    <p style=\"margin: 10px 0 0 0; opacity: 0.9; font-size: 16px;\">Diseñada específicamente para ti</p>\n  </div>\n  \n  <!-- Contenido -->\n  <div style=\"background: white; padding: 40px 30px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);\">\n    \n    <p style=\"font-size: 18px; line-height: 1.6; margin: 0 0 20px 0;\">\n      Hola <strong>${usuario.nombre}</strong>,\n    </p>\n    \n    <p style=\"font-size: 16px; line-height: 1.6; margin: 0 0 25px 0;\">\n      He preparado una sesión personalizada para ti basándome en tu nivel, objetivos y limitaciones.\n    </p>\n    \n    <!-- Introducción personalizada -->\n    <div style=\"background: #f0f7ff; border-left: 4px solid #667eea; padding: 20px; margin: 0 0 30px 0; border-radius: 4px;\">\n      <p style=\"margin: 0; font-size: 15px; line-height: 1.6; color: #333;\">\n        ${sesion.introduccion_personalizada || 'Sesión diseñada para tu nivel y objetivos.'}\n      </p>\n    </div>\n    \n    <!-- Resumen de la sesión -->\n    <div style=\"background: #f9f9f9; padding: 25px; border-radius: 8px; margin: 0 0 30px 0;\">\n      <h3 style=\"margin: 0 0 15px 0; color: #333; font-size: 18px;\">📋 Resumen de tu sesión:</h3>\n      <ul style=\"margin: 0; padding-left: 20px; line-height: 2; color: #666;\">\n        <li><strong>Duración:</strong> ${sesion.duracion_estimada || '25-30 minutos'}</li>\n        <li><strong>Enfoque:</strong> ${sesion.enfoque || 'Mixto'}</li>\n        <li><strong>Ejercicios:</strong> ${totalEjercicios} ejercicios personalizados</li>\n        <li><strong>Nivel:</strong> ${usuario.nivel_actual}</li>\n      </ul>\n    </div>\n    \n    <!-- CTA Button -->\n    <div style=\"text-align: center; margin: 40px 0;\">\n      <a href=\"${sesionUrl}\" style=\"display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 18px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 18px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);\">\n        🎬 VER MI SESIÓN COMPLETA\n      </a>\n      <p style=\"margin: 15px 0 0 0; font-size: 14px; color: #999;\">\n        Click para ver todos los ejercicios con videos\n      </p>\n    </div>\n    \n    <!-- Instrucciones -->\n    <div style=\"background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; margin: 30px 0; border-radius: 4px;\">\n      <p style=\"margin: 0; font-weight: 600; color: #856404;\">💡 <strong>Recuerda:</strong></p>\n      <ul style=\"margin: 10px 0 0; padding-left: 20px; color: #856404; line-height: 1.8;\">\n        <li>Ve a tu ritmo, no hay prisa</li>\n        <li>Si algo duele, para y descansa</li>\n        <li>Puedes pausar los videos cuando necesites</li>\n      </ul>\n    </div>\n    \n    <!-- Cierre -->\n    <p style=\"font-size: 16px; line-height: 1.6; margin: 30px 0 10px;\">\n      Cuando termines la sesión, haz click en \"Completar Sesión\" y recibirás la siguiente inmediatamente.\n    </p>\n    \n    <p style=\"font-size: 16px; line-height: 1.6; margin: 10px 0;\">\n      ¡A por ello! 💪<br>\n      <strong>El equipo de Camino Vital</strong>\n    </p>\n  </div>\n  \n  <!-- Footer -->\n  <div style=\"text-align: center; margin-top: 30px; padding: 20px; color: #999; font-size: 12px;\">\n    <p style=\"margin: 0;\">Camino Vital | Hábitos Vitales</p>\n    <p style=\"margin: 5px 0 0;\">Este email es parte de tu programa de ejercicio personalizado</p>\n  </div>\n  \n</body>\n</html>\n`;\n\nreturn {\n  json: {\n    user_id: usuario.id,\n    user_email: usuario.email,\n    user_nombre: usuario.nombre,\n    sesion_id: sesion.sesion_id,\n    sesiones_objetivo: usuario.sesiones_objetivo_semana,\n    semana: usuario.semana_actual,\n    sesion_numero: 1,\n    email_html: emailHTML,\n    asunto: `🎯 Tu Sesión 1 de ${usuario.sesiones_objetivo_semana}: ${sesion.titulo}`\n  }\n};"
+      },
+      "id": "93687147-cd66-4903-bfe5-921230369ebe",
+      "name": "Preparar Email Sesión",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1136,
+        -480
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar body JSON para Brevo con HTML correctamente escapado\nconst input = $input.first().json;\n\n// Construir el body como objeto JavaScript (se convierte automáticamente a JSON)\nconst brevoBody = {\n  sender: {\n    name: \"Camino Vital\",\n    email: \"hola@habitos-vitales.com\"\n  },\n  to: [\n    {\n      email: input.user_email,\n      name: input.user_nombre\n    }\n  ],\n  subject: input.asunto,\n  htmlContent: input.email_html  // JavaScript maneja el escape automáticamente\n};\n\nreturn {\n  json: {\n    ...input,\n    brevo_body: brevoBody\n  }\n};"
+      },
+      "id": "12b24abb-3af1-43c5-80da-1705c8352caa",
+      "name": "Preparar Body Brevo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        -480
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brevo.com/v3/smtp/email",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api-key",
+              "value": "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"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.brevo_body }}",
+        "options": {}
+      },
+      "id": "ad927b77-b137-4f6f-a7f3-108d49f79166",
+      "name": "Enviar Email vía Brevo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1440,
+        -480
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Recuperar datos del envío después del HTTP Request de Brevo\n\nconst datosEnvio = $node[\"Preparar Body Brevo\"].json;\n\nconsole.log('🔄 Recuperando datos de envío...');\n\nreturn {\n  json: {\n    user_id: datosEnvio.user_id,\n    sesion_id: datosEnvio.sesion_id,\n    user_email: datosEnvio.user_email,\n    sesiones_objetivo: datosEnvio.sesiones_objetivo\n  }\n};"
+      },
+      "id": "003d686d-e0f9-458e-882a-fcf83a4bd85d",
+      "name": "Recuperar Datos Envío",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1632,
+        -480
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=-- Registrar envío de sesión personalizada\nWITH envio_insertado AS (\n  INSERT INTO programa_envios (user_id, contenido_id, estado, fecha_envio)\n  VALUES (\n    {{ $json.user_id }},\n    {{ $json.sesion_id }},\n    'enviado',\n    NOW()\n  )\n  RETURNING id, user_id, contenido_id\n),\nusuario_actualizado AS (\n  UPDATE programa_users\n  SET \n    fecha_ultimo_envio = NOW(),\n    envios_totales = envios_totales + 1\n  WHERE id = {{ $json.user_id }}\n  RETURNING id, envios_totales\n)\nSELECT \n  e.id as envio_id,\n  e.user_id,\n  e.contenido_id as sesion_id,\n  u.envios_totales,\n  {{ $json.sesiones_objetivo }} as sesiones_objetivo\nFROM envio_insertado e, usuario_actualizado u;",
+        "options": {}
+      },
+      "id": "0042e89d-b43b-4bf7-aa01-e010cfcf9c4d",
+      "name": "Registrar Envío",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        1856,
+        -480
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\">\n  <title>¡Perfecto!</title>\n  <style>\n    body {\n      font-family: Arial, sans-serif;\n      max-width: 600px;\n      margin: 50px auto;\n      padding: 20px;\n      text-align: center;\n      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n      min-height: 100vh;\n      display: flex;\n      align-items: center;\n      justify-content: center;\n    }\n    .card {\n      background: white;\n      border-radius: 12px;\n      padding: 40px;\n      box-shadow: 0 10px 40px rgba(0,0,0,0.2);\n    }\n    h1 {\n      color: #4CAF50;\n      margin: 0 0 20px 0;\n      font-size: 32px;\n    }\n    p {\n      font-size: 18px;\n      line-height: 1.6;\n      color: #555;\n    }\n    .icon {\n      font-size: 64px;\n      margin-bottom: 20px;\n    }\n    .highlight {\n      background: #e8f5e9;\n      padding: 15px;\n      border-radius: 8px;\n      margin: 20px 0;\n      color: #2e7d32;\n      font-weight: bold;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"card\">\n    <div class=\"icon\">🎉</div>\n    <h1>¡Perfecto!</h1>\n    <p>Has elegido hacer <strong>{{ $node[\"Recuperar Datos Envío\"].json.sesiones_objetivo }} sesiones esta semana</strong></p>\n    <div class=\"highlight\">\n      📧 Tu primera sesión está de camino<br>\n      Revisa tu email en unos segundos\n    </div>\n    <p style=\"margin-top: 30px; font-size: 16px; color: #666;\">\n      Cuando termines la sesión, haz click en el botón de feedback del email<br>\n      y recibirás la siguiente inmediatamente\n    </p>\n    <p style=\"margin-top: 30px; color: #888; font-size: 14px;\">\n      ¡Bienvenido a Camino Vital! 💪\n    </p>\n  </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "3b8efddc-012c-4ceb-9e9c-713d1fd4dc26",
+      "name": "Responder Confirmación",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        2064,
+        -480
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Ups, algo falló</title>\n  <style>\n    body {\n      font-family: Arial, sans-serif;\n      max-width: 600px;\n      margin: 50px auto;\n      padding: 20px;\n      text-align: center;\n      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);\n      min-height: 100vh;\n      display: flex;\n      align-items: center;\n      justify-content: center;\n    }\n    .card {\n      background: white;\n      border-radius: 12px;\n      padding: 40px;\n      box-shadow: 0 10px 40px rgba(0,0,0,0.2);\n    }\n    h1 {\n      color: #ee5a6f;\n      margin: 0 0 20px 0;\n      font-size: 32px;\n    }\n    p {\n      font-size: 18px;\n      line-height: 1.6;\n      color: #555;\n    }\n    .icon {\n      font-size: 64px;\n      margin-bottom: 20px;\n    }\n    .contact {\n      background: #fff3cd;\n      padding: 15px;\n      border-radius: 8px;\n      margin: 20px 0;\n      border-left: 4px solid #ffc107;\n    }\n    a {\n      color: #4CAF50;\n      text-decoration: none;\n      font-weight: bold;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"card\">\n    <div class=\"icon\">😕</div>\n    <h1>Ups, algo no funcionó</h1>\n    <p>Hubo un problema al procesar tu solicitud.</p>\n    <div class=\"contact\">\n      <p style=\"margin: 0; font-size: 16px;\"><strong>No te preocupes</strong></p>\n      <p style=\"margin: 10px 0 0 0;\">Por favor, inténtalo de nuevo en unos minutos.</p>\n    </div>\n    <p style=\"margin-top: 30px; font-size: 16px; color: #666;\">\n      Si el problema persiste, contáctanos:<br>\n      <a href=\"mailto:hola@habitos-vitales.com\">hola@habitos-vitales.com</a>\n    </p>\n  </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "5bec5044-c8f0-4065-a5c0-fd48e7b15be6",
+      "name": "Responder Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        784,
+        80
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Seleccionar Sesiones": {
+      "main": [
+        [
+          {
+            "node": "Guardar Sesiones Objetivo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar Sesiones Objetivo": {
+      "main": [
+        [
+          {
+            "node": "Obtener Ejercicios Disponibles",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Responder Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Ejercicios Disponibles": {
+      "main": [
+        [
+          {
+            "node": "Preparar Prompt Claude",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Responder Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Prompt Claude": {
+      "main": [
+        [
+          {
+            "node": "Llamar Claude API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Llamar Claude API": {
+      "main": [
+        [
+          {
+            "node": "Parsear Respuesta Claude",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Responder Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parsear Respuesta Claude": {
+      "main": [
+        [
+          {
+            "node": "Guardar Sesión en DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar Sesión en DB": {
+      "main": [
+        [
+          {
+            "node": "Obtener Template Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Responder Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Template Email": {
+      "main": [
+        [
+          {
+            "node": "Preparar Email Sesión",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Email Sesión": {
+      "main": [
+        [
+          {
+            "node": "Preparar Body Brevo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Body Brevo": {
+      "main": [
+        [
+          {
+            "node": "Enviar Email vía Brevo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Email vía Brevo": {
+      "main": [
+        [
+          {
+            "node": "Recuperar Datos Envío",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Responder Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recuperar Datos Envío": {
+      "main": [
+        [
+          {
+            "node": "Registrar Envío",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar Envío": {
+      "main": [
+        [
+          {
+            "node": "Responder Confirmación",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Responder Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "95a9e42a-5ef6-4760-8c7f-de1c1ec8a77c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "84e52699fab62b1fb2c5be95d249c5bcabdd7574acb0d2876e03aca6f6c8a022"
+  },
+  "id": "j8LKtzkqviJXn32R",
+  "tags": [
+    {
+      "updatedAt": "2025-12-23T21:05:34.287Z",
+      "createdAt": "2025-12-23T21:05:34.287Z",
+      "id": "2Np5mmwYXiyeMPtJ",
+      "name": "Camino Vital"
+    },
+    {
+      "updatedAt": "2025-12-23T21:22:27.713Z",
+      "createdAt": "2025-12-23T21:22:27.713Z",
+      "id": "YriIAJNwCVbGfQiT",
+      "name": "TEST"
+    }
+  ]
+}

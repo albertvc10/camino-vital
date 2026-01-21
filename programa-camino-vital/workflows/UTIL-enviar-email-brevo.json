@@ -1,0 +1,151 @@
+{
+  "name": "UTIL - Enviar Email Brevo",
+  "active": true,
+  "nodes": [
+    {
+      "id": "webhook-enviar-email",
+      "name": "Webhook Enviar Email",
+      "type": "n8n-nodes-base.webhook",
+      "position": [240, 300],
+      "webhookId": "util-enviar-email",
+      "parameters": {
+        "path": "util/enviar-email",
+        "options": {},
+        "httpMethod": "POST",
+        "responseMode": "lastNode"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "preparar-body-brevo",
+      "name": "Preparar Body Brevo",
+      "type": "n8n-nodes-base.code",
+      "position": [460, 300],
+      "parameters": {
+        "jsCode": "// Preparar body para Brevo - CENTRALIZADO\n// Entrada esperada:\n// - user_email: string\n// - user_nombre: string\n// - asunto: string\n// - email_html: string\n// - user_id: number (opcional, para registrar envío)\n// - sesion_id: number (opcional)\n\nconst input = $json.body || $json;\n\n// Obtener sender desde config o usar defaults\nconst senderName = process.env.SENDER_NAME || 'Camino Vital';\nconst senderEmail = process.env.SENDER_EMAIL || 'hola@habitos-vitales.com';\n\nconst brevoBody = {\n  sender: {\n    name: senderName,\n    email: senderEmail\n  },\n  to: [\n    {\n      email: input.user_email,\n      name: input.user_nombre || input.user_email\n    }\n  ],\n  subject: input.asunto || input.email_asunto,\n  htmlContent: input.email_html\n};\n\nconsole.log('📧 Preparando email para:', input.user_email);\nconsole.log('📋 Asunto:', brevoBody.subject);\n\nreturn {\n  json: {\n    ...input,\n    brevo_body: brevoBody\n  }\n};"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "enviar-email-brevo",
+      "name": "Enviar Email vía Brevo",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [680, 300],
+      "parameters": {
+        "url": "https://api.brevo.com/v3/smtp/email",
+        "method": "POST",
+        "options": {},
+        "jsonBody": "={{ $json.brevo_body }}",
+        "sendBody": true,
+        "sendHeaders": true,
+        "specifyBody": "json",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api-key",
+              "value": "={{ $env.BREVO_API_KEY }}"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        }
+      },
+      "typeVersion": 4.2
+    },
+    {
+      "id": "if-registrar-envio",
+      "name": "IF: ¿Registrar Envío?",
+      "type": "n8n-nodes-base.if",
+      "position": [900, 300],
+      "parameters": {
+        "options": {},
+        "conditions": {
+          "options": {
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "tiene-user-id",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              },
+              "leftValue": "={{ $node['Preparar Body Brevo'].json.user_id }}",
+              "rightValue": 0
+            }
+          ]
+        }
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "registrar-envio-db",
+      "name": "Registrar Envío en BD",
+      "type": "n8n-nodes-base.postgres",
+      "position": [1120, 250],
+      "parameters": {
+        "query": "=SELECT * FROM registrar_envio(\n  {{ $node['Preparar Body Brevo'].json.user_id }},\n  {{ $node['Preparar Body Brevo'].json.sesion_id || 'NULL' }}\n);",
+        "options": {},
+        "operation": "executeQuery"
+      },
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      },
+      "typeVersion": 2.4
+    },
+    {
+      "id": "respuesta-con-registro",
+      "name": "Respuesta Con Registro",
+      "type": "n8n-nodes-base.code",
+      "position": [1340, 250],
+      "parameters": {
+        "jsCode": "// Respuesta final\nconst input = $node['Preparar Body Brevo'].json;\nconst brevoResponse = $node['Enviar Email vía Brevo'].json;\nconst envioDb = $json || {};\n\nreturn {\n  json: {\n    success: true,\n    email_enviado: true,\n    destinatario: input.user_email,\n    asunto: input.asunto || input.email_asunto,\n    brevo_message_id: brevoResponse.messageId,\n    envio_id: envioDb.envio_id || null,\n    envios_totales: envioDb.envios_totales || null\n  }\n};"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "respuesta-sin-registro",
+      "name": "Respuesta Sin Registro",
+      "type": "n8n-nodes-base.code",
+      "position": [1120, 400],
+      "parameters": {
+        "jsCode": "// Respuesta sin registro en BD\nconst input = $node['Preparar Body Brevo'].json;\nconst brevoResponse = $node['Enviar Email vía Brevo'].json;\n\nreturn {\n  json: {\n    success: true,\n    email_enviado: true,\n    destinatario: input.user_email,\n    asunto: input.asunto || input.email_asunto,\n    brevo_message_id: brevoResponse.messageId,\n    envio_id: null,\n    envios_totales: null\n  }\n};"
+      },
+      "typeVersion": 2
+    }
+  ],
+  "connections": {
+    "Webhook Enviar Email": {
+      "main": [[{"node": "Preparar Body Brevo", "type": "main", "index": 0}]]
+    },
+    "Preparar Body Brevo": {
+      "main": [[{"node": "Enviar Email vía Brevo", "type": "main", "index": 0}]]
+    },
+    "Enviar Email vía Brevo": {
+      "main": [[{"node": "IF: ¿Registrar Envío?", "type": "main", "index": 0}]]
+    },
+    "IF: ¿Registrar Envío?": {
+      "main": [
+        [{"node": "Registrar Envío en BD", "type": "main", "index": 0}],
+        [{"node": "Respuesta Sin Registro", "type": "main", "index": 0}]
+      ]
+    },
+    "Registrar Envío en BD": {
+      "main": [[{"node": "Respuesta Con Registro", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {"executionOrder": "v1"},
+  "staticData": null,
+  "pinData": {},
+  "versionId": "2",
+  "triggerCount": 1,
+  "tags": []
+}

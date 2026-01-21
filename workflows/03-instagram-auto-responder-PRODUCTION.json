@@ -1,5 +1,5 @@
 {
-  "name": "Instagram Auto-Responder - GUÍA",
+  "name": "Instagram Auto-Responder - PRODUCTION",
   "nodes": [
     {
       "parameters": {
@@ -19,37 +19,28 @@
     },
     {
       "parameters": {
-        "content": "## 🎯 Workflow: Auto-responder Instagram\n\n**Qué hace:**\n1. Recibe webhooks de Instagram cuando hay comentarios\n2. Detecta si el comentario contiene \"GUÍA\"\n3. Envía un DM automático con el enlace\n\n**Configuración necesaria:**\n- URL del webhook en Facebook: https://TU-NGROK-URL.ngrok-free.app/webhook/instagram-webhook\n- Token de verificación: habitos_vitales_2024\n- Access Token de Instagram en el nodo de HTTP Request\n\n**Nota:** Este workflow responde a la verificación inicial de Facebook y procesa los comentarios.",
-        "height": 400,
-        "width": 500
-      },
-      "id": "sticky-note-1",
-      "name": "Nota Informativa",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [240, -100]
-    },
-    {
-      "parameters": {
         "conditions": {
           "options": {
-            "caseSensitive": false
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
           },
           "conditions": [
             {
-              "id": "is-comment",
-              "leftValue": "={{ $json.body?.entry?.[0]?.changes?.[0]?.field }}",
-              "rightValue": "comments",
+              "id": "has-body",
+              "leftValue": "={{ $json.body && $json.body.entry && $json.body.entry.length > 0 }}",
+              "rightValue": true,
               "operator": {
-                "type": "string",
-                "operation": "equals"
+                "type": "boolean",
+                "operation": "notEquals"
               }
             }
-          ]
+          ],
+          "combineOperation": "any"
         }
       },
-      "id": "if-comment",
-      "name": "Es comentario?",
+      "id": "if-verification",
+      "name": "Es verificación?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [460, 300]
@@ -103,25 +94,18 @@
     },
     {
       "parameters": {
-        "jsCode": "// Normalizar texto quitando acentos y pasando a minúsculas\nconst text = $input.first().json.comment_text || '';\nconst normalizedText = text\n  .toLowerCase()\n  .normalize('NFD')\n  .replace(/[\\u0300-\\u036f]/g, '');\n\n// Buscar variantes de \"guia\"\nconst containsGuia = normalizedText.includes('guia');\n\nreturn {\n  json: {\n    ...$input.first().json,\n    contains_guia: containsGuia\n  }\n};"
-      },
-      "id": "check-guia",
-      "name": "Detectar GUÍA",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [1120, 500]
-    },
-    {
-      "parameters": {
         "conditions": {
+          "options": {
+            "caseSensitive": false
+          },
           "conditions": [
             {
               "id": "condition-guia",
-              "leftValue": "={{ $json.contains_guia }}",
-              "rightValue": true,
+              "leftValue": "={{ $json.comment_text }}",
+              "rightValue": "guia",
               "operator": {
-                "type": "boolean",
-                "operation": "equals"
+                "type": "string",
+                "operation": "contains"
               }
             }
           ]
@@ -131,28 +115,30 @@
       "name": "Contiene GUÍA?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1340, 500]
+      "position": [1120, 500]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://graph.instagram.com/v21.0/{{ $json.comment_id }}/replies",
-        "sendHeaders": true,
-        "headerParameters": {
+        "url": "=https://graph.facebook.com/v21.0/{{ $json.comment_id }}/replies",
+        "sendQuery": true,
+        "queryParameters": {
           "parameters": [
             {
-              "name": "Authorization",
-              "value": "=Bearer IGAAKCIH9BRQZABZAFpwdmFjYUVwRVduU0VrOXpPU3NuLVZAldFVxVUhKeW5NMGdtQmVQRkVCbEI5ZA3pOeTBVYzlfVl96bU9GNE1nZA09mTmE2WldBZAjdvUjF0dmZADVTdfNldYQkl6cVZAUNEg0SzhRbnBTdHJaYzVPXzZANRXNNbUt4QQZDZD"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
+              "name": "access_token",
+              "value": "IGAAKCIH9BRQZABZAGJ0VUd2dk5yZA0kwdENCbmRnSmdmRFZA5NlltLXNzOHlrZAFMtVGF6WmlLRC16UjFMU3FGYVlSajVTd0tNSncxMVdBVWJPdGNMdXk0SU1iTXZAMVVQ3S3QyMWpkZAGRZAVHNHWVNpalVXUGUyQ0pKVzFYZAWh5eGIyawZDZD"
             }
           ]
         },
         "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"message\": \"¡Hola! 👋 Revisa tus mensajes directos, te he enviado la información\"\n}",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "¡Hola! 👋 Te envío la información por mensaje directo"
+            }
+          ]
+        },
         "options": {}
       },
       "id": "reply-comment",
@@ -164,23 +150,19 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://graph.instagram.com/v21.0/me/messages",
-        "sendHeaders": true,
-        "headerParameters": {
+        "url": "=https://graph.facebook.com/v21.0/me/messages",
+        "sendQuery": true,
+        "queryParameters": {
           "parameters": [
             {
-              "name": "Authorization",
-              "value": "=Bearer IGAAKCIH9BRQZABZAFpwdmFjYUVwRVduU0VrOXpPU3NuLVZAldFVxVUhKeW5NMGdtQmVQRkVCbEI5ZA3pOeTBVYzlfVl96bU9GNE1nZA09mTmE2WldBZAjdvUjF0dmZADVTdfNldYQkl6cVZAUNEg0SzhRbnBTdHJaYzVPXzZANRXNNbUt4QQZDZD"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
+              "name": "access_token",
+              "value": "IGAAKCIH9BRQZABZAGJ0VUd2dk5yZA0kwdENCbmRnSmdmRFZA5NlltLXNzOHlrZAFMtVGF6WmlLRC16UjFMU3FGYVlSajVTd0tNSncxMVdBVWJPdGNMdXk0SU1iTXZAMVVQ3S3QyMWpkZAGRZAVHNHWVNpalVXUGUyQ0pKVzFYZAWh5eGIyawZDZD"
             }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"recipient\": \"{\\\"id\\\":\\\"{{ $json.from_user_id }}\\\"}\",\n  \"message\": \"{\\\"text\\\":\\\"¡Hola! 👋 Gracias por tu interés.\\\\n\\\\n📚 Aquí está tu guía completa sobre hábitos vitales: https://habitos-vitales.com\\\\n\\\\n¿Te gustaría recibir más contenido exclusivo? ¡Suscríbete a mi newsletter!\\\\n\\\\n✨ Nos vemos dentro!\\\"}\"\n}",
+        "jsonBody": "={\n  \"recipient\": {\n    \"id\": \"{{ $json.from_user_id }}\"\n  },\n  \"message\": {\n    \"text\": \"¡Hola! 👋 Gracias por tu interés.\\n\\n📚 Aquí está tu guía completa sobre hábitos vitales: https://habitos-vitales.com\\n\\n¿Te gustaría recibir más contenido exclusivo? ¡Suscríbete a mi newsletter!\\n\\n✨ Nos vemos dentro!\"\n  }\n}",
         "options": {}
       },
       "id": "send-dm",
@@ -223,12 +205,30 @@
       "name": "Responder Enviado",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1560, 400]
+      "position": [1780, 400]
     }
   ],
   "connections": {
     "Webhook Instagram": {
       "main": [
+        [
+          {
+            "node": "Es verificación?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es verificación?": {
+      "main": [
+        [
+          {
+            "node": "Responder Verificación",
+            "type": "main",
+            "index": 0
+          }
+        ],
         [
           {
             "node": "Es comentario?",
@@ -251,28 +251,10 @@
             "type": "main",
             "index": 0
           }
-        ],
-        [
-          {
-            "node": "Responder Verificación",
-            "type": "main",
-            "index": 0
-          }
         ]
       ]
     },
     "Extraer Datos": {
-      "main": [
-        [
-          {
-            "node": "Detectar GUÍA",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Detectar GUÍA": {
       "main": [
         [
           {
@@ -328,19 +310,10 @@
     "executionOrder": "v1"
   },
   "staticData": null,
-  "tags": [
-    {
-      "name": "Instagram",
-      "id": "ig-1"
-    },
-    {
-      "name": "Automation",
-      "id": "auto-1"
-    }
-  ],
+  "tags": [],
   "meta": {
-    "instanceId": "local"
+    "instanceId": "production"
   },
   "pinData": {},
-  "versionId": "1"
+  "versionId": "PRODUCTION"
 }

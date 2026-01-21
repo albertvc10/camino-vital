@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tu Programa Personalizado - Camino Vital</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        /* Variables CSS */
+        :root {
+            --color-primary: #DFCA61;
+            --color-success: #62B882;
+            --color-error: #E74C3C;
+            --color-bg-dark: #232323;
+            --color-bg-card: #1C1C1C;
+            --color-bg-section: #2A2A2A;
+            --color-text-primary: #E8E8E8;
+            --color-text-secondary: #B5B5B5;
+            --color-border: rgba(255,255,255,0.08);
+            --border-radius-full: 999px;
+            --border-radius-card: 18px;
+            --shadow-button: 0 0 35px rgba(223, 202, 97, 0.3);
+            --shadow-button-hover: 0 0 45px rgba(223, 202, 97, 0.4);
+            --transition-fast: 0.12s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+            background: var(--color-bg-dark);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--color-text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--color-bg-card);
+            border-radius: var(--border-radius-card);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            overflow: hidden;
+            border: 1px solid var(--color-border);
+        }
+
+        .header {
+            background: linear-gradient(180deg, var(--color-bg-section) 0%, var(--color-bg-card) 100%);
+            color: white;
+            padding: 50px 40px;
+            text-align: center;
+        }
+
+        .success-icon {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, rgba(98, 184, 130, 0.2) 0%, rgba(223, 202, 97, 0.2) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 50px;
+            margin: 0 auto 25px;
+            animation: celebratePulse 2s ease-in-out infinite;
+        }
+
+        @keyframes celebratePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        .tagline {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.16em;
+            color: var(--color-success);
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 12px;
+            color: var(--color-primary);
+        }
+
+        .header p {
+            font-size: 18px;
+            color: var(--color-text-secondary);
+        }
+
+        .header .user-name {
+            color: var(--color-primary);
+            font-weight: 600;
+        }
+
+        .content {
+            padding: 50px 40px;
+        }
+
+        /* Program Card */
+        .program-card {
+            background: linear-gradient(135deg, rgba(223, 202, 97, 0.1) 0%, rgba(98, 184, 130, 0.05) 100%);
+            border: 2px solid rgba(223, 202, 97, 0.3);
+            border-radius: var(--border-radius-card);
+            padding: 35px;
+            margin-bottom: 40px;
+        }
+
+        .program-card-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .program-badge {
+            display: inline-block;
+            background: rgba(223, 202, 97, 0.15);
+            color: var(--color-primary);
+            padding: 8px 20px;
+            border-radius: var(--border-radius-full);
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .program-card h2 {
+            color: var(--color-primary);
+            font-size: 28px;
+        }
+
+        .program-details {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        .detail-item {
+            background: var(--color-bg-dark);
+            padding: 20px 15px;
+            border-radius: 14px;
+            text-align: center;
+            border: 1px solid var(--color-border);
+            transition: all var(--transition-fast);
+        }
+
+        .detail-item:hover {
+            transform: translateY(-2px);
+            border-color: rgba(223, 202, 97, 0.3);
+        }
+
+        .detail-icon {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .detail-label {
+            font-size: 12px;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .detail-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--color-primary);
+        }
+
+        /* Personalization Box */
+        .personalization-box {
+            background: rgba(98, 184, 130, 0.08);
+            border: 1px solid rgba(98, 184, 130, 0.3);
+            border-left: 4px solid var(--color-success);
+            padding: 25px 30px;
+            margin-bottom: 40px;
+            border-radius: 14px;
+        }
+
+        .personalization-box h3 {
+            color: var(--color-success);
+            margin-bottom: 18px;
+            font-size: 18px;
+        }
+
+        .personalization-box ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .personalization-box li {
+            padding: 10px 0;
+            padding-left: 30px;
+            position: relative;
+            color: var(--color-text-secondary);
+            font-size: 15px;
+        }
+
+        .personalization-box li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--color-success);
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        /* Exercise Examples */
+        .examples-section {
+            margin-bottom: 40px;
+        }
+
+        .examples-section h3 {
+            color: var(--color-text-primary);
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+
+        .exercise-cards {
+            display: grid;
+            gap: 16px;
+        }
+
+        .exercise-card {
+            background: var(--color-bg-dark);
+            border-radius: 14px;
+            padding: 22px;
+            border: 1px solid var(--color-border);
+            border-left: 4px solid var(--color-success);
+            transition: all var(--transition-fast);
+        }
+
+        .exercise-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(98, 184, 130, 0.3);
+        }
+
+        .exercise-card h4 {
+            color: var(--color-text-primary);
+            margin-bottom: 12px;
+            font-size: 17px;
+        }
+
+        .exercise-card p {
+            color: var(--color-text-secondary);
+            margin: 6px 0;
+            font-size: 14px;
+        }
+
+        .exercise-meta {
+            font-size: 13px;
+            color: var(--color-primary);
+            margin-top: 12px;
+            font-weight: 500;
+        }
+
+        /* Benefits Grid */
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+
+        .benefit-item {
+            background: var(--color-bg-dark);
+            padding: 24px;
+            border-radius: 14px;
+            border: 1px solid var(--color-border);
+            transition: all var(--transition-fast);
+        }
+
+        .benefit-item:hover {
+            transform: translateY(-2px);
+            border-color: rgba(223, 202, 97, 0.3);
+        }
+
+        .benefit-item .icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .benefit-item h4 {
+            color: var(--color-primary);
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .benefit-item p {
+            color: var(--color-text-secondary);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* Testimonial */
+        .testimonial {
+            background: var(--color-bg-dark);
+            padding: 30px;
+            border-radius: 14px;
+            margin-bottom: 40px;
+            border: 1px solid var(--color-border);
+            position: relative;
+        }
+
+        .testimonial::before {
+            content: '"';
+            font-size: 60px;
+            color: var(--color-primary);
+            opacity: 0.3;
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            line-height: 1;
+        }
+
+        .testimonial-text {
+            font-style: italic;
+            color: var(--color-text-secondary);
+            font-size: 16px;
+            line-height: 1.7;
+            padding-left: 30px;
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 20px;
+            padding-left: 30px;
+        }
+
+        .testimonial-avatar {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-success));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--color-bg-card);
+        }
+
+        .testimonial-name {
+            font-style: normal;
+            font-weight: 600;
+            color: var(--color-primary);
+            font-size: 15px;
+        }
+
+        /* Pricing Section */
+        .pricing-section {
+            background: linear-gradient(135deg, rgba(223, 202, 97, 0.1) 0%, rgba(98, 184, 130, 0.05) 100%);
+            padding: 50px 40px;
+            border-radius: var(--border-radius-card);
+            text-align: center;
+            margin-bottom: 40px;
+            border: 2px solid rgba(223, 202, 97, 0.3);
+        }
+
+        .pricing-title {
+            color: var(--color-primary);
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .price {
+            font-size: 64px;
+            color: var(--color-primary);
+            font-weight: 700;
+            margin: 20px 0;
+        }
+
+        .price-note {
+            color: var(--color-text-secondary);
+            font-size: 18px;
+            margin-bottom: 35px;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: var(--color-primary);
+            color: var(--color-bg-card);
+            padding: 18px 50px;
+            font-size: 18px;
+            border: none;
+            border-radius: var(--border-radius-full);
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: var(--shadow-button);
+            transition: all var(--transition-fast);
+            text-decoration: none;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-button-hover);
+        }
+
+        .guarantee {
+            background: rgba(98, 184, 130, 0.1);
+            border: 2px dashed var(--color-success);
+            padding: 20px 25px;
+            border-radius: 12px;
+            margin-top: 30px;
+        }
+
+        .guarantee p {
+            color: var(--color-success);
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .stripe-note {
+            margin-top: 20px;
+            color: var(--color-text-secondary);
+            font-size: 13px;
+        }
+
+        /* Support Section */
+        .support-section {
+            text-align: center;
+            padding: 30px;
+            background: var(--color-bg-dark);
+            border-radius: 14px;
+            border: 1px solid var(--color-border);
+        }
+
+        .support-section p {
+            color: var(--color-text-secondary);
+            font-size: 15px;
+        }
+
+        .support-section a {
+            color: var(--color-primary);
+            text-decoration: none;
+        }
+
+        .support-section a:hover {
+            text-decoration: underline;
+        }
+
+        /* Loading state */
+        .cta-button.loading {
+            position: relative;
+            pointer-events: none;
+        }
+
+        .cta-button.loading::after {
+            content: "";
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            top: 50%;
+            left: 50%;
+            margin-left: -10px;
+            margin-top: -10px;
+            border: 2px solid var(--color-bg-card);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .cta-button.loading span {
+            visibility: hidden;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 40px 25px;
+            }
+
+            .header h1 {
+                font-size: 26px;
+            }
+
+            .content {
+                padding: 30px 20px;
+            }
+
+            .program-card {
+                padding: 25px 20px;
+            }
+
+            .program-details {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .benefits-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .price {
+                font-size: 48px;
+            }
+
+            .pricing-section {
+                padding: 35px 25px;
+            }
+
+            .cta-button {
+                padding: 18px 40px;
+                font-size: 16px;
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .program-details {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="success-icon">✅</div>
+            <div class="tagline">Programa personalizado</div>
+            <h1>Hemos analizado tu perfil!</h1>
+            <p>Este es el programa perfecto para ti, <span class="user-name" id="userName"></span></p>
+        </div>
+
+        <div class="content">
+            <div class="program-card">
+                <div class="program-card-header">
+                    <span class="program-badge">Tu programa recomendado</span>
+                    <h2>Base Vital</h2>
+                </div>
+
+                <div class="program-details">
+                    <div class="detail-item">
+                        <div class="detail-icon">📊</div>
+                        <div class="detail-label">Nivel</div>
+                        <div class="detail-value" id="userLevel"></div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-icon">⏱️</div>
+                        <div class="detail-label">Duracion</div>
+                        <div class="detail-value" id="userDuration"></div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-icon">📧</div>
+                        <div class="detail-label">Frecuencia</div>
+                        <div class="detail-value">3 emails/semana</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-icon">🎯</div>
+                        <div class="detail-label">Enfoque</div>
+                        <div class="detail-value" id="userFocus"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="personalization-box">
+                <h3>Por que este programa es perfecto para ti:</h3>
+                <ul id="whyPerfect"></ul>
+            </div>
+
+            <div class="examples-section">
+                <h3>Ejemplos de ejercicios que recibiras:</h3>
+                <div class="exercise-cards" id="exerciseExamples"></div>
+            </div>
+
+            <div class="benefits-grid">
+                <div class="benefit-item">
+                    <div class="icon">🔄</div>
+                    <h4>Se adapta a ti</h4>
+                    <p>Si algo es muy facil o dificil, el programa se ajusta automaticamente segun tu feedback</p>
+                </div>
+                <div class="benefit-item">
+                    <div class="icon">🏠</div>
+                    <h4>Sin equipo necesario</h4>
+                    <p>Todo desde casa con tu propio peso corporal. Sin gimnasio ni material</p>
+                </div>
+                <div class="benefit-item">
+                    <div class="icon">📹</div>
+                    <h4>Videos explicativos</h4>
+                    <p>Cada ejercicio tiene su video demostrativo para que lo hagas correctamente</p>
+                </div>
+                <div class="benefit-item">
+                    <div class="icon">💬</div>
+                    <h4>Soporte personalizado</h4>
+                    <p>Dudas o problemas? Responde cualquier email y te ayudamos</p>
+                </div>
+            </div>
+
+            <div class="testimonial">
+                <p class="testimonial-text" id="testimonialText"></p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar" id="testimonialAvatar"></div>
+                    <span class="testimonial-name" id="testimonialName"></span>
+                </div>
+            </div>
+
+            <div class="pricing-section">
+                <h3 class="pricing-title">Acceso completo a Base Vital</h3>
+                <div class="price">39€</div>
+                <div class="price-note">Pago unico • <span id="priceDuration"></span></div>
+
+                <button class="cta-button" id="ctaButton" onclick="redirectToCheckout()">
+                    <span>Empezar mi programa ahora</span>
+                </button>
+
+                <div class="guarantee">
+                    <p>🔒 Garantia de 7 dias: Si sientes que no es para ti, te devolvemos el dinero. Sin preguntas.</p>
+                </div>
+
+                <p class="stripe-note">
+                    Pago seguro procesado por Stripe
+                </p>
+            </div>
+
+            <div class="support-section">
+                <p><strong>Aun tienes dudas?</strong></p>
+                <p>Escribenos a <a href="mailto:hola@habitos-vitales.com">hola@habitos-vitales.com</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Cargar datos del cuestionario
+        const quizData = JSON.parse(localStorage.getItem('quizData') || '{}');
+
+        if (!quizData.email) {
+            window.location.href = 'cuestionario.html';
+        }
+
+        // Determinar nivel basado en respuestas
+        function determineLevel() {
+            const tiempo = quizData.tiempo_sin_ejercicio;
+            const movilidad = quizData.nivel_movilidad;
+
+            if ((tiempo === 'menos_3meses' || tiempo === '3-6meses') &&
+                (movilidad === 'normal' || movilidad === 'buena')) {
+                return {
+                    nivel: 'Intermedio',
+                    duration: '10 semanas',
+                    focus: 'Fuerza funcional',
+                    reasons: [
+                        'Has estado activo recientemente, puedes empezar con mas intensidad',
+                        'Tu movilidad es buena, podemos trabajar ejercicios mas desafiantes',
+                        'Progresaras mas rapido con ejercicios de nivel intermedio'
+                    ],
+                    exercises: [
+                        {
+                            name: 'Sentadillas completas',
+                            description: 'Sin apoyo de silla',
+                            reps: '10-12 repeticiones',
+                            note: 'Fortalece piernas y core'
+                        },
+                        {
+                            name: 'Zancadas estaticas',
+                            description: 'Manteniendo posicion estable',
+                            reps: '8 cada pierna',
+                            note: 'Mejora equilibrio y fuerza'
+                        },
+                        {
+                            name: 'Plancha de rodillas',
+                            description: 'Activacion del core',
+                            reps: '20-30 segundos',
+                            note: 'Fortalece la zona media'
+                        }
+                    ],
+                    testimonial: {
+                        text: 'Empece en nivel intermedio y en 10 semanas note una mejora increible. Ahora puedo hacer cosas que antes evitaba por miedo a hacerme dano.',
+                        name: 'Carlos, 52 anos',
+                        avatar: 'C'
+                    }
+                };
+            } else {
+                return {
+                    nivel: 'Iniciacion',
+                    duration: '12 semanas',
+                    focus: 'Movilidad + Seguridad',
+                    reasons: [
+                        'Empezaras con ejercicios seguros y progresivos adaptados a tu situacion',
+                        'El programa respeta tu punto de partida sin exigencias excesivas',
+                        'Ganaras confianza gradualmente antes de aumentar la intensidad'
+                    ],
+                    exercises: [
+                        {
+                            name: 'Movilidad de cuello',
+                            description: 'Rotaciones suaves de la cabeza',
+                            reps: '8 cada lado',
+                            note: 'Sin forzar, movimientos lentos'
+                        },
+                        {
+                            name: 'Circulos de hombros',
+                            description: 'Rotaciones hacia adelante y atras',
+                            reps: '10 cada direccion',
+                            note: 'Despierta la zona superior'
+                        },
+                        {
+                            name: 'Sentadillas asistidas',
+                            description: 'Con apoyo de silla',
+                            reps: '5-8 repeticiones',
+                            note: 'Usa la silla solo como apoyo de seguridad'
+                        }
+                    ],
+                    testimonial: {
+                        text: 'Despues de 3 anos sin hacer nada, tenia miedo de hacerme dano. Con el nivel iniciacion empece suave y ahora me siento capaz de hacer cosas que pense que habia perdido.',
+                        name: 'Maria, 58 anos',
+                        avatar: 'M'
+                    }
+                };
+            }
+        }
+
+        const programData = determineLevel();
+
+        // Rellenar pagina con datos
+        document.getElementById('userName').textContent = quizData.nombre;
+        document.getElementById('userLevel').textContent = programData.nivel;
+        document.getElementById('userDuration').textContent = programData.duration;
+        document.getElementById('priceDuration').textContent = programData.duration;
+        document.getElementById('userFocus').textContent = programData.focus;
+
+        // Razones por las que es perfecto
+        const whyPerfect = document.getElementById('whyPerfect');
+        programData.reasons.forEach(reason => {
+            const li = document.createElement('li');
+            li.textContent = reason;
+            whyPerfect.appendChild(li);
+        });
+
+        // Ejemplos de ejercicios
+        const exerciseExamples = document.getElementById('exerciseExamples');
+        programData.exercises.forEach(exercise => {
+            const card = document.createElement('div');
+            card.className = 'exercise-card';
+            card.innerHTML = `
+                <h4>${exercise.name}</h4>
+                <p><strong>Descripcion:</strong> ${exercise.description}</p>
+                <p><strong>Repeticiones:</strong> ${exercise.reps}</p>
+                <p class="exercise-meta">${exercise.note}</p>
+            `;
+            exerciseExamples.appendChild(card);
+        });
+
+        // Testimonial
+        document.getElementById('testimonialText').textContent = programData.testimonial.text;
+        document.getElementById('testimonialName').textContent = programData.testimonial.name;
+        document.getElementById('testimonialAvatar').textContent = programData.testimonial.avatar;
+
+        // Funcion para redirigir a checkout de Stripe
+        async function redirectToCheckout() {
+            // Mostrar estado de carga
+            const ctaButton = document.getElementById('ctaButton');
+            ctaButton.classList.add('loading');
+
+            // Detectar entorno (local vs produccion)
+            const isLocal = window.location.hostname === 'localhost' ||
+                           window.location.hostname === '127.0.0.1' ||
+                           window.location.protocol === 'file:';
+
+            const stripeURL = isLocal
+                ? 'https://buy.stripe.com/test_eVqaEW2Lh41Z83h0sbeZ201' // TEST mode LOCAL
+                : 'https://buy.stripe.com/PRODUCTION_LINK'; // PRODUCTION (cuando este listo)
+
+            console.log('Entorno:', isLocal ? 'LOCAL (Stripe TEST)' : 'PRODUCCION');
+            console.log('Stripe URL:', stripeURL);
+
+            // Redirigir a Stripe Checkout directamente
+            try {
+                window.location.href = `${stripeURL}?prefilled_email=${encodeURIComponent(quizData.email)}&client_reference_id=${encodeURIComponent(quizData.email)}`;
+            } catch (error) {
+                console.error('Error:', error);
+                ctaButton.classList.remove('loading');
+                alert('Hubo un error. Por favor, intentalo de nuevo o contacta con hola@habitos-vitales.com');
+            }
+        }
+    </script>
+</body>
+</html>

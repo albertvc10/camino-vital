@@ -1,0 +1,270 @@
+{
+  "updatedAt": "2026-01-16T15:20:31.555Z",
+  "createdAt": "2026-01-07T19:23:55.980Z",
+  "id": "kKbBsBRr48hFi1aS",
+  "name": "Camino Vital - 09 Mostrar Sesión",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "path": "sesion/:sesion_id",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "4a989723-b882-40be-a0d1-9d748d5c2c5a",
+      "name": "Webhook Mostrar Sesión",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "view-session"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SET search_path TO public;\n\nSELECT id as user_id, nombre, email, auth_token\nFROM programa_users\nWHERE auth_token = '{{ $json.query.token }}';",
+        "options": {}
+      },
+      "id": "31c1f1a9-adc5-4d92-a11b-9ae679869bff",
+      "name": "Validar Token",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        224,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const usuarios = $input.all();\n\nif (usuarios.length === 0) {\n  throw new Error('Token inválido o expirado');\n}\n\nconst usuario = usuarios[0].json;\nconst sesionId = $node[\"Webhook Mostrar Sesión\"].json.params.sesion_id;\n\nconsole.log('✅ Token válido para usuario:', usuario.nombre);\n\nreturn {\n  json: {\n    user_id: usuario.user_id,\n    user_nombre: usuario.nombre,\n    user_email: usuario.email,\n    sesion_id: sesionId,\n    params: {\n      sesion_id: sesionId\n    }\n  }\n};"
+      },
+      "id": "1fdbc566-1a9a-4fc5-855d-7701a79883e9",
+      "name": "Verificar Token Válido",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=-- Obtener sesión completa con datos del usuario (fuerza y cardio)\nSELECT \n  s.id,\n  s.titulo,\n  s.descripcion,\n  s.introduccion_personalizada,\n  s.enfoque,\n  s.duracion_estimada,\n  s.calentamiento,\n  s.trabajo_principal,\n  s.tipo_actividad,\n  s.calentamiento_texto,\n  s.actividad_principal,\n  s.senales_de_alerta,\n  s.consejos_seguridad,\n  s.progresion_sugerida,\n  s.numero_sesion,\n  s.semana,\n  s.completada,\n  u.id as user_id,\n  u.nombre as user_nombre,\n  u.email as user_email,\n  u.sesiones_objetivo_semana,\n  u.nivel_actual\nFROM programa_sesiones s\nJOIN programa_users u ON s.user_id = u.id\nWHERE s.id = {{ $json.params.sesion_id }}\n  AND u.id = {{ $json.user_id }};",
+        "options": {}
+      },
+      "id": "e85d89f1-9c90-4096-94d7-d6630179f54e",
+      "name": "Obtener Sesión",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        672,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT nombre, html_template FROM email_templates WHERE nombre IN ('css_base_habitos_vitales', 'pagina_sesion') AND activo = true;",
+        "options": {}
+      },
+      "id": "obtener-templates-001",
+      "name": "Obtener Templates",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        896,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Obtener datos de sesión y templates\nconst sesion = $node[\"Obtener Sesión\"].json;\nconst templatesData = $input.all();\n\nif (!sesion || !sesion.id) {\n  throw new Error('Sesión no encontrada');\n}\n\n// Organizar templates por nombre\nconst templates = {};\ntemplatesData.forEach(t => {\n  templates[t.json.nombre] = t.json.html_template;\n});\n\nconst cssBase = templates['css_base_habitos_vitales'] || '';\nconst templatePagina = templates['pagina_sesion'] || '';\n\nconsole.log('📋 Generando página de sesión...');\nconsole.log('🎯 Tipo de sesión:', sesion.enfoque);\n\n// Determinar si es sesión de FUERZA o CARDIO\nconst esCardio = sesion.enfoque === 'cardio';\n\n// URLs\nconst webhookUrl = process.env.WEBHOOK_URL || 'http://localhost:5678';\nconst feedbackProblemasUrl = `${webhookUrl}/webhook/feedback-problemas?user_id=${sesion.user_id}&sesion=${sesion.numero_sesion}`;\n\n// URL base de Firebase Storage\nconst firebaseBaseUrl = 'https://firebasestorage.googleapis.com/v0/b/playfit-21e92.appspot.com/o/video%2F';\nconst firebaseToken = '?alt=media';\n\nlet htmlCalentamiento = '';\nlet htmlTrabajoPrincipal = '';\n\nif (esCardio) {\n  // ========== SESIÓN CARDIO ==========\n  console.log('❤️ Generando HTML para sesión CARDIO');\n  \n  // Calentamiento es texto para cardio\n  htmlCalentamiento = `\n    <div class=\"ejercicio ejercicio-calentamiento\">\n      <div class=\"ejercicio-header\">\n        <div class=\"ejercicio-numero ejercicio-numero-calentamiento\">🔥</div>\n        <h3>Calentamiento</h3>\n      </div>\n      <div class=\"ejercicio-detalles\" style=\"white-space: pre-line;\">\n        ${sesion.calentamiento_texto || 'Realiza un calentamiento suave de 5 minutos.'}\n      </div>\n    </div>\n  `;\n  \n  // Actividad principal para cardio\n  const actividad = typeof sesion.actividad_principal === 'string'\n    ? JSON.parse(sesion.actividad_principal)\n    : sesion.actividad_principal;\n  \n  const iconosActividad = {\n    'bicicleta': '🚴',\n    'caminar': '🚶',\n    'nadar': '🏊',\n    'eliptica': '🏃'\n  };\n  const iconoActividad = iconosActividad[sesion.tipo_actividad] || '🏃';\n  \n  htmlTrabajoPrincipal = `\n    <div class=\"ejercicio ejercicio-principal\">\n      <div class=\"ejercicio-header\">\n        <div class=\"ejercicio-numero ejercicio-numero-principal\">${iconoActividad}</div>\n        <h3>${sesion.tipo_actividad ? sesion.tipo_actividad.charAt(0).toUpperCase() + sesion.tipo_actividad.slice(1) : 'Cardio'}</h3>\n      </div>\n      <div class=\"ejercicio-detalles\">\n        <div><strong>⏱️ Duración:</strong> ${actividad?.duracion_total || sesion.duracion_estimada}</div>\n        <div><strong>💓 Intensidad:</strong> ${actividad?.intensidad || 'Moderada'}</div>\n        ${actividad?.estructura ? `\n        <div style=\"margin-top: 15px;\"><strong>📋 Estructura:</strong></div>\n        <div style=\"white-space: pre-line; margin-top: 10px; padding: 15px; background: rgba(255,255,255,0.04); border-radius: 8px;\">${actividad.estructura}</div>\n        ` : ''}\n      </div>\n    </div>\n    \n    ${sesion.senales_de_alerta && sesion.senales_de_alerta.length > 0 ? `\n    <div class=\"hv-card hv-card-accent\" style=\"margin-top: 25px;\">\n      <h4 style=\"color: #E74C3C; margin-bottom: 15px;\">⚠️ Señales de alerta</h4>\n      <ul style=\"color: #B5B5B5; padding-left: 20px;\">\n        ${sesion.senales_de_alerta.map(s => `<li>${s}</li>`).join('')}\n      </ul>\n    </div>\n    ` : ''}\n    \n    ${sesion.consejos_seguridad && sesion.consejos_seguridad.length > 0 ? `\n    <div class=\"hv-card hv-card-green\" style=\"margin-top: 25px;\">\n      <h4 style=\"color: #62B882; margin-bottom: 15px;\">💡 Consejos de seguridad</h4>\n      <ul style=\"color: #B5B5B5; padding-left: 20px;\">\n        ${sesion.consejos_seguridad.map(c => `<li>${c}</li>`).join('')}\n      </ul>\n    </div>\n    ` : ''}\n    \n    ${sesion.progresion_sugerida ? `\n    <div class=\"hv-card\" style=\"margin-top: 25px;\">\n      <h4 style=\"color: #DFCA61; margin-bottom: 15px;\">📈 Progresión sugerida</h4>\n      <p style=\"color: #B5B5B5;\">${sesion.progresion_sugerida}</p>\n    </div>\n    ` : ''}\n  `;\n  \n} else {\n  // ========== SESIÓN FUERZA ==========\n  console.log('💪 Generando HTML para sesión FUERZA');\n  \n  // Parsear JSONs si vienen como strings\n  const calentamiento = typeof sesion.calentamiento === 'string'\n    ? JSON.parse(sesion.calentamiento)\n    : sesion.calentamiento;\n\n  const trabajoPrincipal = typeof sesion.trabajo_principal === 'string'\n    ? JSON.parse(sesion.trabajo_principal)\n    : sesion.trabajo_principal;\n\n  if (!calentamiento || !trabajoPrincipal) {\n    throw new Error('Datos de ejercicios no encontrados para sesión de fuerza');\n  }\n  \n  console.log(`🏋️ ${calentamiento.length} ejercicios de calentamiento`);\n  console.log(`💪 ${trabajoPrincipal.length} ejercicios principales`);\n\n  // Función para generar HTML de un ejercicio\n  function generarEjercicioHTML(ejercicio, index, tipo) {\n    const videoUrl = `${firebaseBaseUrl}${encodeURIComponent(ejercicio.nombre_archivo)}${firebaseToken}`;\n    const numero = tipo === 'calentamiento' ? `C${index + 1}` : index + 1;\n    \n    return `\n      <div class=\"ejercicio ejercicio-${tipo}\">\n        <div class=\"ejercicio-header\">\n          <div class=\"ejercicio-numero ejercicio-numero-${tipo}\">${numero}</div>\n          <h3>${ejercicio.nombre_espanol}</h3>\n        </div>\n        \n        <div class=\"video-container\">\n          <video controls playsinline loop preload=\"metadata\">\n            <source src=\"${videoUrl}\" type=\"video/quicktime\">\n            <source src=\"${videoUrl}\" type=\"video/mp4\">\n            Tu navegador no soporta el tag de video.\n          </video>\n        </div>\n        \n        <div class=\"ejercicio-detalles\">\n          <div><strong>📊 Repeticiones:</strong> ${ejercicio.repeticiones}</div>\n          <div><strong>⏱️ Duración:</strong> ${ejercicio.duracion_aprox}</div>\n          ${ejercicio.notas ? `\n          <div class=\"ejercicio-consejo\">\n            <strong>💡 Consejo:</strong> ${ejercicio.notas}\n          </div>\n          ` : ''}\n        </div>\n      </div>\n    `;\n  }\n\n  // Generar HTML de ejercicios\n  htmlCalentamiento = calentamiento.map((ej, idx) =>\n    generarEjercicioHTML(ej, idx, 'calentamiento')\n  ).join('');\n\n  htmlTrabajoPrincipal = trabajoPrincipal.map((ej, idx) =>\n    generarEjercicioHTML(ej, idx, 'principal')\n  ).join('');\n}\n\n// Iconos por enfoque\nconst iconosEnfoque = {\n  'movilidad': '🧘',\n  'fuerza': '💪',\n  'cardio': '❤️',\n  'equilibrio': '⚖️',\n  'mixto': '🎯'\n};\nconst iconoEnfoque = iconosEnfoque[sesion.enfoque] || '🎯';\n\n// Reemplazar variables en el template\nlet paginaHTML = templatePagina\n  .replace(/\\{\\{css_base\\}\\}/g, cssBase)\n  .replace(/\\{\\{titulo\\}\\}/g, sesion.titulo)\n  .replace(/\\{\\{user_nombre\\}\\}/g, sesion.user_nombre)\n  .replace(/\\{\\{duracion_estimada\\}\\}/g, sesion.duracion_estimada)\n  .replace(/\\{\\{nivel_actual\\}\\}/g, sesion.nivel_actual)\n  .replace(/\\{\\{enfoque\\}\\}/g, sesion.enfoque)\n  .replace(/\\{\\{numero_sesion\\}\\}/g, sesion.numero_sesion)\n  .replace(/\\{\\{sesiones_objetivo\\}\\}/g, sesion.sesiones_objetivo_semana)\n  .replace(/\\{\\{introduccion_personalizada\\}\\}/g, sesion.introduccion_personalizada)\n  .replace(/\\{\\{html_calentamiento\\}\\}/g, htmlCalentamiento)\n  .replace(/\\{\\{html_trabajo_principal\\}\\}/g, htmlTrabajoPrincipal)\n  .replace(/\\{\\{webhook_url\\}\\}/g, webhookUrl)\n  .replace(/\\{\\{user_id\\}\\}/g, sesion.user_id)\n  .replace(/\\{\\{feedback_problemas_url\\}\\}/g, feedbackProblemasUrl)\n  .replace(/\\{\\{icono_enfoque\\}\\}/g, iconoEnfoque);\n\nconsole.log('✅ HTML generado correctamente');\n\nreturn {\n  json: {\n    sesion_id: sesion.id,\n    html: paginaHTML\n  }\n};"
+      },
+      "id": "878540c2-939b-4b75-8d0f-2c28c2e98403",
+      "name": "Generar HTML Sesión",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.html }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=utf-8"
+              }
+            ]
+          }
+        }
+      },
+      "id": "3b9a857e-429f-4ab9-91bf-549aaf3347e3",
+      "name": "Responder HTML",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Acceso denegado</title>\n  <style>\n    * { margin: 0; padding: 0; box-sizing: border-box; }\n    body {\n      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;\n      background: linear-gradient(180deg, #232323 0%, #1C1C1C 100%);\n      min-height: 100vh;\n      display: flex;\n      align-items: center;\n      justify-content: center;\n      padding: 20px;\n    }\n    .card {\n      background: #1C1C1C;\n      border-radius: 18px;\n      padding: 50px 40px;\n      box-shadow: 0 10px 40px rgba(0,0,0,0.4);\n      border: 1px solid rgba(255,255,255,0.08);\n      text-align: center;\n      max-width: 450px;\n    }\n    .icon { font-size: 64px; margin-bottom: 25px; }\n    h1 {\n      color: #E74C3C;\n      margin: 0 0 20px 0;\n      font-size: 28px;\n    }\n    p {\n      font-size: 16px;\n      line-height: 1.6;\n      color: #B5B5B5;\n    }\n    a {\n      color: #DFCA61;\n      text-decoration: none;\n      font-weight: 600;\n    }\n    a:hover { text-decoration: underline; }\n  </style>\n</head>\n<body>\n  <div class=\"card\">\n    <div class=\"icon\">🔒</div>\n    <h1>Acceso denegado</h1>\n    <p>El enlace que estás usando no es válido o ha expirado.</p>\n    <p style=\"margin-top: 25px;\">\n      Por favor, usa el enlace que recibiste en tu email.<br><br>\n      Si crees que esto es un error, contacta con nosotros:<br>\n      <a href=\"mailto:hola@habitos-vitales.com\">hola@habitos-vitales.com</a>\n    </p>\n  </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "0c6c5bfb-4ce9-4def-996c-ec63711e3a14",
+      "name": "Responder Error Token",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        832,
+        288
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Mostrar Sesión": {
+      "main": [
+        [
+          {
+            "node": "Validar Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar Token": {
+      "main": [
+        [
+          {
+            "node": "Verificar Token Válido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar Token Válido": {
+      "main": [
+        [
+          {
+            "node": "Obtener Sesión",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder Error Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Sesión": {
+      "main": [
+        [
+          {
+            "node": "Obtener Templates",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder Error Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Templates": {
+      "main": [
+        [
+          {
+            "node": "Generar HTML Sesión",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generar HTML Sesión": {
+      "main": [
+        [
+          {
+            "node": "Responder HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "eb3c1771-9267-4222-b944-f7bfe8afa851",
+  "versionCounter": 85,
+  "triggerCount": 1,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-01-07T19:23:55.980Z",
+      "createdAt": "2026-01-07T19:23:55.980Z",
+      "role": "workflow:owner",
+      "workflowId": "kKbBsBRr48hFi1aS",
+      "projectId": "UdrpUrR3Q6pngStF",
+      "project": {
+        "updatedAt": "2025-12-30T11:32:25.894Z",
+        "createdAt": "2025-12-01T10:04:05.303Z",
+        "id": "UdrpUrR3Q6pngStF",
+        "name": "Albert Villanueva Carreras <albertvc10@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null
+      }
+    }
+  ]
+}

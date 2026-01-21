@@ -312,12 +312,14 @@
       "parameters": {
         "resource": "folder",
         "operation": "create",
-        "name": "=Vizard Clips/{{ $json.projectName }}_{{ $json.projectId }}",
-        "options": {
-          "googleFileId": {
-            "googleFileId": ""
-          }
-        }
+        "name": "={{ $json.projectName }}_{{ $json.projectId }}",
+        "parents": {
+          "mode": "list",
+          "folderIds": [
+            "1vQFUCh0jJD7D7qGkT3e50M4T9IqtRNBw"
+          ]
+        },
+        "options": {}
       },
       "id": "create-project-folder",
       "name": "📁 Crear Carpeta Proyecto",
@@ -325,7 +327,17 @@
       "typeVersion": 3,
       "position": [2000, 1050],
       "continueOnFail": true,
-      "notes": "Continúa si la carpeta ya existe"
+      "notes": "Continúa si la carpeta ya existe. Parent: /Hábitos Vitales/videos_n8n/videos_verificados"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combinar datos binarios del video con info de la carpeta\n// IMPORTANTE: Este nodo procesa CADA clip individualmente\n\n// Obtener el índice del item actual para procesar el clip correcto\nconst itemIndex = $input.itemIndex;\n\n// Obtener datos binarios del clip ACTUAL (no solo el primero)\nconst binaryData = $input.item.binary;\n\n// Obtener metadata del clip ACTUAL\nconst clipMetadata = $('🔍 Filtrar Clips Aprobados').item(itemIndex).json;\n\n// Obtener el folderId de la carpeta creada\n// Como la carpeta solo se crea una vez, buscamos el primer item que tenga un ID válido\nconst folderItems = $('📁 Crear Carpeta Proyecto').all();\nlet folderId = null;\n\nfor (const item of folderItems) {\n  if (item.json && item.json.id) {\n    folderId = item.json.id;\n    break;\n  }\n}\n\nif (!folderId) {\n  throw new Error('No se pudo obtener el ID de la carpeta de Google Drive');\n}\n\n// Pasar los datos binarios y la info necesaria para ESTE clip\nreturn {\n  json: {\n    folderId: folderId,\n    clipNumber: clipMetadata.clipNumber,\n    title: clipMetadata.title,\n    viralScore: clipMetadata.viralScore\n  },\n  binary: binaryData\n};"
+      },
+      "id": "combine-data-for-upload",
+      "name": "🔗 Combinar Datos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2220, 1050]
     },
     {
       "parameters": {
@@ -335,7 +347,7 @@
         "parents": {
           "mode": "list",
           "folderIds": [
-            "={{ $('📁 Crear Carpeta Proyecto').first().json.id }}"
+            "={{ $json.folderId }}"
           ]
         },
         "options": {}
@@ -344,7 +356,7 @@
       "name": "☁️ Subir a Drive",
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
-      "position": [2220, 1050]
+      "position": [2440, 1050]
     }
   ],
   "connections": {
@@ -548,6 +560,17 @@
       ]
     },
     "📁 Crear Carpeta Proyecto": {
+      "main": [
+        [
+          {
+            "node": "🔗 Combinar Datos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔗 Combinar Datos": {
       "main": [
         [
           {

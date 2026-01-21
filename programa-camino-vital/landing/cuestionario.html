@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuestionario Personalizado - Camino Vital</title>
+    <style>
+        /* Variables CSS */
+        :root {
+            --color-primary: #DFCA61;
+            --color-success: #62B882;
+            --color-error: #E74C3C;
+            --color-bg-dark: #232323;
+            --color-bg-card: #1C1C1C;
+            --color-bg-section: #2A2A2A;
+            --color-text-primary: #E8E8E8;
+            --color-text-secondary: #B5B5B5;
+            --color-border: rgba(255,255,255,0.08);
+            --border-radius-full: 999px;
+            --border-radius-card: 18px;
+            --shadow-button: 0 0 35px rgba(223, 202, 97, 0.3);
+            --shadow-button-hover: 0 0 45px rgba(223, 202, 97, 0.4);
+            --transition-fast: 0.12s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+            background: var(--color-bg-dark);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.6;
+        }
+
+        .quiz-container {
+            max-width: 700px;
+            width: 100%;
+            background: var(--color-bg-card);
+            border-radius: var(--border-radius-card);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            overflow: hidden;
+            border: 1px solid var(--color-border);
+        }
+
+        /* Progress bar sticky */
+        .progress-section {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--color-bg-card);
+            padding: 20px 30px 15px;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .step-indicator {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--color-primary);
+        }
+
+        .steps-remaining {
+            font-size: 13px;
+            color: var(--color-text-secondary);
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: var(--border-radius-full);
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--color-success), var(--color-primary));
+            transition: width 0.4s ease;
+            border-radius: var(--border-radius-full);
+        }
+
+        .quiz-header {
+            background: linear-gradient(180deg, var(--color-bg-section) 0%, var(--color-bg-card) 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .quiz-header .tagline {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.16em;
+            color: var(--color-success);
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .quiz-header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            color: var(--color-primary);
+        }
+
+        .quiz-header p {
+            font-size: 16px;
+            color: var(--color-text-secondary);
+        }
+
+        .quiz-content {
+            padding: 40px;
+        }
+
+        .step {
+            display: none;
+        }
+
+        .step.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .step-header {
+            margin-bottom: 30px;
+        }
+
+        .step h2 {
+            color: var(--color-text-primary);
+            margin-bottom: 10px;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .step p {
+            color: var(--color-text-secondary);
+            font-size: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: var(--color-text-primary);
+            font-size: 15px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid var(--color-border);
+            border-radius: 12px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: all var(--transition-fast);
+            background: rgba(255,255,255,0.03);
+            color: var(--color-text-primary);
+        }
+
+        input[type="text"]::placeholder,
+        input[type="email"]::placeholder,
+        textarea::placeholder {
+            color: #666;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            background: rgba(223, 202, 97, 0.05);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .input-hint {
+            font-size: 13px;
+            color: var(--color-text-secondary);
+            margin-top: 8px;
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .radio-option {
+            background: rgba(255,255,255,0.02);
+            border: 2px solid var(--color-border);
+            border-radius: 14px;
+            padding: 18px 20px;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            display: flex;
+            align-items: start;
+            gap: 14px;
+        }
+
+        .radio-option:hover {
+            border-color: rgba(223, 202, 97, 0.5);
+            background: rgba(223, 202, 97, 0.05);
+            transform: translateY(-1px);
+        }
+
+        .radio-option input[type="radio"] {
+            margin-top: 3px;
+            cursor: pointer;
+            accent-color: var(--color-primary);
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+
+        .radio-option.selected {
+            border-color: var(--color-primary);
+            background: rgba(223, 202, 97, 0.1);
+            box-shadow: 0 0 20px rgba(223, 202, 97, 0.15);
+        }
+
+        .radio-label {
+            flex: 1;
+        }
+
+        .radio-label strong {
+            display: block;
+            color: var(--color-text-primary);
+            margin-bottom: 4px;
+            font-size: 16px;
+        }
+
+        .radio-label span {
+            display: block;
+            color: var(--color-text-secondary);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 35px;
+        }
+
+        .btn {
+            padding: 16px 32px;
+            border: none;
+            border-radius: var(--border-radius-full);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: var(--color-primary);
+            color: var(--color-bg-card);
+            flex: 1;
+            box-shadow: var(--shadow-button);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-button-hover);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--color-text-secondary);
+            border: 2px solid var(--color-border);
+            padding: 14px 24px;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+        }
+
+        .error-message {
+            color: var(--color-error);
+            font-size: 14px;
+            margin-top: 8px;
+            display: none;
+        }
+
+        .info-box {
+            background: rgba(98, 184, 130, 0.1);
+            border: 1px solid rgba(98, 184, 130, 0.3);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin: 25px 0;
+            font-size: 14px;
+            color: var(--color-text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .info-box-icon {
+            color: var(--color-success);
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .encouragement-box {
+            background: rgba(223, 202, 97, 0.1);
+            border: 1px solid rgba(223, 202, 97, 0.2);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .encouragement-box p {
+            color: var(--color-primary);
+            font-weight: 500;
+            margin: 0;
+        }
+
+        /* Loading state */
+        .btn-loading {
+            position: relative;
+            pointer-events: none;
+        }
+
+        .btn-loading::after {
+            content: "";
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            top: 50%;
+            left: 50%;
+            margin-left: -10px;
+            margin-top: -10px;
+            border: 2px solid var(--color-bg-card);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .btn-loading span {
+            visibility: hidden;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+                align-items: flex-start;
+            }
+
+            .quiz-header {
+                padding: 30px 20px;
+            }
+
+            .quiz-header h1 {
+                font-size: 24px;
+            }
+
+            .quiz-content {
+                padding: 25px 20px;
+            }
+
+            .progress-section {
+                padding: 15px 20px 12px;
+            }
+
+            .step h2 {
+                font-size: 20px;
+            }
+
+            .button-group {
+                flex-direction: column-reverse;
+            }
+
+            .btn-secondary {
+                width: 100%;
+                text-align: center;
+            }
+
+            .btn-primary {
+                width: 100%;
+            }
+
+            .radio-option {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <!-- Progress Section (Sticky) -->
+        <div class="progress-section">
+            <div class="progress-info">
+                <span class="step-indicator" id="step-indicator">Paso 1 de 5</span>
+                <span class="steps-remaining" id="steps-remaining">Faltan 4 pasos</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress" style="width: 20%"></div>
+            </div>
+        </div>
+
+        <div class="quiz-header">
+            <div class="tagline">Cuestionario personalizado</div>
+            <h1>Descubre tu programa ideal</h1>
+            <p>Solo 2 minutos para crear tu plan a medida</p>
+        </div>
+
+        <div class="quiz-content">
+            <form id="quizForm">
+                <!-- PASO 1: Datos de contacto -->
+                <div class="step active" data-step="1">
+                    <div class="step-header">
+                        <h2>Empecemos por conocerte</h2>
+                        <p>Solo necesitamos tu email para enviarte tu programa personalizado</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nombre">Tu nombre</label>
+                        <input type="text" id="nombre" name="nombre" required placeholder="Ej: Maria Garcia">
+                        <div class="error-message" id="error-nombre">Por favor, introduce tu nombre</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Tu email</label>
+                        <input type="email" id="email" name="email" required placeholder="tu@email.com">
+                        <div class="error-message" id="error-email">Por favor, introduce un email valido</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email_confirm">Confirma tu email</label>
+                        <input type="email" id="email_confirm" required placeholder="Escribe tu email de nuevo">
+                        <p class="input-hint">Revisa bien tu email - te enviaremos el programa aqui</p>
+                        <div class="error-message" id="error-email-confirm">Los emails no coinciden</div>
+                    </div>
+
+                    <div class="info-box">
+                        <span class="info-box-icon">🔒</span>
+                        <span>Tu informacion esta segura. Solo la usaremos para enviarte tu programa.</span>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="button" class="btn btn-primary" onclick="nextStep()"><span>Siguiente</span></button>
+                    </div>
+                </div>
+
+                <!-- PASO 2: Tiempo sin ejercicio -->
+                <div class="step" data-step="2">
+                    <div class="encouragement-box">
+                        <p>Muy bien! Ya casi tenemos tu perfil completo</p>
+                    </div>
+
+                    <div class="step-header">
+                        <h2>Cuanto tiempo llevas sin hacer ejercicio regular?</h2>
+                        <p>No te preocupes, no hay respuesta incorrecta. Esto nos ayuda a calibrar tu punto de partida.</p>
+                    </div>
+
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="tiempo_sin_ejercicio" value="menos_3meses" required>
+                            <div class="radio-label">
+                                <strong>Menos de 3 meses</strong>
+                                <span>Hice ejercicio hace poco pero lo deje</span>
+                            </div>
+                        </label>
+
+                        <label class="radio-option">
+                            <input type="radio" name="tiempo_sin_ejercicio" value="3-6meses">
+                            <div class="radio-label">
+                                <strong>Entre 3 y 6 meses</strong>
+                                <span>Hace medio ano aproximadamente</span>
+                            </div>
+                        </label>
+
+                        <label class="radio-option">
+                            <input type="radio" name="tiempo_sin_ejercicio" value="6-12meses">
+                            <div class="radio-label">
+                                <strong>Entre 6 meses y 1 ano</strong>
+                                <span>Llevo casi un ano sin actividad regular</span>
+                            </div>
+                        </label>
+
+                        <label class="radio-option">
+                            <input type="radio" name="tiempo_sin_ejercicio" value="1-2anos">
+                            <div class="radio-label">
+                                <strong>Entre 1 y 2 anos</strong>
+                                <span>Hace bastante que no hago nada</span>
+                            </div>
+                        </label>
+
+                        <label class="radio-option">
+                            <input type="radio" name="tiempo_sin_ejercicio" value="mas_2anos">
+                            <div class="radio-label">
+                                <strong>Mas de 2 anos</strong>
+                                <span>Llevo mucho tiempo sin moverme regularmente</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="button" class="btn btn-secondary" onclick="prevStep()">Atras</button>
+                        <button type="button" class="btn btn-primary" onclick="nextStep()"><span>Siguiente</span></button>
+                    </div>
+                </div>
+
+                <!-- PASO 3: Nivel de movilidad -->
+                <div class="step" data-step="3">
+                    <div class="encouragement-box">
+                        <p>Perfecto! Ya vamos por la mitad</p>
+                    </div>
+
+                    <div class="step-header">
+                        <h2>Como describirias tu nivel actual de movilidad?</h2>
+                        <p>Piensa en tareas del dia a dia: agacharte, subir escaleras, cargar peso...</p>
+                    </div>
+
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="nivel_movilidad" value="muy_limitada" required>
+                            <div class="radio-label">
+                                <strong>Muy limitada</strong>
+                                <span>Me cuesta mucho realizar tareas basicas del dia a dia</span>
+                            </div>
+                        </label>
+
+                        <label class="radio-option">
+                            <input type="radio" name="nivel_movilidad" value="limitada">
+                            <div class="radio-label">
+                                <strong>Algo limitada</strong>
+                                <span>Siento rigidez o inseguridad en algunos movimientos</span>
+                            </div>
+                        </label>
+
+                        <label class="radio-option">
+                            <input type="radio" name="nivel_movilidad" value="normal">
+                            <div class="radio-label">
+                                <strong>Normal</strong>
+                                <span>Me muevo sin problemas, solo falta de forma fisica</span>
+                            </div>
+                        </label>
+
+                        <label class="radio-option">
+                            <input type="radio" name="nivel_movilidad" value="buena">
+                            <div class="radio-label">
+                                <strong>Buena</strong>
+                                <span>Me siento agil, solo quiero mantenerme activo</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="button" class="btn btn-secondary" onclick="prevStep()">Atras</button>
+                        <button type="button" class="btn btn-primary" onclick="nextStep()"><span>Siguiente</span></button>
+                    </div>
+                </div>
+
+                <!-- PASO 4: Limitaciones -->
+                <div class="step" data-step="4">
+                    <div class="encouragement-box">
+                        <p>Genial! Solo falta un paso mas</p>
+                    </div>
+
+                    <div class="step-header">
+                        <h2>Tienes alguna limitacion fisica que debamos conocer?</h2>
+                        <p>Esto nos ayuda a adaptar los ejercicios para que sean seguros para ti</p>
+                    </div>
+
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="limitaciones" value="ninguna" required>
+                            <div class="radio-label">
+                                <strong>Ninguna</strong>
+                                <span>No tengo limitaciones especificas</span>
+                            </div>
+                        </label>
+
+                        <label class="radio-option">
+                            <input type="radio" name="limitaciones" value="rodillas">
+                            <div class="radio-label">
+                                <strong>Problemas de rodillas</strong>
+                                <span>Dolor, inestabilidad o lesiones previas</span>
+                            </div>
+                        </label>
+
+                        <label class="radio-option">
+                            <input type="radio" name="limitaciones" value="espalda">
+                            <div class="radio-label">
+                                <strong>Problemas de espalda</strong>
+                                <span>Lumbar, cervical o dorsal</span>
+                            </div>
+                        </label>
+
+                        <label class="radio-option">
+                            <input type="radio" name="limitaciones" value="hombros">
+                            <div class="radio-label">
+                                <strong>Problemas de hombros</strong>
+                                <span>Dolor o limitacion en movimientos de brazos</span>
+                            </div>
+                        </label>
+
+                        <label class="radio-option">
+                            <input type="radio" name="limitaciones" value="equilibrio">
+                            <div class="radio-label">
+                                <strong>Problemas de equilibrio</strong>
+                                <span>Inseguridad al mantenerme de pie</span>
+                            </div>
+                        </label>
+
+                        <label class="radio-option">
+                            <input type="radio" name="limitaciones" value="otras">
+                            <div class="radio-label">
+                                <strong>Otras</strong>
+                                <span>Especificare en el siguiente campo</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 25px;">
+                        <label for="limitaciones_detalle">Si marcaste "Otras" o quieres anadir detalles (opcional)</label>
+                        <textarea id="limitaciones_detalle" name="limitaciones_detalle" placeholder="Ej: Tengo artrosis en las manos, me han operado la cadera recientemente..."></textarea>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="button" class="btn btn-secondary" onclick="prevStep()">Atras</button>
+                        <button type="button" class="btn btn-primary" onclick="nextStep()"><span>Siguiente</span></button>
+                    </div>
+                </div>
+
+                <!-- PASO 5: Objetivo principal -->
+                <div class="step" data-step="5">
+                    <div class="encouragement-box">
+                        <p>Ultimo paso! Ya casi tienes tu programa personalizado</p>
+                    </div>
+
+                    <div class="step-header">
+                        <h2>Cual es tu principal objetivo?</h2>
+                        <p>Elige el que mas resuene contigo. Esto nos ayuda a enfocar tu programa.</p>
+                    </div>
+
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="objetivo_principal" value="autonomia" required>
+                            <div class="radio-label">
+                                <strong>Mantener mi autonomia con el paso del tiempo</strong>
+                                <span>Quiero seguir siendo independiente durante anos</span>
+                            </div>
+                        </label>
+
+                        <label class="radio-option">
+                            <input type="radio" name="objetivo_principal" value="fuerza">
+                            <div class="radio-label">
+                                <strong>Ganar fuerza para el dia a dia</strong>
+                                <span>Quiero que las tareas cotidianas me cuesten menos</span>
+                            </div>
+                        </label>
+
+                        <label class="radio-option">
+                            <input type="radio" name="objetivo_principal" value="movilidad">
+                            <div class="radio-label">
+                                <strong>Mejorar mi movilidad y flexibilidad</strong>
+                                <span>Quiero moverme con mas fluidez y menos rigidez</span>
+                            </div>
+                        </label>
+
+                        <label class="radio-option">
+                            <input type="radio" name="objetivo_principal" value="confianza">
+                            <div class="radio-label">
+                                <strong>Recuperar confianza en mi cuerpo</strong>
+                                <span>Quiero sentirme seguro al moverme</span>
+                            </div>
+                        </label>
+
+                        <label class="radio-option">
+                            <input type="radio" name="objetivo_principal" value="todo">
+                            <div class="radio-label">
+                                <strong>Todo lo anterior</strong>
+                                <span>Quiero una mejora integral de mi salud fisica</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="button" class="btn btn-secondary" onclick="prevStep()">Atras</button>
+                        <button type="button" class="btn btn-primary" id="submitBtn" onclick="submitQuiz()"><span>Ver mi programa personalizado</span></button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 5;
+
+        // Actualizar clases de radio options cuando se selecciona
+        document.querySelectorAll('.radio-option').forEach(option => {
+            option.addEventListener('click', function() {
+                const radio = this.querySelector('input[type="radio"]');
+                const group = radio.name;
+
+                // Quitar selected de todos los del grupo
+                document.querySelectorAll(`input[name="${group}"]`).forEach(r => {
+                    r.closest('.radio-option').classList.remove('selected');
+                });
+
+                // Anadir selected al clickeado
+                this.classList.add('selected');
+                radio.checked = true;
+            });
+        });
+
+        function updateProgress() {
+            const progress = (currentStep / totalSteps) * 100;
+            document.getElementById('progress').style.width = progress + '%';
+            document.getElementById('step-indicator').textContent = `Paso ${currentStep} de ${totalSteps}`;
+
+            const remaining = totalSteps - currentStep;
+            if (remaining === 0) {
+                document.getElementById('steps-remaining').textContent = 'Ultimo paso!';
+            } else if (remaining === 1) {
+                document.getElementById('steps-remaining').textContent = 'Falta 1 paso';
+            } else {
+                document.getElementById('steps-remaining').textContent = `Faltan ${remaining} pasos`;
+            }
+        }
+
+        function validateStep(step) {
+            const currentStepEl = document.querySelector(`.step[data-step="${step}"]`);
+            const inputs = currentStepEl.querySelectorAll('input[required], select[required]');
+
+            let valid = true;
+            inputs.forEach(input => {
+                if (input.type === 'radio') {
+                    const name = input.name;
+                    const checked = currentStepEl.querySelector(`input[name="${name}"]:checked`);
+                    if (!checked) {
+                        valid = false;
+                    }
+                } else {
+                    if (!input.value.trim()) {
+                        valid = false;
+                        const errorEl = document.getElementById(`error-${input.id}`);
+                        if (errorEl) errorEl.style.display = 'block';
+                    } else {
+                        const errorEl = document.getElementById(`error-${input.id}`);
+                        if (errorEl) errorEl.style.display = 'none';
+                    }
+                }
+            });
+
+            return valid;
+        }
+
+        function nextStep() {
+            if (!validateStep(currentStep)) {
+                // Mostrar mensaje mas amigable
+                const currentStepEl = document.querySelector(`.step[data-step="${currentStep}"]`);
+                const radioInputs = currentStepEl.querySelectorAll('input[type="radio"][required]');
+
+                if (radioInputs.length > 0) {
+                    const name = radioInputs[0].name;
+                    const checked = currentStepEl.querySelector(`input[name="${name}"]:checked`);
+                    if (!checked) {
+                        alert('Por favor, selecciona una opcion para continuar');
+                        return;
+                    }
+                }
+
+                alert('Por favor, completa todos los campos obligatorios');
+                return;
+            }
+
+            // Paso 1: Validar que los emails coincidan
+            if (currentStep === 1) {
+                const email = document.getElementById('email').value.trim();
+                const emailConfirm = document.getElementById('email_confirm').value.trim();
+
+                if (email !== emailConfirm) {
+                    const errorDiv = document.getElementById('error-email-confirm');
+                    errorDiv.style.display = 'block';
+                    alert('Los emails no coinciden. Por favor, verifica que sean iguales.');
+                    return;
+                } else {
+                    const errorDiv = document.getElementById('error-email-confirm');
+                    errorDiv.style.display = 'none';
+                }
+            }
+
+            // Continuar al siguiente paso
+            if (currentStep < totalSteps) {
+                document.querySelector(`.step[data-step="${currentStep}"]`).classList.remove('active');
+                currentStep++;
+                document.querySelector(`.step[data-step="${currentStep}"]`).classList.add('active');
+                updateProgress();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                document.querySelector(`.step[data-step="${currentStep}"]`).classList.remove('active');
+                currentStep--;
+                document.querySelector(`.step[data-step="${currentStep}"]`).classList.add('active');
+                updateProgress();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        async function submitQuiz() {
+            if (!validateStep(currentStep)) {
+                alert('Por favor, selecciona una opcion para continuar');
+                return;
+            }
+
+            // Mostrar estado de carga
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.classList.add('btn-loading');
+
+            // Recoger todos los datos del formulario
+            const formData = new FormData(document.getElementById('quizForm'));
+            const data = Object.fromEntries(formData.entries());
+
+            // Guardar en localStorage para usar en la pagina de resultados
+            localStorage.setItem('quizData', JSON.stringify(data));
+
+            // Determinar nivel basado en respuestas
+            const tiempo = data.tiempo_sin_ejercicio;
+            const movilidad = data.nivel_movilidad;
+            let nivelAsignado, duracionPrograma;
+
+            if ((tiempo === 'menos_3meses' || tiempo === '3-6meses') &&
+                (movilidad === 'normal' || movilidad === 'buena')) {
+                nivelAsignado = 'Intermedio';
+                duracionPrograma = '10 semanas';
+            } else {
+                nivelAsignado = 'Iniciacion';
+                duracionPrograma = '12 semanas';
+            }
+
+            // Detectar entorno (local vs produccion)
+            const isLocal = window.location.hostname === 'localhost' ||
+                           window.location.hostname === '127.0.0.1' ||
+                           window.location.protocol === 'file:';
+
+            const webhookURL = isLocal
+                ? 'http://localhost:5678/webhook/guardar-lead-test'
+                : 'https://n8n.habitos-vitales.com/webhook/guardar-lead';
+
+            console.log('Entorno:', isLocal ? 'LOCAL' : 'PRODUCCION');
+            console.log('Webhook URL:', webhookURL);
+            console.log('Datos:', data);
+
+            // Crear lead con info completa del cuestionario
+            try {
+                const response = await fetch(webhookURL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        ...data,
+                        nivel_asignado: nivelAsignado,
+                        duracion_programa: duracionPrograma,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+
+                if (!response.ok) {
+                    console.error('Error al crear lead:', response.status);
+                }
+            } catch (error) {
+                console.error('Error al crear lead:', error);
+                // Continuamos aunque falle el guardado para no bloquear al usuario
+            }
+
+            // Redirigir a pagina de resultados
+            window.location.href = 'resultados.html';
+        }
+
+        // Inicializar
+        updateProgress();
+    </script>
+</body>
+</html>

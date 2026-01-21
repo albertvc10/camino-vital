@@ -1,0 +1,353 @@
+{
+  "name": "Instagram Auto-Responder - MULTI-KEYWORD",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "=GET,POST",
+        "path": "instagram-webhook",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "7b6aa9e1-0170-4201-99ba-b537061901ee",
+      "name": "Webhook Instagram",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        15312,
+        1312
+      ],
+      "webhookId": "instagram-webhook"
+    },
+    {
+      "parameters": {
+        "content": "## 🎯 Instagram Auto-Responder - MULTI-KEYWORD\n\n**Flujo mejorado:**\n1. Webhook recibe petición\n2. Lee Data Table de palabras clave\n3. JavaScript procesa y busca coincidencias\n4. Switch rutea según el tipo\n5. Envía DM con mensaje y botón (opcional)\n\n**Mejoras:**\n- ✅ Múltiples palabras clave\n- ✅ Mensajes DM personalizados\n- ✅ 1 botón opcional con URL por mensaje\n- ✅ Gestión fácil desde Data Table\n\n**Data Table:**\nNombre: palabras_clave_instagram\nColumnas:\n- palabra_clave (String)\n- mensaje_dm (String)\n- activo (Boolean)\n- boton_texto (String)\n- boton_url (String)",
+        "height": 600,
+        "width": 500
+      },
+      "id": "b72d9166-f111-46fd-83c6-1f0e986d419b",
+      "name": "Nota",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        14864,
+        832
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": "palabras_clave_instagram",
+        "returnAll": true
+      },
+      "id": "a1b2c3d4-5678-90ab-cdef-1234567890ab",
+      "name": "Leer Tabla Keywords",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        15312,
+        1120
+      ],
+      "notes": "Lee todas las palabras clave de la Data Table"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Obtener datos del webhook accediendo directamente al nodo\nconst webhookData = $('Webhook Instagram').first().json;\n\n// Obtener datos de la tabla accediendo directamente al nodo\nconst palabrasClave = $('Leer Tabla Keywords').all().map(item => item.json);\n\n// CASO 1: Verificación de Facebook/Instagram\nif (webhookData.query && webhookData.query['hub.challenge']) {\n  return {\n    json: {\n      action: 'verification',\n      challenge: webhookData.query['hub.challenge']\n    }\n  };\n}\n\n// CASO 2: Verificar si es comentario\nconst isComment = webhookData?.body?.entry?.[0]?.changes?.[0]?.field === 'comments';\n\nif (!isComment) {\n  return {\n    json: {\n      action: 'ignore',\n      reason: 'No es un comentario'\n    }\n  };\n}\n\n// CASO 3: Procesar comentario\nconst entry = webhookData.body.entry[0];\nconst change = entry.changes[0];\nconst value = change.value;\nconst originalText = value.text || '';\n\n// Normalizar: minúsculas + sin acentos\nconst normalized = originalText\n  .toLowerCase()\n  .normalize('NFD')\n  .replace(/[\\u0300-\\u036f]/g, '');\n\nif (palabrasClave.length === 0) {\n  return {\n    json: {\n      action: 'ignore',\n      reason: 'No hay palabras clave configuradas en la tabla'\n    }\n  };\n}\n\n// Buscar coincidencia en las palabras clave\nlet matchFound = null;\n\nfor (const row of palabrasClave) {\n  const keyword = row.palabra_clave;\n  const activo = row.activo;\n  const mensaje = row.mensaje_dm;\n  const botonTexto = row.boton_texto || '';\n  const botonUrl = row.boton_url || '';\n  \n  // Solo buscar en palabras activas\n  if (!activo) continue;\n  \n  // Normalizar la palabra clave también\n  const keywordNormalized = keyword\n    .toLowerCase()\n    .normalize('NFD')\n    .replace(/[\\u0300-\\u036f]/g, '');\n  \n  // Verificar si el comentario contiene esta palabra\n  if (normalized.includes(keywordNormalized)) {\n    matchFound = {\n      palabra_encontrada: keyword,\n      mensaje_dm: mensaje,\n      tiene_boton: botonTexto.trim() !== '',\n      boton_texto: botonTexto.trim(),\n      boton_url: botonUrl.trim()\n    };\n    break; // Salir al encontrar la primera coincidencia\n  }\n}\n\n// Decidir acción\nif (matchFound) {\n  return {\n    json: {\n      action: 'send_dm',\n      comment_id: value.id,\n      comment_text: originalText,\n      from_user_id: value.from.id,\n      from_username: value.from.username,\n      palabra_encontrada: matchFound.palabra_encontrada,\n      mensaje_dm: matchFound.mensaje_dm,\n      tiene_boton: matchFound.tiene_boton,\n      boton_texto: matchFound.boton_texto,\n      boton_url: matchFound.boton_url\n    }\n  };\n} else {\n  return {\n    json: {\n      action: 'ignore',\n      reason: 'Comentario sin palabra clave activa',\n      comment_text: originalText\n    }\n  };\n}"
+      },
+      "id": "d8d87693-212a-458c-b194-96da6d51c7cd",
+      "name": "Procesar y Decidir",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        15520,
+        1312
+      ],
+      "notes": "Procesa el comentario usando datos de la tabla"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "verification",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Verificación"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "send_dm",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Enviar DM"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "ignore",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Ignorar"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "62669459-267d-4dcb-a01d-13e3f423b3fd",
+      "name": "Rutear",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        15744,
+        1312
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.challenge }}",
+        "options": {}
+      },
+      "id": "172457e3-6bd3-4482-8575-ccac036b495b",
+      "name": "Responder Verificación",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        15968,
+        1120
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// SIMPLIFICADO: Solo pasar el user_id\nconst data = $input.first().json;\nconst userId = data.from_user_id;\n\n// Retornar solo el user_id\nreturn {\n  json: {\n    from_user_id: userId\n  }\n};"
+      },
+      "id": "f1e2d3c4-5678-90ab-cdef-fedcba098765",
+      "name": "Construir Mensaje",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        15968,
+        1312
+      ],
+      "notes": "Construye el JSON apropiado según si tiene botón o no"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.instagram.com/v21.0/me/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer IGAAKCIH9BRQZABZAFpwdmFjYUVwRVduU0VrOXpPU3NuLVZAldFVxVUhKeW5NMGdtQmVQRkVCbEI5ZA3pPeTBVYzlfVl96bU9GNE1nZA09mTmE2WldBZAjdvUjF0dmZADVTdfNldYQkl6cVZAUNEg0SzhRbnBTdHJaYzVPXzZANRXNNbUt4QQZDZD"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"recipient\": {\"id\": \"{{ $json.from_user_id }}\"},\n  \"message\": {\"text\": \"¡Hola! 👋 Gracias por tu interés.\\n\\n📚 Aquí está tu guía completa sobre hábitos vitales: https://habitos-vitales.com\\n\\n¿Te gustaría recibir más contenido exclusivo? ¡Suscríbete a mi newsletter!\\n\\n✨ Nos vemos dentro!\"}\n}",
+        "options": {}
+      },
+      "id": "9f8e7d6c-5b4a-3210-fedc-ba0987654321",
+      "name": "Enviar DM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        16192,
+        1312
+      ],
+      "notes": "Envía el mensaje construido a Instagram"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "DM enviado correctamente",
+        "options": {}
+      },
+      "id": "dec76021-1539-439b-a3c6-66d939db1f61",
+      "name": "Responder OK DM",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        16416,
+        1312
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "Ignorado",
+        "options": {}
+      },
+      "id": "34950c65-10d3-4090-ac3c-b9608d365974",
+      "name": "Responder Ignorado",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        15968,
+        1520
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Instagram": {
+      "main": [
+        [
+          {
+            "node": "Leer Tabla Keywords",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Procesar y Decidir",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Tabla Keywords": {
+      "main": [
+        [
+          {
+            "node": "Procesar y Decidir",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Procesar y Decidir": {
+      "main": [
+        [
+          {
+            "node": "Rutear",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rutear": {
+      "main": [
+        [
+          {
+            "node": "Responder Verificación",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Construir Mensaje",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder Ignorado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Construir Mensaje": {
+      "main": [
+        [
+          {
+            "node": "Enviar DM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar DM": {
+      "main": [
+        [
+          {
+            "node": "Responder OK DM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "multi-keyword-with-button-v2",
+  "meta": {
+    "instanceId": "83fbd45f05543f4db8c93f9525c355fcb71c8c853096d7099d71922bb5d4186c"
+  },
+  "tags": [
+    {
+      "name": "Instagram"
+    },
+    {
+      "name": "Automation"
+    },
+    {
+      "name": "Multi-Keyword"
+    }
+  ]
+}

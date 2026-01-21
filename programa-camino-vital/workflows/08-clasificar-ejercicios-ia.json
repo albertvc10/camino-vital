@@ -1,0 +1,310 @@
+{
+  "name": "Camino Vital - 08 Clasificar Ejercicios con IA",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-manual",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Videos PENDIENTES de clasificar (excluye los 38 ya clasificados)\n// Total: 208 videos\n\nconst videos = [\n  \"Fire_Hydrant_Left.mov\",\n  \"Fire_Hydrant_Right.mov\",\n  \"Flying_Kick.mov\",\n  \"Forward_Lunges.mov\",\n  \"Frog_Squats.mov\",\n  \"Froggers.mov\",\n  \"Gluteus_Bridge.mov\",\n  \"Gluteus_Stretch_Left.mov\",\n  \"Gluteus_Stretch_Right.mov\",\n  \"Half_Burpees.mov\",\n  \"Heel_Touches.mov\",\n  \"Hello_Darlings.mov\",\n  \"High-Five_Abs.mov\",\n  \"High_Jumps.mov\",\n  \"High_Knees.mov\",\n  \"High_Plank.mov\",\n  \"High_Plank_Jacks.mov\",\n  \"High_Plank_Jumping_Jacks.mov\",\n  \"High_Plank_Knee_Drops.mov\",\n  \"High_Plank_Knee_to_Elbow.mov\",\n  \"High_Plank_Leg_Lifts_Left.mov\",\n  \"High_Plank_Leg_Lifts_Right.mov\",\n  \"High_Side_Plank_Left.mov\",\n  \"High_Side_Plank_Right.mov\",\n  \"Hindu_Push-ups.mov\",\n  \"Hip_Abduction_Left.mov\",\n  \"Hip_Abduction_Right.mov\",\n  \"Hip_Adduction_Left.mov\",\n  \"Hip_Adduction_Right.mov\",\n  \"In_and_Out_Jump_Squats.mov\",\n  \"Inchworm_Low_Plank.mov\",\n  \"Inchworms.mov\",\n  \"Inclined_Wall_Push-ups.mov\",\n  \"JackKnife.mov\",\n  \"Jacks.mov\",\n  \"Jog_In_Place.mov\",\n  \"Jump_Lunges.mov\",\n  \"Jump_Squats.mov\",\n  \"Jumping_Jacks.mov\",\n  \"Knee_High_Side_Plank_Left.mov\",\n  \"Knee_High_Side_Plank_Right.mov\",\n  \"Knee_Lay_Down_Push-ups.mov\",\n  \"Knee_Low_Side_Plank_Left.mov\",\n  \"Knee_Low_Side_Plank_Lifts_Left.mov\",\n  \"Knee_Low_Side_Plank_Lifts_Right.mov\",\n  \"Knee_Low_Side_Plank_Right.mov\",\n  \"Knee_Narrow_to_Wide_Push-ups.mov\",\n  \"Knee_Plyo_Push-ups.mov\",\n  \"Knee_Push-ups.mov\",\n  \"Knee_Side_to_Side_Push-ups.mov\",\n  \"Knee_Tuck_Crunches.mov\",\n  \"Knee_Up_Downs.mov\",\n  \"Knee_and_Stand_Left.mov\",\n  \"Knee_and_Stand_Right.mov\",\n  \"Kneeling_Hip_Flexor_Stretch_Left.mov\",\n  \"Kneeling_Hip_Flexor_Stretch_Right.mov\",\n  \"Lateral_Burpees.mov\",\n  \"Lateral_Jump_Touchdown.mov\",\n  \"Lateral_Jumps.mov\",\n  \"Lay-Down_Push-ups_and_Tuck_Jumps.mov\",\n  \"Lay-Down_Snap_Jumps.mov\",\n  \"Lay_Down_Push-ups.mov\",\n  \"Leg_Raise_Crunch.mov\",\n  \"Leg_Raises.mov\",\n  \"Low_Plank.mov\",\n  \"Low_Plank_Arm_Reaches.mov\",\n  \"Low_Plank_Crunches.mov\",\n  \"Low_Plank_Knee_Crosses.mov\",\n  \"Low_Plank_Knee_Drops.mov\",\n  \"Low_Plank_Knee_to_Elbow.mov\",\n  \"Low_Plank_Twists.mov\",\n  \"Low_Side_Plank_Left.mov\",\n  \"Low_Side_Plank_Leg_Lifts_Left.mov\",\n  \"Low_Side_Plank_Leg_Lifts_Right.mov\",\n  \"Low_Side_Plank_Right.mov\",\n  \"Low_Squat_Jacks.mov\",\n  \"Lunge_High_Knee_Jumps_Left.mov\",\n  \"Lunge_High_Knee_Jumps_Right.mov\",\n  \"Lunge_and_Twist_Left.mov\",\n  \"Lunge_and_Twist_Right.mov\",\n  \"Lunge_to_Front_Kick_Left.mov\",\n  \"Lunge_to_Front_Kick_Right.mov\",\n  \"Lunge_to_High_Knee_Left.mov\",\n  \"Lunge_to_High_Knee_Right.mov\",\n  \"Marching_Wall_Sit.mov\",\n  \"Modified_Half_Burpees.mov\",\n  \"Mountain_Climbers.mov\",\n  \"Narrow_Burpees.mov\",\n  \"Narrow_Knee_Push-ups.mov\",\n  \"Narrow_Push-ups.mov\",\n  \"Narrow_Squats.mov\",\n  \"Narrow_to_Wide_Push-ups.mov\",\n  \"Oblique_Crunch_Left.mov\",\n  \"Oblique_Crunch_Right.mov\",\n  \"Overhead_Squats.mov\",\n  \"Overhead_Triceps_Stretch_Left.mov\",\n  \"Overhead_Triceps_Stretch_Right.mov\",\n  \"Pendulum_Lunges_Left.mov\",\n  \"Pendulum_Lunges_Right.mov\",\n  \"Pike_Push-ups.mov\",\n  \"Pivot_Lunges.mov\",\n  \"Plank_Leg_Raises.mov\",\n  \"Plank_and_Shoulder_Tap.mov\",\n  \"Plank_to_Down_Dog.mov\",\n  \"Plie_Jump_Squats.mov\",\n  \"Plie_Squats.mov\",\n  \"Plyo_Push-ups.mov\",\n  \"Pogo_Jumps.mov\",\n  \"Power_Knees_Left.mov\",\n  \"Power_Knees_Right.mov\",\n  \"Prisoner_Squats.mov\",\n  \"Prone_X.mov\",\n  \"Pulsing_High_Knees.mov\",\n  \"Pulsing_Squats.mov\",\n  \"Punches.mov\",\n  \"Push-up_Shoulder_Tap.mov\",\n  \"Push-up_Side_Plank_Left.mov\",\n  \"Push-up_Side_Plank_Right.mov\",\n  \"Push-ups.mov\",\n  \"Quick_Feet.mov\",\n  \"Reverse_Crunches.mov\",\n  \"Reverse_Plank.mov\",\n  \"Rockstars.mov\",\n  \"Russian_Twist_Easy.mov\",\n  \"Russian_Twists_Hard.mov\",\n  \"Scissor_Abs.mov\",\n  \"Scissor_Kicks.mov\",\n  \"Shoulder_Cross_Stretch_Left.mov\",\n  \"Shoulder_Cross_Stretch_Right.mov\",\n  \"Side_Kicks.mov\",\n  \"Side_Lunge_Touchdown.mov\",\n  \"Side_Lunges_Left.mov\",\n  \"Side_Lunges_Right.mov\",\n  \"Side_Plank_Hip_Lifts_Left.mov\",\n  \"Side_Plank_Hip_Lifts_Right.mov\",\n  \"Side_Plank_and_Oblique_Crunch_Left.mov\",\n  \"Side_Plank_and_Oblique_Crunch_Right.mov\",\n  \"Side_Star_Plank_Left.mov\",\n  \"Side_Star_Plank_Right.mov\",\n  \"Side_to_Cursty_Lunge_Left.mov\",\n  \"Side_to_Cursty_Lunge_Right.mov\",\n  \"Side_to_side_Push-ups.mov\",\n  \"Single_Leg_Bridge_Left.mov\",\n  \"Single_Leg_Bridge_Right.mov\",\n  \"Single_Leg_Crab_Bridge_Left.mov\",\n  \"Single_Leg_Crab_Bridge_Right.mov\",\n  \"Single_Leg_Deadlift_Left.mov\",\n  \"Single_Leg_Deadlift_Right.mov\",\n  \"Single_Leg_Push-ups_Left.mov\",\n  \"Single_Leg_Push-ups_Right.mov\",\n  \"Single_Leg_Reach_Left.mov\",\n  \"Single_Leg_Reach_Right.mov\",\n  \"Single_Leg_V-ups.mov\",\n  \"Single_Leg_X_Mountain_Climber_Left.mov\",\n  \"Single_Leg_X_Mountain_Climber_Right.mov\",\n  \"Sit-ups.mov\",\n  \"Skier_Abs.mov\",\n  \"Skier_Jumps.mov\",\n  \"Snap_Jump.mov\",\n  \"Speed_Skaters.mov\",\n  \"Spiderman.mov\",\n  \"Squat_Jacks.mov\",\n  \"Squat_Side_Kick.mov\",\n  \"Squat_Stars.mov\",\n  \"Squat_Touch_Down.mov\",\n  \"Squat_and_X_Crunch.mov\",\n  \"Squat_to_High_Knee.mov\",\n  \"Squats.mov\",\n  \"Squatting_Quick_Feet.mov\",\n  \"Standing_Quadriceps_Stretch_Left.mov\",\n  \"Standing_Quadriceps_Stretch_Right.mov\",\n  \"Star_Burpees.mov\",\n  \"Star_Jacks.mov\",\n  \"Star_Push-ups.mov\",\n  \"Star_Toe_Touches.mov\",\n  \"Straight_Leg_JackKnife.mov\",\n  \"Straight_Leg_Raises_Left.mov\",\n  \"Straight_Leg_Raises_Right.mov\",\n  \"Superman.mov\",\n  \"Superman_Pull.mov\",\n  \"Swimmer.mov\",\n  \"T_Superman.mov\",\n  \"Table_Top_Crunches.mov\",\n  \"Toe_Tap.mov\",\n  \"Toe_Touches.mov\",\n  \"Touchdown_Lunges.mov\",\n  \"Triceps_Dip.mov\",\n  \"Triceps_Extension.mov\",\n  \"Tuck_Jumps.mov\",\n  \"Up_Downs.mov\",\n  \"V-ups.mov\",\n  \"W_Superman.mov\",\n  \"Wall_Lateral_Pull-Downs.mov\",\n  \"Wall_Pectoral_Stretch_Left.mov\",\n  \"Wall_Pectoral_Stretch_Right.mov\",\n  \"Wall_Push_Offs.mov\",\n  \"Wall_Sit.mov\",\n  \"Wide_High_Knees.mov\",\n  \"Wide_Knee_Push-ups.mov\",\n  \"Wide_Legged_V-ups.mov\",\n  \"Wide_Push-ups.mov\",\n  \"Windshield_Wipers.mov\",\n  \"X_Hop.mov\",\n  \"X_Mountain_Climbers.mov\",\n  \"X_Plank.mov\",\n  \"X_Squat.mov\",\n  \"X_Squat_Jump.mov\",\n  \"Y_Superman.mov\"\n];\n\n// Devolver un item por cada video\nreturn videos.map(nombre => ({\n  json: {\n    nombre_archivo: nombre\n  }\n}));"
+      },
+      "id": "input-videos",
+      "name": "Input: Lista de Videos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Procesar TODOS los videos\nreturn $input.all().map(item => {\n  const nombreArchivo = item.json.nombre_archivo;\n\n  const prompt = `Eres un experto en clasificación de ejercicios físicos para personas mayores y con movilidad limitada.\n\nAnaliza el siguiente nombre de video y devuelve ÚNICAMENTE un objeto JSON válido con la clasificación completa.\n\n**Nombre del video:** ${nombreArchivo}\n\nDevuelve un JSON con esta estructura exacta:\n\n{\n  \"nombre_espanol\": \"Nombre del ejercicio en español\",\n  \"nivel\": \"iniciacion|intermedio|avanzado\",\n  \"areas_cuerpo\": [\"piernas\", \"core\", \"brazos\", \"espalda\", \"hombros\", \"gluteos\", \"pecho\"],\n  \"tipo_ejercicio\": [\"movilidad\", \"fuerza\", \"equilibrio\", \"estiramiento\", \"cardio\", \"estabilidad\"],\n  \"posicion\": \"de_pie|sentado|suelo|tumbado|cuadrupedia\",\n  \"requiere_equipo\": true|false,\n  \"equipo_necesario\": [\"silla\", \"banda_elastica\", \"mancuernas\", \"esterilla\", \"pared\"],\n  \"evitar_si_limitacion\": [\"espalda\", \"rodillas\", \"hombros\", \"munecas\", \"cuello\", \"cadera\"],\n  \"objetivos\": [\"movilidad\", \"fuerza\", \"equilibrio\", \"confianza\", \"flexibilidad\", \"postura\"],\n  \"descripcion_corta\": \"Descripción breve de 1-2 líneas\",\n  \"descripcion_completa\": \"Descripción detallada del ejercicio\",\n  \"instrucciones_clave\": [\"Paso 1\", \"Paso 2\", \"Paso 3\"],\n  \"beneficios\": [\"Beneficio 1\", \"Beneficio 2\"],\n  \"precauciones\": [\"Precaución 1 si aplica\"]\n}\n\nCriterios:\n- **iniciacion**: Ejercicios suaves, bajo impacto\n- **intermedio**: Requieren cierta fuerza/equilibrio\n- **avanzado**: Requieren fuerza significativa\n\nLimitaciones:\n- espalda: problemas lumbares, hernias\n- rodillas: artrosis, dolor\n- hombros: lesiones manguito rotador\n- munecas: túnel carpiano\n- cuello: dolor cervical\n- cadera: artrosis, prótesis\n\nIMPORTANTE:\n- Devuelve SOLO el objeto JSON, sin texto adicional\n- Asegúrate de que el JSON sea válido\n- Todos los campos son obligatorios\n- Los arrays pueden estar vacíos [] si no aplica\n- Sé preciso y realista`;\n\n  console.log('📝 Preparando prompt para:', nombreArchivo);\n\n  return {\n    json: {\n      nombre_archivo: nombreArchivo,\n      prompt: prompt\n    }\n  };\n});"
+      },
+      "id": "preparar-prompt",
+      "name": "Preparar Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "loop-over-items",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 2,
+        "unit": "seconds"
+      },
+      "id": "wait-before-api",
+      "name": "Wait (Rate Limit)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "anthropicApi",
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  model: 'claude-sonnet-4-5-20250929',\n  max_tokens: 4096,\n  messages: [\n    {\n      role: 'user',\n      content: $json.prompt\n    }\n  ]\n} }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "llamar-claude",
+      "name": "Llamar a Claude API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1260,
+        300
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "anthropic-api",
+          "name": "Anthropic API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "nombre_archivo",
+              "name": "nombre_archivo",
+              "value": "={{ $('Preparar Prompt').item.json.nombre_archivo }}",
+              "type": "string"
+            },
+            {
+              "id": "respuesta_claude",
+              "name": "respuesta_claude",
+              "value": "={{ $json.content[0].text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "extraer-datos",
+      "name": "Extraer Datos",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1600,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parsear TODAS las respuestas de Claude\nreturn $input.all().map(item => {\n  const nombreArchivo = item.json.nombre_archivo;\n  const textoRespuesta = item.json.respuesta_claude;\n\n  console.log('📝 Parseando respuesta para:', nombreArchivo);\n\n  // Extraer JSON de la respuesta\n  const jsonMatch = textoRespuesta.match(/\\{[\\s\\S]*\\}/);\n\n  if (!jsonMatch) {\n    throw new Error(`No se encontró JSON en la respuesta para ${nombreArchivo}`);\n  }\n\n  const clasificacion = JSON.parse(jsonMatch[0]);\n\n  console.log('✅ Clasificado:', clasificacion.nombre_espanol);\n\n  return {\n    json: {\n      nombre_archivo: nombreArchivo,\n      ...clasificacion,\n      clasificado_por: 'ia',\n      verificado_manualmente: false\n    }\n  };\n});"
+      },
+      "id": "parsear-json",
+      "name": "Parsear JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1820,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO ejercicios_biblioteca (\n  nombre_archivo,\n  nombre_espanol,\n  nivel,\n  areas_cuerpo,\n  tipo_ejercicio,\n  posicion,\n  requiere_equipo,\n  equipo_necesario,\n  evitar_si_limitacion,\n  objetivos,\n  descripcion_corta,\n  descripcion_completa,\n  instrucciones_clave,\n  beneficios,\n  precauciones,\n  clasificado_por,\n  verificado_manualmente\n)\nVALUES (\n  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17\n)\nON CONFLICT (nombre_archivo) \nDO UPDATE SET\n  nombre_espanol = EXCLUDED.nombre_espanol,\n  nivel = EXCLUDED.nivel,\n  areas_cuerpo = EXCLUDED.areas_cuerpo,\n  tipo_ejercicio = EXCLUDED.tipo_ejercicio,\n  posicion = EXCLUDED.posicion,\n  requiere_equipo = EXCLUDED.requiere_equipo,\n  equipo_necesario = EXCLUDED.equipo_necesario,\n  evitar_si_limitacion = EXCLUDED.evitar_si_limitacion,\n  objetivos = EXCLUDED.objetivos,\n  descripcion_corta = EXCLUDED.descripcion_corta,\n  descripcion_completa = EXCLUDED.descripcion_completa,\n  instrucciones_clave = EXCLUDED.instrucciones_clave,\n  beneficios = EXCLUDED.beneficios,\n  precauciones = EXCLUDED.precauciones,\n  updated_at = NOW()\nRETURNING *;",
+        "options": {
+          "queryReplacement": "={{ [\n  $json.nombre_archivo,\n  $json.nombre_espanol,\n  $json.nivel,\n  $json.areas_cuerpo,\n  $json.tipo_ejercicio,\n  $json.posicion,\n  $json.requiere_equipo,\n  $json.equipo_necesario || [],\n  $json.evitar_si_limitacion || [],\n  $json.objetivos,\n  $json.descripcion_corta,\n  $json.descripcion_completa,\n  $json.instrucciones_clave,\n  $json.beneficios,\n  $json.precauciones,\n  $json.clasificado_por,\n  $json.verificado_manualmente\n] }}"
+        }
+      },
+      "id": "insertar-en-db",
+      "name": "Insertar en DB",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        2040,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-local",
+          "name": "PostgreSQL local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Resumen final\nconst total = $input.all().length;\n\nreturn {\n  json: {\n    total_clasificados: total,\n    mensaje: `✅ ${total} ejercicios clasificados e insertados correctamente`,\n    ejercicios: $input.all().map(item => ({\n      nombre: item.json.nombre_archivo,\n      nombre_espanol: item.json.nombre_espanol,\n      nivel: item.json.nivel\n    }))\n  }\n};"
+      },
+      "id": "resumen-final",
+      "name": "Resumen Final",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2260,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Input: Lista de Videos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Input: Lista de Videos": {
+      "main": [
+        [
+          {
+            "node": "Preparar Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Prompt": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Wait (Rate Limit)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resumen Final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait (Rate Limit)": {
+      "main": [
+        [
+          {
+            "node": "Llamar a Claude API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Llamar a Claude API": {
+      "main": [
+        [
+          {
+            "node": "Extraer Datos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Datos": {
+      "main": [
+        [
+          {
+            "node": "Parsear JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parsear JSON": {
+      "main": [
+        [
+          {
+            "node": "Insertar en DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insertar en DB": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-01-03T00:00:00.000Z",
+  "versionId": "v1"
+}

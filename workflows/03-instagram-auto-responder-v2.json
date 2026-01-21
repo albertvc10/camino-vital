@@ -1,0 +1,215 @@
+{
+  "name": "Instagram Auto-Responder - GUÍA v2 (Facebook Trigger)",
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "instagram",
+        "event": "comments",
+        "appId": "YOUR_APP_ID",
+        "appSecret": "YOUR_APP_SECRET",
+        "verifyToken": "habitos_vitales_2024",
+        "options": {}
+      },
+      "id": "facebook-trigger-1",
+      "name": "Instagram Comments Trigger",
+      "type": "n8n-nodes-base.facebookTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "instagram-comments"
+    },
+    {
+      "parameters": {
+        "content": "## 🎯 Workflow: Auto-responder Instagram v2\n\n**Usando Facebook Trigger Node**\n\n**Flujo completo:**\n1. Usuario comenta \"guía\" en Instagram\n2. ✅ Responde al comentario público: \"¡Hola! 👋 Te envío la info por DM\"\n3. 📨 Envía DM privado con el enlace completo\n\n**API:** Graph API v21.0\n\n**Configuración en Facebook Developers:**\n\n1️⃣ **Webhook URL:**\n   `https://23c3867d8139.ngrok-free.app/webhook/instagram-webhook`\n\n2️⃣ **Token de verificación:**\n   `habitos_vitales_2024`\n\n3️⃣ **App ID y App Secret:**\n   - Debes obtenerlos de tu app de Facebook Developers\n   - Ve a Settings > Basic en tu app\n   - Copia App ID y App Secret al nodo Facebook Trigger\n\n4️⃣ **Permisos necesarios:**\n   - instagram_manage_comments\n   - instagram_manage_messages\n   - pages_manage_metadata\n   - pages_read_engagement\n\n5️⃣ **Suscripciones webhook:**\n   - comments (se configura automáticamente con el nodo)\n\n**Ventajas de esta versión:**\n- ✅ El nodo Facebook Trigger maneja la verificación automáticamente\n- ✅ Solo recibe eventos de comentarios (no necesitas filtrar)\n- ✅ Estructura de datos más limpia\n\n**Access Token:**\nYa configurado en los nodos HTTP Request abajo.",
+        "height": 680,
+        "width": 520
+      },
+      "id": "sticky-note-1",
+      "name": "Nota Informativa",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [240, -100]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extraer información del comentario\n// El nodo Facebook Trigger ya parsea los datos\nconst item = $input.first().json;\n\n// Los datos vienen directamente del trigger\nreturn {\n  json: {\n    comment_id: item.id,\n    comment_text: item.text,\n    from_user_id: item.from.id,\n    from_username: item.from.username,\n    media_id: item.media?.id,\n    timestamp: item.timestamp\n  }\n};"
+      },
+      "id": "extract-comment-data",
+      "name": "Extraer Datos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false
+          },
+          "conditions": [
+            {
+              "id": "condition-guia",
+              "leftValue": "={{ $json.comment_text }}",
+              "rightValue": "guia",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ]
+        }
+      },
+      "id": "if-contains-guia",
+      "name": "Contiene GUÍA?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v21.0/{{ $json.comment_id }}/replies",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "access_token",
+              "value": "EAAMvAKzh9rsBOZBZBjFQ9Qg1HpgcPQ6z3yZCFPmzfXJwQqUHqyGy69GE1xhePVZBZArbZCFCgjd82VcnHuv8DtWY9tiFuHO7AhxdPPfhMQi6mJyZAGNt2I0TQLY5Jv8MhF8eiCZAOAdjJ0Vhkt90ZCUXZCNDdZCbD1KZCWhtNGZC2m4Bn0gNaTYXPVW8KJ4QlELZCDIjXdVJzpdlPbsHY5jcnCq7g7UZD"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "¡Hola! 👋 Te envío la información por mensaje directo"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "reply-to-comment",
+      "name": "💬 Responder Comentario",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v21.0/me/messages",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "access_token",
+              "value": "EAAMvAKzh9rsBOZBZBjFQ9Qg1HpgcPQ6z3yZCFPmzfXJwQqUHqyGy69GE1xhePVZBZArbZCFCgjd82VcnHuv8DtWY9tiFuHO7AhxdPPfhMQi6mJyZAGNt2I0TQLY5Jv8MhF8eiCZAOAdjJ0Vhkt90ZCUXZCNDdZCbD1KZCWhtNGZC2m4Bn0gNaTYXPVW8KJ4QlELZCDIjXdVJzpdlPbsHY5jcnCq7g7UZD"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"recipient\": {\n    \"id\": \"{{ $json.from_user_id }}\"\n  },\n  \"message\": {\n    \"text\": \"¡Hola! 👋 Gracias por tu interés.\\n\\n📚 Aquí está tu guía completa sobre hábitos vitales: https://habitos-vitales.com\\n\\n¿Te gustaría recibir más contenido exclusivo? ¡Suscríbete a mi newsletter!\\n\\n✨ Nos vemos dentro!\"\n  }\n}",
+        "options": {}
+      },
+      "id": "send-dm",
+      "name": "📨 Enviar DM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 200]
+    },
+    {
+      "parameters": {
+        "content": "## 📱 Ejemplo en Instagram:\n\n**Usuario comenta:**\n💬 \"Hola! Quiero la guía\"\n\n**Bot responde:**\n1️⃣ En el comentario (público):\n   \"¡Hola! 👋 Te envío la información por mensaje directo\"\n\n2️⃣ En DM (privado):\n   \"¡Hola! 👋 Gracias por tu interés.\n   \n   📚 Aquí está tu guía completa sobre hábitos vitales: https://habitos-vitales.com\n   \n   ¿Te gustaría recibir más contenido exclusivo? ¡Suscríbete a mi newsletter!\n   \n   ✨ Nos vemos dentro!\"\n\n**Para testing:**\n- Usa tu cuenta personal de IG\n- Comenta en un post de tu cuenta de negocio\n- Verifica que recibas ambas respuestas\n\n**Diferencias con v1:**\n- Sin nodos de verificación manual\n- Sin filtros de field === 'comments'\n- Más simple y confiable",
+        "height": 540,
+        "width": 420
+      },
+      "id": "sticky-note-example",
+      "name": "📱 Ejemplo Visual",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [900, 400]
+    },
+    {
+      "parameters": {
+        "content": "## ⚠️ Configuración Requerida\n\n**Debes configurar en el nodo 'Instagram Comments Trigger':**\n\n1. **App ID**: Tu Facebook App ID\n2. **App Secret**: Tu Facebook App Secret\n\nPara obtenerlos:\n1. Ve a https://developers.facebook.com\n2. Selecciona tu app\n3. Ve a Settings > Basic\n4. Copia App ID y App Secret\n5. Pégalos en el nodo trigger\n\n**Webhook URL será:**\n`https://23c3867d8139.ngrok-free.app/webhook/instagram-webhook`\n\n(la misma que usabas antes)",
+        "height": 380,
+        "width": 380
+      },
+      "id": "sticky-note-config",
+      "name": "⚙️ Configuración",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-100, 300]
+    }
+  ],
+  "connections": {
+    "Instagram Comments Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extraer Datos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Datos": {
+      "main": [
+        [
+          {
+            "node": "Contiene GUÍA?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contiene GUÍA?": {
+      "main": [
+        [
+          {
+            "node": "💬 Responder Comentario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "💬 Responder Comentario": {
+      "main": [
+        [
+          {
+            "node": "📨 Enviar DM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "Instagram",
+      "id": "ig-1"
+    },
+    {
+      "name": "Automation",
+      "id": "auto-1"
+    },
+    {
+      "name": "v2",
+      "id": "v2-1"
+    }
+  ],
+  "meta": {
+    "instanceId": "local"
+  },
+  "pinData": {},
+  "versionId": "2"
+}

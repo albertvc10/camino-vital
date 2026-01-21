@@ -1,0 +1,712 @@
+{
+  "name": "Camino Vital - 03-bis Feedback y Siguiente Sesión",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "sesion-completada",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a17e48bc-c544-42f6-8a5c-b06adbbaac39",
+      "name": "Webhook Sesión Completada",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -208,
+        -16
+      ],
+      "webhookId": "sesion-completada"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=-- Obtener datos del usuario\nSELECT \n  id,\n  email,\n  nombre,\n  etapa,\n  nivel_actual,\n  semana_actual,\n  sesiones_objetivo_semana,\n  sesiones_completadas_semana,\n  sesion_actual_dentro_semana\nFROM programa_users\nWHERE id = {{ $json.query.user_id }};",
+        "options": {}
+      },
+      "id": "8f2006d7-cdb8-463a-aa8c-53be434aaa05",
+      "name": "Obtener Datos Usuario",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        16,
+        -16
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=-- Registrar feedback (IDEMPOTENTE con ON CONFLICT)\n-- Parsear feedback\nWITH feedback_parsed AS (\n  SELECT \n    CASE \n      WHEN '{{ $node[\"Webhook Sesión Completada\"].json.query.feedback }}' IN ('completa_facil', 'completa_bien', 'completa_dificil') THEN 'completa'\n      ELSE 'incompleta'\n    END as completitud,\n    CASE \n      WHEN '{{ $node[\"Webhook Sesión Completada\"].json.query.feedback }}' = 'completa_facil' THEN 'facil'\n      WHEN '{{ $node[\"Webhook Sesión Completada\"].json.query.feedback }}' = 'completa_bien' THEN 'apropiado'\n      WHEN '{{ $node[\"Webhook Sesión Completada\"].json.query.feedback }}' = 'completa_dificil' THEN 'dificil'\n      ELSE NULL\n    END as respuesta,\n    CASE \n      WHEN '{{ $node[\"Webhook Sesión Completada\"].json.query.feedback }}' = 'incompleta_tiempo' THEN 'tiempo'\n      WHEN '{{ $node[\"Webhook Sesión Completada\"].json.query.feedback }}' = 'incompleta_dificil' THEN 'muy_dificil'\n      WHEN '{{ $node[\"Webhook Sesión Completada\"].json.query.feedback }}' = 'dolor' THEN 'dolor'\n      ELSE NULL\n    END as razon_no_completar\n),\n-- Insertar feedback\nfeedback_insertado AS (\n  INSERT INTO programa_feedback (\n    user_id, semana, etapa, nivel, sesion_numero,\n    tipo_feedback, respuesta, completitud, razon_no_completar,\n    accion_tomada, created_at\n  )\n  SELECT \n    {{ $json.id }},\n    {{ $json.semana_actual }},\n    '{{ $json.etapa }}',\n    '{{ $json.nivel_actual }}',\n    {{ $node[\"Webhook Sesión Completada\"].json.query.sesion }},\n    'sesion_completada',\n    fp.respuesta,\n    fp.completitud,\n    fp.razon_no_completar,\n    'procesando',\n    NOW()\n  FROM feedback_parsed fp\n  ON CONFLICT (user_id, sesion_numero, semana, tipo_feedback) DO NOTHING\n  RETURNING id, TRUE as insertado\n),\n-- Actualizar contadores solo si se insertó\nusuario_actualizado AS (\n  UPDATE programa_users\n  SET \n    sesiones_completadas_semana = sesiones_completadas_semana + CASE WHEN EXISTS(SELECT 1 FROM feedback_insertado) THEN 1 ELSE 0 END,\n    sesion_actual_dentro_semana = sesion_actual_dentro_semana + CASE WHEN EXISTS(SELECT 1 FROM feedback_insertado) THEN 1 ELSE 0 END,\n    updated_at = CASE WHEN EXISTS(SELECT 1 FROM feedback_insertado) THEN NOW() ELSE updated_at END\n  WHERE id = {{ $json.id }}\n  RETURNING *\n)\n-- Retornar resultado\nSELECT \n  COALESCE(fi.id, (\n    SELECT pf.id FROM programa_feedback pf \n    WHERE pf.user_id = {{ $json.id }} \n      AND pf.sesion_numero = {{ $node[\"Webhook Sesión Completada\"].json.query.sesion }}\n      AND pf.semana = {{ $json.semana_actual }}\n      AND pf.tipo_feedback = 'sesion_completada'\n  )) as feedback_id,\n  COALESCE(fi.insertado, FALSE) as insertado,\n  u.id,\n  u.email,\n  u.nombre,\n  u.auth_token,\n  u.sesion_actual_dentro_semana,\n  u.sesiones_completadas_semana,\n  u.sesiones_objetivo_semana,\n  u.etapa,\n  u.nivel_actual,\n  u.semana_actual\nFROM usuario_actualizado u\nLEFT JOIN feedback_insertado fi ON TRUE;",
+        "options": {}
+      },
+      "id": "976495bf-7a0a-46d8-b6db-e06665071fa4",
+      "name": "Registrar Feedback",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        240,
+        -16
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "quedan-mas-sesiones",
+              "leftValue": "={{ $node['Registrar Feedback'].json.sesion_actual_dentro_semana }}",
+              "rightValue": "={{ $node['Registrar Feedback'].json.sesiones_objetivo_semana }}",
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "cfe1c4e6-ba15-45bf-99c7-49267e16612f",
+      "name": "IF: ¿Quedan más sesiones?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        688,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Obtener template de email desde DB\nSELECT * FROM get_email_template('sesion_ejercicios');",
+        "options": {}
+      },
+      "id": "ad485636-e4e6-490c-bb88-6d0fb3057a3c",
+      "name": "Obtener Template Email",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        1120,
+        -112
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar email con sesión generada por IA + banner de ajuste si aplica\n\nconst usuario = $node[\"Registrar Feedback\"].json;\nconst sesion = $node[\"Obtener Sesión Completa\"].json;\nconst analisis = $node[\"Analizar Feedback Inmediato\"].json;\n\nconsole.log('📧 Preparando email con sesión personalizada');\nconsole.log('🎯 Sesión ID:', sesion.sesion_id);\nconsole.log('🎯 Enfoque:', sesion.enfoque);\nconsole.log('⚙️ Ajuste aplicado:', analisis.necesita_ajuste);\n\n// Variables para el template\nconst webhookUrl = process.env.WEBHOOK_URL || 'http://localhost:5678';\nconst sesionUrl = `${webhookUrl}/webhook/view-session/sesion/${sesion.sesion_id}?token=${usuario.auth_token}`;\n\n// Calcular contenido según tipo\nlet totalEjercicios = 'N/A';\nlet enfoqueTexto = sesion.enfoque || 'Mixto';\n\nif (sesion.enfoque === 'fuerza' && sesion.calentamiento && sesion.trabajo_principal) {\n  const calentamiento = typeof sesion.calentamiento === 'string' ? JSON.parse(sesion.calentamiento) : sesion.calentamiento;\n  const trabajoPrincipal = typeof sesion.trabajo_principal === 'string' ? JSON.parse(sesion.trabajo_principal) : sesion.trabajo_principal;\n  totalEjercicios = `${(calentamiento?.length || 0) + (trabajoPrincipal?.length || 0)} ejercicios personalizados`;\n  enfoqueTexto = 'Fuerza Funcional';\n} else if (sesion.enfoque === 'cardio') {\n  totalEjercicios = 'Actividad cardiovascular guiada';\n  enfoqueTexto = 'Cardio y Resistencia';\n}\n\n// BANNER DE AJUSTE (si aplica)\nlet bannerAjuste = '';\nif (analisis.necesita_ajuste) {\n  const tipo = analisis.tipo_alerta;\n\n  if (tipo === 'subir_intensidad') {\n    bannerAjuste = `\n      <div style=\"background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; padding: 20px; margin: 0 0 30px 0; border-radius: 8px; text-align: center;\">\n        <h3 style=\"margin: 0 0 10px 0; font-size: 20px;\">✅ ¡Progreso detectado!</h3>\n        <p style=\"margin: 0; font-size: 15px; line-height: 1.6;\">\n          Las últimas sesiones fueron fáciles para ti. Hemos aumentado la intensidad al <strong>${analisis.nueva_intensidad}%</strong> para seguir desafiándote y ayudarte a progresar.\n        </p>\n        <p style=\"margin: 10px 0 0 0; font-size: 14px; opacity: 0.9;\">\n          <strong>Nivel:</strong> ${analisis.nuevo_nivel.toUpperCase()} |\n          <strong>Intensidad:</strong> ${analisis.nueva_intensidad}%\n        </p>\n      </div>\n    `;\n  } else if (tipo === 'bajar_intensidad') {\n    bannerAjuste = `\n      <div style=\"background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%); color: white; padding: 20px; margin: 0 0 30px 0; border-radius: 8px; text-align: center;\">\n        <h3 style=\"margin: 0 0 10px 0; font-size: 20px;\">💡 Ajuste aplicado</h3>\n        <p style=\"margin: 0; font-size: 15px; line-height: 1.6;\">\n          ${analisis.mensaje_usuario}\n        </p>\n        <p style=\"margin: 10px 0 0 0; font-size: 14px; opacity: 0.9;\">\n          <strong>Nivel:</strong> ${analisis.nuevo_nivel.toUpperCase()} |\n          <strong>Nueva intensidad:</strong> ${analisis.nueva_intensidad}%\n        </p>\n      </div>\n    `;\n  } else if (tipo === 'subir_volumen') {\n    bannerAjuste = `\n      <div style=\"background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; padding: 20px; margin: 0 0 30px 0; border-radius: 8px; text-align: center;\">\n        <h3 style=\"margin: 0 0 10px 0; font-size: 20px;\">🚀 Aumentamos el desafío</h3>\n        <p style=\"margin: 0; font-size: 15px; line-height: 1.6;\">\n          Has dominado el nivel máximo de intensidad. Añadimos <strong>+${analisis.nuevo_volumen}%</strong> de volumen extra para seguir progresando.\n        </p>\n        <p style=\"margin: 10px 0 0 0; font-size: 14px; opacity: 0.9;\">\n          <strong>Nivel:</strong> ${analisis.nuevo_nivel.toUpperCase()} |\n          <strong>Intensidad:</strong> ${analisis.nueva_intensidad}% + ${analisis.nuevo_volumen}% volumen\n        </p>\n      </div>\n    `;\n  } else if (tipo === 'bajar_nivel') {\n    bannerAjuste = `\n      <div style=\"background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%); color: white; padding: 20px; margin: 0 0 30px 0; border-radius: 8px; text-align: center;\">\n        <h3 style=\"margin: 0 0 10px 0; font-size: 20px;\">💡 HEMOS AJUSTADO TU PROGRAMA</h3>\n        <p style=\"margin: 0; font-size: 15px; line-height: 1.6;\">\n          ${analisis.mensaje_usuario}\n        </p>\n        <p style=\"margin: 10px 0 0 0; font-size: 14px; opacity: 0.9;\">\n          <strong>Nuevo nivel:</strong> ${analisis.nuevo_nivel.toUpperCase()} |\n          <strong>Intensidad:</strong> ${analisis.nueva_intensidad}%\n        </p>\n      </div>\n    `;\n  } else if (tipo === 'subir_nivel') {\n    bannerAjuste = `\n      <div style=\"background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; padding: 20px; margin: 0 0 30px 0; border-radius: 8px; text-align: center;\">\n        <h3 style=\"margin: 0 0 10px 0; font-size: 20px;\">🚀 ¡Nuevo nivel desbloqueado!</h3>\n        <p style=\"margin: 0; font-size: 15px; line-height: 1.6;\">\n          ${analisis.mensaje_usuario}\n        </p>\n        <p style=\"margin: 10px 0 0 0; font-size: 14px; opacity: 0.9;\">\n          <strong>Nuevo nivel:</strong> ${analisis.nuevo_nivel.toUpperCase()} |\n          <strong>Intensidad:</strong> ${analisis.nueva_intensidad}%\n        </p>\n      </div>\n    `;\n  } else if (tipo === 'techo_alcanzado') {\n    bannerAjuste = `\n      <div style=\"background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); color: white; padding: 20px; margin: 0 0 30px 0; border-radius: 8px; text-align: center; box-shadow: 0 4px 15px rgba(255,165,0,0.3);\">\n        <h3 style=\"margin: 0 0 10px 0; font-size: 22px;\">🏆 ¡Nivel Élite alcanzado!</h3>\n        <p style=\"margin: 0; font-size: 15px; line-height: 1.6;\">\n          ${analisis.mensaje_usuario}\n        </p>\n        <p style=\"margin: 10px 0 0 0; font-size: 14px; opacity: 0.9;\">\n          <strong>Nivel:</strong> ${analisis.nuevo_nivel.toUpperCase()} ÉLITE |\n          <strong>Intensidad:</strong> ${analisis.nueva_intensidad}% + ${analisis.nuevo_volumen}% volumen\n        </p>\n      </div>\n    `;\n  } else {\n    // Fallback para otros tipos\n    const iconosAlerta = {\n      'sesion_incompleta': '⚠️',\n      'dos_dificiles': '💡',\n      'dos_faciles': '🚀'\n    };\n    const coloresAlerta = {\n      'sesion_incompleta': '#ff9800',\n      'dos_dificiles': '#2196F3',\n      'dos_faciles': '#4CAF50'\n    };\n\n    const icono = iconosAlerta[analisis.tipo_alerta] || '💡';\n    const color = coloresAlerta[analisis.tipo_alerta] || '#2196F3';\n\n    bannerAjuste = `\n      <div style=\"background: ${color}; color: white; padding: 20px; margin: 0 0 30px 0; border-radius: 8px; text-align: center;\">\n        <h3 style=\"margin: 0 0 10px 0; font-size: 20px;\">${icono} HEMOS AJUSTADO TU PROGRAMA</h3>\n        <p style=\"margin: 0; font-size: 15px; line-height: 1.6;\">\n          ${analisis.mensaje_usuario}\n        </p>\n        <p style=\"margin: 10px 0 0 0; font-size: 14px; opacity: 0.9;\">\n          <strong>Nivel:</strong> ${analisis.nuevo_nivel.toUpperCase()} |\n          <strong>Intensidad:</strong> ${analisis.nueva_intensidad}%\n        </p>\n      </div>\n    `;\n  }\n}\n\n// HTML del email\nconst emailHTML = `\n<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n</head>\n<body style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333; background: #f5f5f5;\">\n\n  <!-- Header -->\n  <div style=\"background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; padding: 40px 30px; text-align: center; border-radius: 12px 12px 0 0;\">\n    <h1 style=\"margin: 0; font-size: 28px;\">🎯 Sesión ${usuario.sesion_actual_dentro_semana} de ${usuario.sesiones_objetivo_semana}</h1>\n    <p style=\"margin: 10px 0 0 0; opacity: 0.9; font-size: 16px;\">¡Sigue así!</p>\n  </div>\n\n  <!-- Contenido -->\n  <div style=\"background: white; padding: 40px 30px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);\">\n\n    <p style=\"font-size: 18px; line-height: 1.6; margin: 0 0 20px 0;\">\n      Hola <strong>${usuario.nombre}</strong>,\n    </p>\n\n    <p style=\"font-size: 16px; line-height: 1.6; margin: 0 0 25px 0;\">\n      ¡Genial trabajo en tu última sesión! Aquí está tu siguiente sesión personalizada.\n    </p>\n\n    <!-- BANNER DE AJUSTE (si aplica) -->\n    ${bannerAjuste}\n\n    <!-- Introducción personalizada -->\n    <div style=\"background: #e8f5e9; border-left: 4px solid #4CAF50; padding: 20px; margin: 0 0 30px 0; border-radius: 4px;\">\n      <p style=\"margin: 0; font-size: 15px; line-height: 1.6; color: #333;\">\n        ${sesion.introduccion_personalizada || 'Sesión diseñada para tu nivel y objetivos.'}\n      </p>\n    </div>\n\n    <!-- Resumen -->\n    <div style=\"background: #f9f9f9; padding: 25px; border-radius: 8px; margin: 0 0 30px 0;\">\n      <h3 style=\"margin: 0 0 15px 0; color: #333; font-size: 18px;\">📋 Resumen:</h3>\n      <ul style=\"margin: 0; padding-left: 20px; line-height: 2; color: #666;\">\n        <li><strong>Duración:</strong> ${sesion.duracion_estimada || '25-30 minutos'}</li>\n        <li><strong>Enfoque:</strong> ${enfoqueTexto}</li>\n        <li><strong>Contenido:</strong> ${totalEjercicios}</li>\n      </ul>\n    </div>\n\n    <!-- CTA Button -->\n    <div style=\"text-align: center; margin: 40px 0;\">\n      <a href=\"${sesionUrl}\" style=\"display: inline-block; background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; padding: 18px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 18px; box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);\">\n        🎬 VER MI SESIÓN\n      </a>\n    </div>\n\n    <p style=\"font-size: 16px; line-height: 1.6; margin: 30px 0 10px;\">\n      ¡A por ello! 💪<br>\n      <strong>El equipo de Camino Vital</strong>\n    </p>\n  </div>\n\n  <!-- Footer -->\n  <div style=\"text-align: center; margin-top: 30px; padding: 20px; color: #999; font-size: 12px;\">\n    <p style=\"margin: 0;\">Camino Vital | Hábitos Vitales</p>\n  </div>\n\n</body>\n</html>\n`;\n\nreturn {\n  json: {\n    user_id: usuario.id,\n    user_email: usuario.email,\n    user_nombre: usuario.nombre,\n    contenido_id: sesion.sesion_id,\n    sesiones_objetivo: usuario.sesiones_objetivo_semana,\n    semana: usuario.semana_actual,\n    sesion_numero: usuario.sesion_actual_dentro_semana,\n    email_html: emailHTML,\n    asunto: `🎯 Sesión ${usuario.sesion_actual_dentro_semana} de ${usuario.sesiones_objetivo_semana}: ${sesion.titulo}`\n  }\n};"
+      },
+      "id": "19af2f83-045a-46ee-b2af-ebcf2f85eb72",
+      "name": "Preparar Email Sesión",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar body JSON para Brevo\nconst input = $input.first().json;\n\nconst brevoBody = {\n  sender: {\n    name: \"Camino Vital\",\n    email: \"hola@habitos-vitales.com\"\n  },\n  to: [\n    {\n      email: input.user_email,\n      name: input.user_nombre\n    }\n  ],\n  subject: input.asunto,\n  htmlContent: input.email_html\n};\n\nreturn {\n  json: {\n    ...input,\n    brevo_body: brevoBody\n  }\n};"
+      },
+      "id": "dde2bd64-0d76-4a65-84e0-54d592aa8d54",
+      "name": "Preparar Body Brevo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1568,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brevo.com/v3/smtp/email",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api-key",
+              "value": "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"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.brevo_body }}",
+        "options": {}
+      },
+      "id": "453bccb5-b7f5-4ffc-86ef-d14b69fcad56",
+      "name": "Enviar Email vía Brevo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1776,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=-- Registrar envío\nINSERT INTO programa_envios (\n  user_id,\n  contenido_id,\n  estado,\n  fecha_envio\n)\nVALUES (\n  {{ $node[\"Preparar Body Brevo\"].json.user_id }},\n  {{ $node[\"Preparar Body Brevo\"].json.contenido_id }},\n  'enviado',\n  NOW()\n)\nRETURNING *;",
+        "options": {}
+      },
+      "id": "78a5c921-8696-45b6-8baa-1b921e926619",
+      "name": "Registrar Envío",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        2000,
+        -112
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=-- Actualizar feedback con acción tomada\nUPDATE programa_feedback\nSET accion_tomada = 'envio_siguiente_sesion'\nWHERE id = {{ $node[\"Registrar Feedback\"].json.id }};",
+        "options": {}
+      },
+      "id": "1aa2a7c9-e11f-4e5a-ac7d-6a314bcc2010",
+      "name": "Actualizar Feedback (Enviado)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        2224,
+        -112
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>¡Siguiente sesión enviada! - Camino Vital</title>\n  <style>\n    * { margin: 0; padding: 0; box-sizing: border-box; }\n    body {\n      font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif;\n      background: linear-gradient(180deg, #232323 0%, #1C1C1C 100%);\n      min-height: 100vh;\n      display: flex;\n      align-items: center;\n      justify-content: center;\n      padding: 20px;\n    }\n    .card {\n      background: #1C1C1C;\n      border-radius: 18px;\n      padding: 50px 40px;\n      box-shadow: 0 10px 40px rgba(0,0,0,0.4);\n      border: 1px solid rgba(255,255,255,0.08);\n      text-align: center;\n      max-width: 500px;\n      width: 100%;\n    }\n    .icon { font-size: 64px; margin-bottom: 25px; }\n    h1 {\n      color: #62B882;\n      margin: 0 0 20px 0;\n      font-size: 28px;\n    }\n    p {\n      font-size: 16px;\n      line-height: 1.7;\n      color: #B5B5B5;\n      margin-bottom: 15px;\n    }\n    .highlight {\n      background: rgba(98, 184, 130, 0.15);\n      border: 1px solid rgba(98, 184, 130, 0.3);\n      padding: 20px;\n      border-radius: 12px;\n      margin: 25px 0;\n      color: #62B882;\n    }\n    .highlight strong { color: #DFCA61; }\n    .footer {\n      margin-top: 30px;\n      padding-top: 20px;\n      border-top: 1px solid rgba(255,255,255,0.08);\n      color: #666;\n      font-size: 13px;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"card\">\n    <div class=\"icon\">✅</div>\n    <h1>¡Siguiente sesión enviada!</h1>\n    <p>Gracias por tu feedback sobre la sesión</p>\n    <div class=\"highlight\">\n      <strong>📬 Revisa tu email</strong><br>\n      Tu siguiente sesión ya está de camino\n    </div>\n    <p style=\"color: #888;\">\n      Sesión {{ $node[\"Registrar Feedback\"].json.sesion_actual_dentro_semana }} de {{ $node[\"Registrar Feedback\"].json.sesiones_objetivo_semana }}\n    </p>\n    <div class=\"footer\">\n      <strong style=\"color: #DFCA61;\">Camino Vital</strong> | Hábitos Vitales\n    </div>\n  </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "d274fc16-1b5e-4a2d-8b83-460b865b1c56",
+      "name": "Responder: Email Enviado",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        2448,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=-- Actualizar feedback: todas las sesiones completadas\nUPDATE programa_feedback\nSET accion_tomada = 'semana_completada'\nWHERE id = {{ $node[\"Registrar Feedback\"].json.id }};",
+        "options": {}
+      },
+      "id": "012a13df-cefd-451c-a4bb-cf992cf14912",
+      "name": "Actualizar Feedback (Completado)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        912,
+        224
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>¡Semana completada! - Camino Vital</title>\n  <style>\n    * { margin: 0; padding: 0; box-sizing: border-box; }\n    body {\n      font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif;\n      background: linear-gradient(180deg, #232323 0%, #1C1C1C 100%);\n      min-height: 100vh;\n      display: flex;\n      align-items: center;\n      justify-content: center;\n      padding: 20px;\n    }\n    .card {\n      background: #1C1C1C;\n      border-radius: 18px;\n      padding: 50px 40px;\n      box-shadow: 0 10px 40px rgba(0,0,0,0.4);\n      border: 1px solid rgba(255,255,255,0.08);\n      text-align: center;\n      max-width: 500px;\n      width: 100%;\n    }\n    .icon { font-size: 64px; margin-bottom: 25px; }\n    h1 {\n      color: #DFCA61;\n      margin: 0 0 20px 0;\n      font-size: 28px;\n    }\n    p {\n      font-size: 16px;\n      line-height: 1.7;\n      color: #B5B5B5;\n      margin-bottom: 15px;\n    }\n    p strong { color: #DFCA61; }\n    .highlight {\n      background: rgba(223, 202, 97, 0.15);\n      border: 1px solid rgba(223, 202, 97, 0.3);\n      padding: 20px;\n      border-radius: 12px;\n      margin: 25px 0;\n      color: #DFCA61;\n    }\n    .footer {\n      margin-top: 30px;\n      padding-top: 20px;\n      border-top: 1px solid rgba(255,255,255,0.08);\n      color: #666;\n      font-size: 13px;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"card\">\n    <div class=\"icon\">🎉</div>\n    <h1>¡Semana completada!</h1>\n    <p>Has completado las <strong>{{ $node[\"Registrar Feedback\"].json.sesiones_objetivo_semana }} sesiones</strong> de esta semana</p>\n    <div class=\"highlight\">\n      💪 ¡Increíble constancia!<br>\n      El domingo recibirás tu checkpoint semanal\n    </div>\n    <p style=\"color: #888;\">\n      Descansa y recarga energías 🌟\n    </p>\n    <div class=\"footer\">\n      <strong style=\"color: #DFCA61;\">Camino Vital</strong> | Hábitos Vitales\n    </div>\n  </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "b00ecfc7-59d4-449d-bb79-f924466630f6",
+      "name": "Responder: Semana Completada",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Error - Camino Vital</title>\n  <style>\n    * { margin: 0; padding: 0; box-sizing: border-box; }\n    body {\n      font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif;\n      background: linear-gradient(180deg, #232323 0%, #1C1C1C 100%);\n      min-height: 100vh;\n      display: flex;\n      align-items: center;\n      justify-content: center;\n      padding: 20px;\n    }\n    .card {\n      background: #1C1C1C;\n      border-radius: 18px;\n      padding: 50px 40px;\n      box-shadow: 0 10px 40px rgba(0,0,0,0.4);\n      border: 1px solid rgba(255,255,255,0.08);\n      text-align: center;\n      max-width: 500px;\n      width: 100%;\n    }\n    .icon { font-size: 64px; margin-bottom: 25px; }\n    h1 {\n      color: #E74C3C;\n      margin: 0 0 20px 0;\n      font-size: 28px;\n    }\n    p {\n      font-size: 16px;\n      line-height: 1.7;\n      color: #B5B5B5;\n      margin-bottom: 15px;\n    }\n    a {\n      color: #DFCA61;\n      text-decoration: none;\n      font-weight: 600;\n    }\n    a:hover { text-decoration: underline; }\n    .footer {\n      margin-top: 30px;\n      padding-top: 20px;\n      border-top: 1px solid rgba(255,255,255,0.08);\n      color: #666;\n      font-size: 13px;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"card\">\n    <div class=\"icon\">😕</div>\n    <h1>Algo no funcionó</h1>\n    <p>Hubo un problema al procesar tu feedback.</p>\n    <p style=\"color: #888;\">Por favor, contáctanos:<br>\n    <a href=\"mailto:hola@habitos-vitales.com\">hola@habitos-vitales.com</a></p>\n    <div class=\"footer\">\n      <strong style=\"color: #DFCA61;\">Camino Vital</strong> | Hábitos Vitales\n    </div>\n  </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "8fd4bdf4-3d81-4d0d-b6b8-ad314770af53",
+      "name": "Responder Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        864,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://localhost:5678/webhook/generar-sesion-ia",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"user_id\": $node['Obtener Datos Usuario'].json.id } }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "generar-sesion-ia-03",
+      "name": "Generar Sesión con IA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        896,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT \n  id as sesion_id,\n  titulo,\n  introduccion_personalizada,\n  enfoque,\n  duracion_estimada,\n  calentamiento,\n  trabajo_principal,\n  tipo_actividad,\n  calentamiento_texto,\n  actividad_principal,\n  numero_sesion\nFROM programa_sesiones\nWHERE id = {{ $json.sesion_id }};",
+        "options": {}
+      },
+      "id": "obtener-sesion-completa-03",
+      "name": "Obtener Sesión Completa",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        1056,
+        -112
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=-- Analizar feedback y recomendar ajustes inmediatos\nSELECT * FROM analizar_feedback_inmediato({{ $json.id }});",
+        "options": {}
+      },
+      "id": "analizar-feedback-inmediato",
+      "name": "Analizar Feedback Inmediato",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        520,
+        -16
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "necesita-ajuste",
+              "leftValue": "={{ $json.necesita_ajuste }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-necesita-ajuste-inmediato",
+      "name": "IF: ¿Necesita ajuste inmediato?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        592,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=-- Aplicar ajuste inmediato (intensidad o nivel)\nUPDATE programa_users\nSET\n  nivel_actual = '{{ $json.nuevo_nivel }}',\n  intensidad_nivel = {{ $json.nueva_intensidad }},\n  volumen_extra = {{ $json.nuevo_volumen }},\n  sesiones_objetivo_semana = {{ $json.nuevas_sesiones }},\n  ajustado_esta_semana = TRUE,\n  updated_at = NOW()\nWHERE id = {{ $node[\"Obtener Datos Usuario\"].json.id }}\nRETURNING *;",
+        "options": {}
+      },
+      "id": "aplicar-ajuste-inmediato",
+      "name": "Aplicar Ajuste Inmediato",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        624,
+        -180
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "feedback-duplicado",
+              "leftValue": "={{ $json.insertado }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-feedback-duplicado",
+      "name": "IF: ¿Feedback duplicado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        688,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM get_email_template('sesion_ya_completada');",
+        "options": {}
+      },
+      "id": "obtener-template-ya-completada",
+      "name": "Obtener Template Ya Completada",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        912,
+        -300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.html_template }}",
+        "options": {}
+      },
+      "id": "responder-ya-completada",
+      "name": "Responder Ya Completada",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1136,
+        -300
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Sesión Completada": {
+      "main": [
+        [
+          {
+            "node": "Obtener Datos Usuario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Datos Usuario": {
+      "main": [
+        [
+          {
+            "node": "Registrar Feedback",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Responder Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar Feedback": {
+      "main": [
+        [
+          {
+            "node": "IF: ¿Feedback duplicado?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: ¿Quedan más sesiones?": {
+      "main": [
+        [
+          {
+            "node": "Generar Sesión con IA",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Actualizar Feedback (Completado)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Template Email": {
+      "main": [
+        [
+          {
+            "node": "Preparar Email Sesión",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Email Sesión": {
+      "main": [
+        [
+          {
+            "node": "Preparar Body Brevo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Body Brevo": {
+      "main": [
+        [
+          {
+            "node": "Enviar Email vía Brevo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Email vía Brevo": {
+      "main": [
+        [
+          {
+            "node": "Registrar Envío",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Responder Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar Envío": {
+      "main": [
+        [
+          {
+            "node": "Actualizar Feedback (Enviado)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actualizar Feedback (Enviado)": {
+      "main": [
+        [
+          {
+            "node": "Responder: Email Enviado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actualizar Feedback (Completado)": {
+      "main": [
+        [
+          {
+            "node": "Responder: Semana Completada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generar Sesión con IA": {
+      "main": [
+        [
+          {
+            "node": "Obtener Sesión Completa",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Responder Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Sesión Completa": {
+      "main": [
+        [
+          {
+            "node": "Obtener Template Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analizar Feedback Inmediato": {
+      "main": [
+        [
+          {
+            "node": "IF: ¿Necesita ajuste inmediato?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: ¿Necesita ajuste inmediato?": {
+      "main": [
+        [
+          {
+            "node": "Aplicar Ajuste Inmediato",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "IF: ¿Quedan más sesiones?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aplicar Ajuste Inmediato": {
+      "main": [
+        [
+          {
+            "node": "IF: ¿Quedan más sesiones?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: ¿Feedback duplicado?": {
+      "main": [
+        [
+          {
+            "node": "Obtener Template Ya Completada",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Analizar Feedback Inmediato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Template Ya Completada": {
+      "main": [
+        [
+          {
+            "node": "Responder Ya Completada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1cbc44ae-9afd-4eac-8aeb-482615278217",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "84e52699fab62b1fb2c5be95d249c5bcabdd7574acb0d2876e03aca6f6c8a022"
+  },
+  "id": "Om4ULqM2ytoZejzC",
+  "tags": []
+}

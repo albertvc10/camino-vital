@@ -1,0 +1,238 @@
+{
+  "name": "Instagram Auto-Responder - GUÍA",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "=GET,POST",
+        "path": "instagram-webhook",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "fb4a46b2-d1bc-4b2a-99be-3e7fd578c78c",
+      "name": "Webhook Instagram",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "instagram-webhook"
+    },
+    {
+      "parameters": {
+        "content": "## 🎯 Workflow: Auto-responder Instagram (SIMPLIFICADO)\n\n**Qué hace:**\n1. Recibe webhooks de Instagram\n2. Detecta automáticamente si es verificación o comentario\n3. Si es comentario con \"GUÍA\" (case-insensitive, con/sin acento) → envía DM\n4. Si no contiene \"GUÍA\" → ignora\n\n**Ventajas de esta versión:**\n- ✅ TODO el procesamiento en JavaScript (más confiable)\n- ✅ Menos nodos = más simple\n- ✅ Normalización completa (minúsculas + sin acentos)\n- ✅ Manejo robusto de errores\n\n**Configuración necesaria:**\n- URL webhook: https://TU-NGROK-URL.ngrok-free.app/webhook/instagram-webhook\n- Token verificación: habitos_vitales_2024\n- Access Token en nodos HTTP Request",
+        "height": 560,
+        "width": 520
+      },
+      "id": "1f86261f-5381-4721-86d6-6f25eadcf21c",
+      "name": "Nota Informativa",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [140, -120]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Procesar webhook de Instagram\nconst inputData = $input.first().json;\n\n// CASO 1: Verificación de Facebook/Instagram\nif (inputData.query && inputData.query['hub.challenge']) {\n  return [\n    {\n      json: {\n        webhook_type: 'verification',\n        challenge: inputData.query['hub.challenge']\n      }\n    }\n  ];\n}\n\n// CASO 2: Webhook de comentario\nconst isComment = inputData?.body?.entry?.[0]?.changes?.[0]?.field === 'comments';\n\nif (!isComment) {\n  return [\n    {\n      json: {\n        webhook_type: 'other',\n        message: 'No es un comentario, ignorando'\n      }\n    }\n  ];\n}\n\n// Extraer datos del comentario\nconst entry = inputData.body.entry[0];\nconst change = entry.changes[0];\nconst value = change.value;\nconst originalText = value.text || '';\n\n// Normalizar texto: minúsculas + quitar acentos\nconst normalizedText = originalText\n  .toLowerCase()\n  .normalize('NFD')\n  .replace(/[\\u0300-\\u036f]/g, '');\n\n// Detectar si contiene \"guia\" (sin acento)\nconst containsGuia = normalizedText.includes('guia');\n\nreturn [\n  {\n    json: {\n      webhook_type: 'comment',\n      comment_id: value.id,\n      comment_text: originalText,\n      comment_text_normalized: normalizedText,\n      contains_guia: containsGuia,\n      from_user_id: value.from.id,\n      from_username: value.from.username,\n      media_id: value.media?.id,\n      timestamp: value.timestamp\n    }\n  }\n];"
+      },
+      "id": "970d3c8f-b8cf-42c6-a04b-8bb13f6642ab",
+      "name": "Procesar Webhook",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.webhook_type }}",
+              "operation": "equals",
+              "value2": "verification"
+            }
+          ]
+        }
+      },
+      "id": "switch-webhook-type",
+      "name": "Tipo de Webhook",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.challenge }}",
+        "options": {}
+      },
+      "id": "bc49c069-c1d5-45b9-be9f-5c7283aa867a",
+      "name": "Responder Verificación",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.webhook_type }}",
+              "operation": "equals",
+              "value2": "comment"
+            },
+            {
+              "value1": "={{ $json.contains_guia }}",
+              "operation": "equals",
+              "value2": "true"
+            }
+          ],
+          "combineOperation": "all"
+        }
+      },
+      "id": "switch-contains-guia",
+      "name": "Es comentario con GUÍA?",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [900, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.instagram.com/v21.0/me/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer IGAAKCIH9BRQZABZAFpwdmFjYUVwRVduU0VrOXpPU3NuLVZAldFVxVUhKeW5NMGdtQmVQRkVCbEI5ZA3pOeTBVYzlfVl96bU9GNE1nZA09mTmE2WldBZAjdvUjF0dmZADVTdfNldYQkl6cVZAUNEg0SzhRbnBTdHJaYzVPXzZANRXNNbUt4QQZDZD"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"recipient\": \"{\\\"id\\\":\\\"{{ $json.from_user_id }}\\\"}\",\n  \"message\": \"{\\\"text\\\":\\\"¡Hola! 👋 Gracias por tu interés.\\\\n\\\\n📚 Aquí está tu guía completa sobre hábitos vitales: https://habitos-vitales.com\\\\n\\\\n¿Te gustaría recibir más contenido exclusivo? ¡Suscríbete a mi newsletter!\\\\n\\\\n✨ Nos vemos dentro!\\\"}\"\n}",
+        "options": {}
+      },
+      "id": "c45ff736-23fe-4cb5-b293-71d84b4833fa",
+      "name": "Enviar DM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "DM Sent",
+        "options": {}
+      },
+      "id": "aa78fb9a-b675-4359-8f4d-713106b1a0d0",
+      "name": "Responder Enviado",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1340, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "Ignored",
+        "options": {}
+      },
+      "id": "68e4426b-4d56-4ed2-b983-eb273204b63c",
+      "name": "Ignorar",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 600]
+    }
+  ],
+  "connections": {
+    "Webhook Instagram": {
+      "main": [
+        [
+          {
+            "node": "Procesar Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Procesar Webhook": {
+      "main": [
+        [
+          {
+            "node": "Tipo de Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tipo de Webhook": {
+      "main": [
+        [
+          {
+            "node": "Responder Verificación",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Es comentario con GUÍA?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es comentario con GUÍA?": {
+      "main": [
+        [
+          {
+            "node": "Enviar DM",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ignorar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar DM": {
+      "main": [
+        [
+          {
+            "node": "Responder Enviado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "simplified-v1",
+  "meta": {
+    "instanceId": "local"
+  },
+  "tags": [
+    {
+      "id": "J5FeMwPBAY6vIVix",
+      "name": "Instagram"
+    },
+    {
+      "id": "6sgoXKE1M30mMMBQ",
+      "name": "Automation"
+    }
+  ]
+}

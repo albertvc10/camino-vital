@@ -1,0 +1,98 @@
+{
+  "name": "Camino Vital - 06 Checkpoint Dominical",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{"field": "cronExpression", "expression": "0 18 * * 0"}]
+        }
+      },
+      "id": "cron-domingo",
+      "name": "Cron: Cada Domingo 18:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Obtener usuarios activos que completaron todas las sesiones de la semana\nSELECT\n  id,\n  email,\n  nombre,\n  etapa,\n  nivel_actual,\n  semana_actual,\n  sesiones_objetivo_semana,\n  sesiones_completadas_semana,\n  semanas_consecutivas_completas,\n  intensidad_nivel\nFROM programa_users\nWHERE estado = 'activo'\n  AND sesiones_completadas_semana >= sesiones_objetivo_semana\n  AND sesiones_objetivo_semana > 0\n  AND semana_actual >= 1\n  AND semana_actual <= 12\nORDER BY id;",
+        "options": {}
+      },
+      "id": "obtener-usuarios-activos",
+      "name": "Obtener Usuarios Activos",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [460, 300],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Obtener template de checkpoint\nSELECT * FROM get_email_template('checkpoint_semanal');",
+        "options": {}
+      },
+      "id": "obtener-template",
+      "name": "Obtener Template Email",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [680, 300],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar email de checkpoint semanal con botones de feedback\n\nfunction replaceVariables(template, variables) {\n  let result = template;\n  for (const [key, value] of Object.entries(variables)) {\n    const safeValue = String(value ?? '');\n    const regex = new RegExp(`\\\\{\\\\{${key}\\\\}\\\\}`, 'g');\n    result = result.replace(regex, safeValue);\n  }\n  return result;\n}\n\nconst usuario = $node[\"Obtener Usuarios Activos\"].json;\nconst template = $node[\"Obtener Template Email\"].json.html_template;\n\nconsole.log('📧 Preparando checkpoint para:', usuario.email);\n\nconst variables = {\n  nombre: usuario.nombre,\n  semana_actual: usuario.semana_actual,\n  semana_siguiente: usuario.semana_actual + 1,\n  sesiones_completadas: usuario.sesiones_completadas_semana,\n  sesiones_objetivo: usuario.sesiones_objetivo_semana,\n  semanas_consecutivas: usuario.semanas_consecutivas_completas || 0,\n  nivel_actual: usuario.nivel_actual,\n  intensidad: usuario.intensidad_nivel,\n  user_id: usuario.id,\n  webhook_url: process.env.WEBHOOK_URL || 'http://localhost:5678'\n};\n\nconst emailHTML = replaceVariables(template, variables);\n\nreturn {\n  json: {\n    user_id: usuario.id,\n    user_email: usuario.email,\n    user_nombre: usuario.nombre,\n    semana: usuario.semana_actual,\n    email_html: emailHTML,\n    asunto: `🎉 ¡Semana ${usuario.semana_actual} completada! - ¿Cómo te fue?`\n  }\n};"
+      },
+      "id": "preparar-email-checkpoint",
+      "name": "Preparar Email Checkpoint",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.WEBHOOK_URL }}/webhook/util/enviar-email",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "enviar-via-util",
+      "name": "Enviar vía UTIL Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 300]
+    }
+  ],
+  "connections": {
+    "Cron: Cada Domingo 18:00": {
+      "main": [[{"node": "Obtener Usuarios Activos", "type": "main", "index": 0}]]
+    },
+    "Obtener Usuarios Activos": {
+      "main": [[{"node": "Obtener Template Email", "type": "main", "index": 0}]]
+    },
+    "Obtener Template Email": {
+      "main": [[{"node": "Preparar Email Checkpoint", "type": "main", "index": 0}]]
+    },
+    "Preparar Email Checkpoint": {
+      "main": [[{"node": "Enviar vía UTIL Email", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {"executionOrder": "v1"},
+  "pinData": {},
+  "versionId": "v2"
+}

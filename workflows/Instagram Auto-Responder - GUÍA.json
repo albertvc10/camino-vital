@@ -1,0 +1,298 @@
+{
+  "name": "Instagram Auto-Responder - GUÍA",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "=GET,POST",
+        "path": "instagram-webhook",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "7b6aa9e1-0170-4201-99ba-b537061901ee",
+      "name": "Webhook Instagram",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        15312,
+        1312
+      ],
+      "webhookId": "instagram-webhook"
+    },
+    {
+      "parameters": {
+        "content": "## 🎯 Instagram Auto-Responder - GUÍA\n\n**Flujo simplificado:**\n1. Webhook recibe petición\n2. JavaScript procesa y decide qué hacer\n3. Switch rutea según el tipo\n4. Responde apropiadamente\n\n**Casos manejados:**\n- ✅ Verificación Facebook → responde challenge\n- ✅ Comentario con \"guía\" → envía DM\n- ✅ Comentario sin \"guía\" → ignora\n- ✅ Otros webhooks → ignora",
+        "height": 400,
+        "width": 420
+      },
+      "id": "b72d9166-f111-46fd-83c6-1f0e986d419b",
+      "name": "Nota",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        14864,
+        832
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $input.first().json;\n\n// CASO 1: Verificación de Facebook/Instagram\nif (inputData.query && inputData.query['hub.challenge']) {\n  return {\n    json: {\n      action: 'verification',\n      challenge: inputData.query['hub.challenge']\n    }\n  };\n}\n\n// CASO 2: Verificar si es comentario\nconst isComment = inputData?.body?.entry?.[0]?.changes?.[0]?.field === 'comments';\n\nif (!isComment) {\n  return {\n    json: {\n      action: 'ignore',\n      reason: 'No es un comentario'\n    }\n  };\n}\n\n// CASO 3: Procesar comentario\nconst entry = inputData.body.entry[0];\nconst change = entry.changes[0];\nconst value = change.value;\nconst originalText = value.text || '';\n\n// Normalizar: minúsculas + sin acentos\nconst normalized = originalText\n  .toLowerCase()\n  .normalize('NFD')\n  .replace(/[\\u0300-\\u036f]/g, '');\n\nconst containsGuia = normalized.includes('guia');\n\n// Decidir acción\nif (containsGuia) {\n  return {\n    json: {\n      action: 'send_dm',\n      comment_id: value.id,\n      comment_text: originalText,\n      from_user_id: value.from.id,\n      from_username: value.from.username\n    }\n  };\n} else {\n  return {\n    json: {\n      action: 'ignore',\n      reason: 'Comentario sin palabra clave',\n      comment_text: originalText\n    }\n  };\n}"
+      },
+      "id": "d8d87693-212a-458c-b194-96da6d51c7cd",
+      "name": "Procesar y Decidir",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        15520,
+        1312
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "verification",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Verificación"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "send_dm",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Enviar DM"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "ignore",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Ignorar"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "62669459-267d-4dcb-a01d-13e3f423b3fd",
+      "name": "Rutear",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        15744,
+        1312
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.challenge }}",
+        "options": {}
+      },
+      "id": "172457e3-6bd3-4482-8575-ccac036b495b",
+      "name": "Responder Verificación",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        15968,
+        1120
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.instagram.com/v21.0/me/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer IGAAKCIH9BRQZABZAFpwdmFjYUVwRVduU0VrOXpPU3NuLVZAldFVxVUhKeW5NMGdtQmVQRkVCbEI5ZA3pOeTBVYzlfVl96bU9GNE1nZA09mTmE2WldBZAjdvUjF0dmZADVTdfNldYQkl6cVZAUNEg0SzhRbnBTdHJaYzVPXzZANRXNNbUt4QQZDZD"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"recipient\": {\"id\": \"{{ $json.from_user_id }}\"},\n  \"message\": {\"text\": \"¡Hola! 👋 Gracias por tu interés.\\n\\n📚 Aquí está tu guía completa sobre hábitos vitales: https://habitos-vitales.com\\n\\n¿Te gustaría recibir más contenido exclusivo? ¡Suscríbete a mi newsletter!\\n\\n✨ Nos vemos dentro!\"}\n}",
+        "options": {}
+      },
+      "id": "81a74267-08fc-48c7-adde-ad1a460233f2",
+      "name": "Enviar DM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        15968,
+        1312
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "DM enviado correctamente",
+        "options": {}
+      },
+      "id": "dec76021-1539-439b-a3c6-66d939db1f61",
+      "name": "Responder OK DM",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        16192,
+        1312
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "Ignorado",
+        "options": {}
+      },
+      "id": "34950c65-10d3-4090-ac3c-b9608d365974",
+      "name": "Responder Ignorado",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        15968,
+        1520
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Instagram": {
+      "main": [
+        [
+          {
+            "node": "Procesar y Decidir",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Procesar y Decidir": {
+      "main": [
+        [
+          {
+            "node": "Rutear",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rutear": {
+      "main": [
+        [
+          {
+            "node": "Responder Verificación",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enviar DM",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder Ignorado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar DM": {
+      "main": [
+        [
+          {
+            "node": "Responder OK DM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6bbdd537-2ba2-43f8-b5a2-63411b59e696",
+  "meta": {
+    "instanceId": "83fbd45f05543f4db8c93f9525c355fcb71c8c853096d7099d71922bb5d4186c"
+  },
+  "id": "jLOh5XO8LMFvsJg4",
+  "tags": [
+    {
+      "updatedAt": "2025-12-18T11:19:48.632Z",
+      "createdAt": "2025-12-18T11:19:48.632Z",
+      "id": "J5FeMwPBAY6vIVix",
+      "name": "Instagram"
+    },
+    {
+      "updatedAt": "2025-12-18T11:19:48.834Z",
+      "createdAt": "2025-12-18T11:19:48.834Z",
+      "id": "6sgoXKE1M30mMMBQ",
+      "name": "Automation"
+    }
+  ]
+}

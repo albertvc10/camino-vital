@@ -58,6 +58,8 @@ services:
       - N8N_HOST=${N8N_HOST}
       - N8N_PORT=${N8N_PORT}
       - N8N_PROTOCOL=${N8N_PROTOCOL}
+      - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL}
+      - WEBHOOK_URL=${WEBHOOK_URL}
       - N8N_BASIC_AUTH_ACTIVE=${N8N_BASIC_AUTH_ACTIVE}
       - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}
       - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
@@ -79,6 +81,16 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
 
+      # Brevo (Email Marketing)
+      - BREVO_API_KEY=${BREVO_API_KEY}
+      - SENDER_EMAIL=${SENDER_EMAIL}
+      - SENDER_NAME=${SENDER_NAME}
+
+      # API de n8n (para importar workflows programáticamente)
+      - N8N_API_KEY_ENABLED=${N8N_API_KEY_ENABLED}
+      - N8N_API_KEY=${N8N_API_KEY}
+      - N8N_EDITOR_BASE_URL=${N8N_EDITOR_BASE_URL}
+
     # Puerto: mapea el puerto 5678 del contenedor al 5678 de tu Mac
     # Accederás a n8n en http://localhost:5678
     ports:
@@ -90,6 +102,31 @@ services:
       - ./data/n8n:/home/node/.n8n
       # Flujos de ejemplo (los montamos para importarlos fácilmente)
       - ./workflows:/workflows
+
+    networks:
+      - n8n-network
+
+  # ============================================
+  # ADMINER - Panel de administración de PostgreSQL
+  # ============================================
+  adminer:
+    image: adminer:latest
+    container_name: n8n_adminer
+    restart: unless-stopped
+
+    # Puerto: accederás en http://localhost:8080
+    ports:
+      - "8080:8080"
+
+    # Variables de entorno
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+      ADMINER_DESIGN: nette  # Tema más bonito
+
+    # Depende de que PostgreSQL esté corriendo
+    depends_on:
+      postgres:
+        condition: service_healthy
 
     networks:
       - n8n-network

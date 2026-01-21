@@ -1,0 +1,233 @@
+{
+  "name": "[TEST-CV] 07 Verificar Límite y Lista Espera",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Obtener configuración del límite\nSELECT \n  (value->>'limite')::int as limite,\n  (value->>'activo')::boolean as activo\nFROM configuracion\nWHERE key = 'usuarios_activos_max';",
+        "options": {}
+      },
+      "id": "obtener-configuracion-limite",
+      "name": "Obtener Configuración Límite",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [240, 300],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Contar usuarios activos actuales\nSELECT COUNT(*) as usuarios_activos\nFROM programa_users\nWHERE estado = 'activo';",
+        "options": {}
+      },
+      "id": "contar-usuarios-activos",
+      "name": "Contar Usuarios Activos",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [460, 300],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Verificar si se alcanzó el límite\nconst config = $node[\"Obtener Configuración Límite\"].json;\nconst stats = $node[\"Contar Usuarios Activos\"].json;\nconst datosUsuario = $input.first().json;\n\nconst limiteActivo = config.activo;\nconst limite = config.limite;\nconst usuariosActivos = parseInt(stats.usuarios_activos);\n\n// Calcular si hay espacio\nconst hayEspacio = !limiteActivo || usuariosActivos < limite;\nconst porcentajeUso = Math.round((usuariosActivos / limite) * 100);\n\nconsole.log(`📊 Estado actual:`);\nconsole.log(`   Usuarios activos: ${usuariosActivos}/${limite}`);\nconsole.log(`   Uso: ${porcentajeUso}%`);\nconsole.log(`   Límite activo: ${limiteActivo}`);\nconsole.log(`   ¿Hay espacio?: ${hayEspacio ? 'SÍ ✅' : 'NO ❌'}`);\n\nif (!hayEspacio) {\n  console.log(`🚨 LÍMITE ALCANZADO - Usuario ${datosUsuario.email} irá a lista de espera`);\n}\n\nreturn {\n  json: {\n    ...datosUsuario,\n    limite_info: {\n      limite_activo: limiteActivo,\n      limite: limite,\n      usuarios_activos: usuariosActivos,\n      hay_espacio: hayEspacio,\n      porcentaje_uso: porcentajeUso\n    }\n  }\n};"
+      },
+      "id": "verificar-limite",
+      "name": "Verificar Límite",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "hay-espacio-disponible",
+              "leftValue": "={{ $json.limite_info.hay_espacio }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-hay-espacio",
+      "name": "¿Hay Espacio?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Usuario puede ser activado\nconst datos = $input.first().json;\n\nconsole.log(`✅ ESPACIO DISPONIBLE - Activando usuario ${datos.email}`);\n\nreturn {\n  json: {\n    permitir_activacion: true,\n    motivo: 'espacio_disponible',\n    email: datos.email,\n    nombre: datos.nombre,\n    stripe_customer_id: datos.stripe_customer_id,\n    stripe_payment_intent_id: datos.stripe_payment_intent_id,\n    monto_pagado: datos.monto_pagado,\n    limite_info: datos.limite_info\n  }\n};"
+      },
+      "id": "preparar-activacion",
+      "name": "Preparar Activación",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 200]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Añadir a lista de espera\nINSERT INTO lista_espera (\n  email,\n  nombre,\n  stripe_payment_intent_id,\n  stripe_customer_id,\n  monto_pagado,\n  perfil_inicial,\n  notas\n)\nVALUES (\n  '{{ $json.email }}',\n  '{{ $json.nombre }}',\n  '{{ $json.stripe_payment_intent_id }}',\n  '{{ $json.stripe_customer_id }}',\n  {{ $json.monto_pagado }},\n  '{{ $json.perfil_inicial }}'::jsonb,\n  'Usuario alcanzó límite de {{ $json.limite_info.limite }} usuarios activos'\n)\nON CONFLICT (email) DO UPDATE SET\n  stripe_payment_intent_id = EXCLUDED.stripe_payment_intent_id,\n  stripe_customer_id = EXCLUDED.stripe_customer_id,\n  monto_pagado = EXCLUDED.monto_pagado,\n  updated_at = NOW()\nRETURNING id, email, created_at;",
+        "options": {}
+      },
+      "id": "añadir-lista-espera",
+      "name": "Añadir a Lista Espera",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1120, 400],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar datos para reembolso y email\nconst datosUsuario = $input.first().json;\nconst datosListaEspera = $node[\"Añadir a Lista Espera\"].json;\n\nconsole.log(`📧 Preparando email lista de espera para: ${datosUsuario.email}`);\nconsole.log(`💰 Preparando reembolso de: ${datosUsuario.monto_pagado}€`);\n\nconst limiteInfo = datosUsuario.limite_info;\n\nreturn {\n  json: {\n    permitir_activacion: false,\n    motivo: 'limite_alcanzado',\n    email: datosUsuario.email,\n    nombre: datosUsuario.nombre,\n    stripe_payment_intent_id: datosUsuario.stripe_payment_intent_id,\n    stripe_customer_id: datosUsuario.stripe_customer_id,\n    monto_pagado: datosUsuario.monto_pagado,\n    lista_espera_id: datosListaEspera.id,\n    limite_info: limiteInfo,\n    mensaje_usuario: `Hemos alcanzado nuestra capacidad actual de ${limiteInfo.limite} usuarios. Te hemos añadido a la lista de espera y reembolsaremos tu pago automáticamente.`\n  }\n};"
+      },
+      "id": "preparar-lista-espera",
+      "name": "Preparar Lista Espera",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge ambos flujos para salida única\nconst input = $input.first().json;\n\nconsole.log(`📤 Resultado final: ${input.permitir_activacion ? 'ACTIVAR' : 'LISTA ESPERA'}`);\n\nreturn { json: input };"
+      },
+      "id": "merge-resultado",
+      "name": "Merge Resultado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 300]
+    }
+  ],
+  "connections": {
+    "Obtener Configuración Límite": {
+      "main": [
+        [
+          {
+            "node": "Contar Usuarios Activos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contar Usuarios Activos": {
+      "main": [
+        [
+          {
+            "node": "Verificar Límite",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar Límite": {
+      "main": [
+        [
+          {
+            "node": "¿Hay Espacio?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Hay Espacio?": {
+      "main": [
+        [
+          {
+            "node": "Preparar Activación",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Añadir a Lista Espera",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Activación": {
+      "main": [
+        [
+          {
+            "node": "Merge Resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Añadir a Lista Espera": {
+      "main": [
+        [
+          {
+            "node": "Preparar Lista Espera",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Lista Espera": {
+      "main": [
+        [
+          {
+            "node": "Merge Resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "Camino Vital",
+      "id": "cv-1"
+    },
+    {
+      "name": "TEST",
+      "id": "test-1"
+    }
+  ],
+  "meta": {
+    "instanceId": "local"
+  },
+  "pinData": {},
+  "versionId": "1"
+}

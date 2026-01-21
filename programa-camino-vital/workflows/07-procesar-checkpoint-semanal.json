@@ -1,0 +1,340 @@
+{
+  "name": "Camino Vital - 07 Procesar Checkpoint Semanal",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "checkpoint-semanal",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-checkpoint",
+      "name": "Webhook Checkpoint Semanal",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "checkpoint-semanal"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SET search_path TO public;\n\nWITH usuario_actual AS (\n  SELECT * FROM programa_users WHERE id = {{ $json.query.user_id }}\n),\najuste_calculado AS (\n  SELECT a.* FROM usuario_actual u,\n  LATERAL calcular_ajuste_por_feedback(\n    u.id, \n    u.semana_actual,\n    '{{ $json.query.feedback || 'apropiado' }}'\n  ) a\n),\nusuario_actualizado AS (\n  UPDATE programa_users u\n  SET \n    nivel_actual = a.ajuste_nivel,\n    intensidad_nivel = a.ajuste_intensidad,\n    semana_actual = u.semana_actual + 1,\n    sesiones_completadas_semana = 0,\n    sesion_actual_dentro_semana = 1,\n    ajustado_esta_semana = TRUE,\n    updated_at = NOW()\n  FROM usuario_actual orig, ajuste_calculado a\n  WHERE u.id = orig.id\n    AND orig.ajustado_esta_semana = FALSE\n  RETURNING u.*\n)\nSELECT \n  COALESCE(upd.id, orig.id) as id,\n  COALESCE(upd.email, orig.email) as email,\n  COALESCE(upd.nombre, orig.nombre) as nombre,\n  COALESCE(upd.semana_actual, orig.semana_actual) as semana_actual,\n  COALESCE(upd.nivel_actual, orig.nivel_actual) as nivel_actual,\n  COALESCE(upd.intensidad_nivel, orig.intensidad_nivel) as intensidad_nivel,\n  COALESCE(upd.volumen_extra, orig.volumen_extra) as volumen_extra,\n  COALESCE(upd.sesiones_objetivo_semana, orig.sesiones_objetivo_semana) as sesiones_objetivo_semana,\n  CASE WHEN upd.id IS NULL THEN TRUE ELSE FALSE END as ya_procesado,\n  a.ajuste_accion,\n  a.ajuste_nivel,\n  a.ajuste_intensidad,\n  a.ajuste_razon,\n  a.feedback_stats\nFROM usuario_actual orig\nLEFT JOIN usuario_actualizado upd ON TRUE\nCROSS JOIN ajuste_calculado a;",
+        "options": {}
+      },
+      "id": "procesar-checkpoint",
+      "name": "Procesar Checkpoint",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [460, 300],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "loose"},
+          "conditions": [
+            {
+              "id": "ya-procesado",
+              "leftValue": "={{ $json.ya_procesado }}",
+              "rightValue": true,
+              "operator": {"type": "boolean", "operation": "equals"}
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-ya-procesado",
+      "name": "IF: ¿Checkpoint ya procesado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM get_email_template('checkpoint_ya_procesado');",
+        "options": {}
+      },
+      "id": "obtener-template-ya-procesado",
+      "name": "Obtener Template Ya Procesado",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [900, 200],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=Ya has procesado el checkpoint de esta semana. ¡Gracias!",
+        "options": {"responseCode": 200}
+      },
+      "id": "responder-ya-procesado",
+      "name": "Responder Ya Procesado",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1120, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "loose"},
+          "conditions": [
+            {
+              "id": "programa-completado",
+              "leftValue": "={{ $json.semana_actual }}",
+              "rightValue": 13,
+              "operator": {"type": "number", "operation": "gte"}
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-programa-completado",
+      "name": "IF: ¿Programa completado (>12 sem)?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [900, 400]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=UPDATE programa_users\nSET estado = 'completado', updated_at = NOW()\nWHERE id = {{ $node['Procesar Checkpoint'].json.id }}\nRETURNING *;",
+        "options": {}
+      },
+      "id": "marcar-programa-completado",
+      "name": "Marcar Programa Completado",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1120, 350],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT html_template FROM email_templates WHERE nombre = 'programa_completado' AND version = 1;",
+        "options": {}
+      },
+      "id": "obtener-template-fin",
+      "name": "Obtener Template Fin Programa",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1340, 350],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar email usando template de BD\nconst template = $json.html_template;\nconst usuario = $node['Marcar Programa Completado'].json;\n\nconsole.log('🏆 Preparando email de programa completado para:', usuario.nombre);\n\n// Reemplazar variables en el template\nconst emailHTML = template\n  .replace(/\\{\\{nombre\\}\\}/g, usuario.nombre || 'Usuario');\n\nreturn {\n  json: {\n    user_id: usuario.id,\n    user_email: usuario.email,\n    user_nombre: usuario.nombre,\n    email_html: emailHTML,\n    asunto: '🏆 ¡Felicidades! Has completado Base Vital'\n  }\n};"
+      },
+      "id": "preparar-email-fin",
+      "name": "Preparar Email Fin Programa",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 350]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.WEBHOOK_URL }}/webhook/util/enviar-email",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {"timeout": 30000}
+      },
+      "id": "enviar-email-fin-util",
+      "name": "Enviar Email Fin (UTIL)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1780, 350]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=🏆 ¡Felicidades! Has completado el programa Base Vital.",
+        "options": {"responseCode": 200}
+      },
+      "id": "responder-programa-completado",
+      "name": "Responder Programa Completado",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [2000, 350]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.WEBHOOK_URL }}/webhook/generar-sesion-ia",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ user_id: $node['Procesar Checkpoint'].json.id }) }}",
+        "options": {"timeout": 60000}
+      },
+      "id": "llamar-generador-ia",
+      "name": "Llamar Generador Sesión IA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 500]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT \n  s.*,\n  u.email as user_email,\n  u.nombre as user_nombre,\n  u.nivel_actual,\n  u.intensidad_nivel,\n  u.volumen_extra,\n  u.auth_token\nFROM programa_sesiones s\nJOIN programa_users u ON s.user_id = u.id\nWHERE s.user_id = {{ $node['Procesar Checkpoint'].json.id }}\n  AND s.semana = {{ $node['Procesar Checkpoint'].json.semana_actual }}\n  AND s.numero_sesion = 1\nORDER BY s.created_at DESC\nLIMIT 1;",
+        "options": {}
+      },
+      "id": "obtener-sesion-generada",
+      "name": "Obtener Sesión Generada",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1340, 500],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT \n  t.html_template,\n  COALESCE(bs.html_template, '') as banner_subir,\n  COALESCE(bb.html_template, '') as banner_bajar\nFROM email_templates t\nLEFT JOIN email_templates bs ON bs.nombre = 'componente_banner_ajuste_subir' AND bs.version = 1\nLEFT JOIN email_templates bb ON bb.nombre = 'componente_banner_ajuste_bajar' AND bb.version = 1\nWHERE t.nombre = 'email_checkpoint_nueva_semana' AND t.version = 1;",
+        "options": {}
+      },
+      "id": "obtener-template-nueva-semana",
+      "name": "Obtener Template Nueva Semana",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1560, 500],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar email usando templates de BD\nconst templates = $json;\nconst sesion = $node['Obtener Sesión Generada'].json;\nconst analisis = $node['Procesar Checkpoint'].json;\n\nconsole.log('📧 Preparando email checkpoint con sesión nueva semana usando template BD');\n\nconst webhookUrl = process.env.WEBHOOK_URL || 'http://localhost:5678';\nconst sesionUrl = `${webhookUrl}/webhook/view-session/sesion/${sesion.id}?token=${sesion.auth_token}`;\n\n// Calcular total ejercicios y enfoque\nlet totalEjercicios = 'N/A';\nlet enfoqueTexto = 'Mixto';\n\nif (sesion.enfoque === 'fuerza' && sesion.calentamiento && sesion.trabajo_principal) {\n  const calentamiento = typeof sesion.calentamiento === 'string' ? JSON.parse(sesion.calentamiento) : sesion.calentamiento;\n  const trabajoPrincipal = typeof sesion.trabajo_principal === 'string' ? JSON.parse(sesion.trabajo_principal) : sesion.trabajo_principal;\n  totalEjercicios = `${(calentamiento?.length || 0) + (trabajoPrincipal?.length || 0)} ejercicios personalizados`;\n  enfoqueTexto = 'Fuerza Funcional';\n} else if (sesion.enfoque === 'cardio') {\n  totalEjercicios = 'Actividad cardiovascular guiada';\n  enfoqueTexto = 'Cardio y Resistencia';\n}\n\n// Determinar banner de ajuste\nlet bannerAjuste = '';\nif (analisis.ajuste_accion !== 'mantener') {\n  const accion = analisis.ajuste_accion;\n  let bannerTemplate = '';\n  \n  if (accion === 'subir' || accion === 'mejorar' || analisis.ajuste_intensidad > analisis.intensidad_nivel) {\n    bannerTemplate = templates.banner_subir;\n  } else {\n    bannerTemplate = templates.banner_bajar;\n  }\n  \n  // Reemplazar variables en el banner\n  bannerAjuste = bannerTemplate\n    .replace(/\\{\\{ajuste_razon\\}\\}/g, analisis.ajuste_razon || '')\n    .replace(/\\{\\{ajuste_nivel\\}\\}/g, (analisis.ajuste_nivel || '').toUpperCase())\n    .replace(/\\{\\{ajuste_intensidad\\}\\}/g, analisis.ajuste_intensidad || '');\n}\n\n// Reemplazar variables en el template principal\nconst emailHTML = templates.html_template\n  .replace(/\\{\\{semana\\}\\}/g, sesion.semana || '')\n  .replace(/\\{\\{nombre\\}\\}/g, sesion.user_nombre || '')\n  .replace(/\\{\\{semana_anterior\\}\\}/g, (analisis.semana_actual - 1) || '')\n  .replace(/\\{\\{banner_ajuste\\}\\}/g, bannerAjuste)\n  .replace(/\\{\\{titulo\\}\\}/g, sesion.titulo || '')\n  .replace(/\\{\\{descripcion\\}\\}/g, sesion.descripcion || 'Sesión personalizada para tu nivel')\n  .replace(/\\{\\{duracion\\}\\}/g, sesion.duracion_estimada || '30')\n  .replace(/\\{\\{enfoque\\}\\}/g, enfoqueTexto)\n  .replace(/\\{\\{contenido\\}\\}/g, totalEjercicios)\n  .replace(/\\{\\{sesion_url\\}\\}/g, sesionUrl);\n\nreturn {\n  json: {\n    user_id: sesion.user_id,\n    user_email: sesion.user_email,\n    user_nombre: sesion.user_nombre,\n    sesion_id: sesion.id,\n    email_html: emailHTML,\n    asunto: `🎯 Semana ${sesion.semana} - Sesión 1: ${sesion.titulo}`\n  }\n};"
+      },
+      "id": "preparar-email-sesion",
+      "name": "Preparar Email Sesión",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1780, 500]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.WEBHOOK_URL }}/webhook/util/enviar-email",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {"timeout": 30000}
+      },
+      "id": "enviar-email-sesion-util",
+      "name": "Enviar Email Sesión (UTIL)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2000, 500]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, message: 'Checkpoint procesado. Nueva sesión enviada.', semana: $node['Procesar Checkpoint'].json.semana_actual, email_resultado: $json } }}",
+        "options": {"responseCode": 200}
+      },
+      "id": "responder-confirmacion",
+      "name": "Responder Confirmación",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [2220, 500]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: false, error: $json.message || 'Error procesando checkpoint' } }}",
+        "options": {"responseCode": 500}
+      },
+      "id": "responder-error",
+      "name": "Responder Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [680, 500]
+    }
+  ],
+  "connections": {
+    "Webhook Checkpoint Semanal": {
+      "main": [[{"node": "Procesar Checkpoint", "type": "main", "index": 0}]]
+    },
+    "Procesar Checkpoint": {
+      "main": [[{"node": "IF: ¿Checkpoint ya procesado?", "type": "main", "index": 0}]],
+      "error": [[{"node": "Responder Error", "type": "main", "index": 0}]]
+    },
+    "IF: ¿Checkpoint ya procesado?": {
+      "main": [
+        [{"node": "Obtener Template Ya Procesado", "type": "main", "index": 0}],
+        [{"node": "IF: ¿Programa completado (>12 sem)?", "type": "main", "index": 0}]
+      ]
+    },
+    "Obtener Template Ya Procesado": {
+      "main": [[{"node": "Responder Ya Procesado", "type": "main", "index": 0}]]
+    },
+    "IF: ¿Programa completado (>12 sem)?": {
+      "main": [
+        [{"node": "Marcar Programa Completado", "type": "main", "index": 0}],
+        [{"node": "Llamar Generador Sesión IA", "type": "main", "index": 0}]
+      ]
+    },
+    "Marcar Programa Completado": {
+      "main": [[{"node": "Obtener Template Fin Programa", "type": "main", "index": 0}]]
+    },
+    "Obtener Template Fin Programa": {
+      "main": [[{"node": "Preparar Email Fin Programa", "type": "main", "index": 0}]]
+    },
+    "Preparar Email Fin Programa": {
+      "main": [[{"node": "Enviar Email Fin (UTIL)", "type": "main", "index": 0}]]
+    },
+    "Enviar Email Fin (UTIL)": {
+      "main": [[{"node": "Responder Programa Completado", "type": "main", "index": 0}]]
+    },
+    "Llamar Generador Sesión IA": {
+      "main": [[{"node": "Obtener Sesión Generada", "type": "main", "index": 0}]]
+    },
+    "Obtener Sesión Generada": {
+      "main": [[{"node": "Obtener Template Nueva Semana", "type": "main", "index": 0}]]
+    },
+    "Obtener Template Nueva Semana": {
+      "main": [[{"node": "Preparar Email Sesión", "type": "main", "index": 0}]]
+    },
+    "Preparar Email Sesión": {
+      "main": [[{"node": "Enviar Email Sesión (UTIL)", "type": "main", "index": 0}]]
+    },
+    "Enviar Email Sesión (UTIL)": {
+      "main": [[{"node": "Responder Confirmación", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {"executionOrder": "v1"},
+  "pinData": {},
+  "versionId": "v3-templates-bd"
+}

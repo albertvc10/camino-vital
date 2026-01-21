@@ -1,0 +1,151 @@
+{
+  "name": "Camino Vital - 04 Guardar Lead (Cuestionario)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "guardar-lead",
+        "options": {
+          "rawBody": true
+        },
+        "responseMode": "responseNode"
+      },
+      "id": "webhook-guardar-lead",
+      "name": "Webhook Guardar Lead",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "guardar-lead"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extraer datos del cuestionario\nconst body = $input.first().json.body;\n\n// Parsear si viene como string\nconst data = typeof body === 'string' ? JSON.parse(body) : body;\n\nreturn {\n  json: {\n    email: data.email,\n    nombre: data.nombre,\n    tiempo_sin_ejercicio: data.tiempo_sin_ejercicio,\n    nivel_movilidad: data.nivel_movilidad,\n    limitaciones: data.limitaciones,\n    limitaciones_detalle: data.limitaciones_detalle || '',\n    objetivo_principal: data.objetivo_principal,\n    nivel_asignado: data.nivel_asignado,\n    duracion_programa: data.duracion_programa,\n    timestamp: data.timestamp\n  }\n};"
+      },
+      "id": "extraer-datos-lead",
+      "name": "Extraer Datos Lead",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO programa_users (\n  email,\n  nombre,\n  etapa,\n  nivel_actual,\n  estado,\n  perfil_inicial\n)\nVALUES (\n  '{{ $json.email }}',\n  '{{ $json.nombre }}',\n  'base_vital',\n  '{{ $json.nivel_asignado === \"Intermedio\" ? \"intermedio\" : \"iniciacion\" }}',\n  'lead',\n  '{\n    \"tiempo_sin_ejercicio\": \"{{ $json.tiempo_sin_ejercicio }}\",\n    \"nivel_movilidad\": \"{{ $json.nivel_movilidad }}\",\n    \"limitaciones\": \"{{ $json.limitaciones }}\",\n    \"limitaciones_detalle\": \"{{ $json.limitaciones_detalle }}\",\n    \"objetivo_principal\": \"{{ $json.objetivo_principal }}\",\n    \"cuestionario_completado\": \"{{ $json.timestamp }}\"\n  }'::jsonb\n)\nON CONFLICT (email) \nDO UPDATE SET\n  nombre = EXCLUDED.nombre,\n  nivel_actual = EXCLUDED.nivel_actual,\n  perfil_inicial = EXCLUDED.perfil_inicial,\n  updated_at = CURRENT_TIMESTAMP\nRETURNING id, email, nombre, nivel_actual;",
+        "options": {}
+      },
+      "id": "guardar-lead-db",
+      "name": "Guardar Lead en DB",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [680, 300],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-local",
+          "name": "PostgreSQL local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brevo.com/v3/contacts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api-key",
+              "value": "={{$env.BREVO_API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"email\": \"{{ $json.email }}\",\n  \"attributes\": {\n    \"NOMBRE\": \"{{ $json.nombre }}\",\n    \"NIVEL\": \"{{ $json.nivel_actual }}\",\n    \"ETAPA\": \"lead\",\n    \"ESTADO\": \"cuestionario_completado\"\n  },\n  \"listIds\": [2],\n  \"updateEnabled\": true\n}",
+        "options": {}
+      },
+      "id": "agregar-brevo",
+      "name": "Agregar a Brevo (Leads)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 300],
+      "notes": "Lista ID 2 = Leads sin pagar"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Lead guardado correctamente\",\n  \"user_id\": {{ $('Guardar Lead en DB').first().json.id || 'null' }}\n}",
+        "options": {}
+      },
+      "id": "responder-ok",
+      "name": "Responder OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Guardar Lead": {
+      "main": [
+        [
+          {
+            "node": "Extraer Datos Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Datos Lead": {
+      "main": [
+        [
+          {
+            "node": "Guardar Lead en DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar Lead en DB": {
+      "main": [
+        [
+          {
+            "node": "Agregar a Brevo (Leads)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agregar a Brevo (Leads)": {
+      "main": [
+        [
+          {
+            "node": "Responder OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "Camino Vital",
+      "id": "cv-1"
+    }
+  ],
+  "meta": {
+    "instanceId": "local"
+  },
+  "pinData": {},
+  "versionId": "1"
+}

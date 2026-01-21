@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bienvenido a Camino Vital!</title>
+    <style>
+        /* Variables CSS */
+        :root {
+            --color-primary: #DFCA61;
+            --color-success: #62B882;
+            --color-error: #E74C3C;
+            --color-bg-dark: #232323;
+            --color-bg-card: #1C1C1C;
+            --color-bg-section: #2A2A2A;
+            --color-text-primary: #E8E8E8;
+            --color-text-secondary: #B5B5B5;
+            --color-border: rgba(255,255,255,0.08);
+            --border-radius-full: 999px;
+            --border-radius-card: 18px;
+            --shadow-button: 0 0 35px rgba(223, 202, 97, 0.3);
+            --transition-fast: 0.12s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+            background: var(--color-bg-dark);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            background: var(--color-bg-card);
+            border-radius: var(--border-radius-card);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            max-width: 700px;
+            width: 100%;
+            overflow: hidden;
+            border: 1px solid var(--color-border);
+        }
+
+        .header {
+            background: linear-gradient(180deg, var(--color-bg-section) 0%, var(--color-bg-card) 100%);
+            padding: 50px 40px;
+            text-align: center;
+        }
+
+        .success-icon {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, rgba(98, 184, 130, 0.2) 0%, rgba(223, 202, 97, 0.2) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 50px;
+            margin: 0 auto 25px;
+            animation: celebrate 1s ease-in-out;
+        }
+
+        @keyframes celebrate {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.1) rotate(-5deg); }
+            50% { transform: scale(1.2) rotate(5deg); }
+            75% { transform: scale(1.1) rotate(-5deg); }
+        }
+
+        .tagline {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.16em;
+            color: var(--color-success);
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        h1 {
+            color: var(--color-primary);
+            font-size: 36px;
+            margin-bottom: 12px;
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            color: var(--color-text-secondary);
+            font-size: 18px;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .confirmation-box {
+            background: rgba(98, 184, 130, 0.08);
+            border: 1px solid rgba(98, 184, 130, 0.3);
+            border-left: 4px solid var(--color-success);
+            padding: 25px 30px;
+            margin-bottom: 35px;
+            border-radius: 14px;
+        }
+
+        .confirmation-box h3 {
+            color: var(--color-success);
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .confirmation-box p {
+            color: var(--color-text-secondary);
+            line-height: 1.7;
+            margin: 8px 0;
+            font-size: 15px;
+        }
+
+        .confirmation-box p strong {
+            color: var(--color-text-primary);
+        }
+
+        .next-steps {
+            background: rgba(223, 202, 97, 0.08);
+            border: 1px solid rgba(223, 202, 97, 0.2);
+            border-radius: 14px;
+            padding: 30px;
+            margin-bottom: 35px;
+        }
+
+        .next-steps h3 {
+            color: var(--color-primary);
+            margin-bottom: 25px;
+            font-size: 22px;
+        }
+
+        .step {
+            display: flex;
+            align-items: start;
+            margin: 20px 0;
+            gap: 18px;
+        }
+
+        .step-number {
+            background: var(--color-primary);
+            color: var(--color-bg-card);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+            font-size: 16px;
+            box-shadow: var(--shadow-button);
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-content h4 {
+            color: var(--color-text-primary);
+            margin-bottom: 6px;
+            font-size: 17px;
+        }
+
+        .step-content p {
+            color: var(--color-text-secondary);
+            line-height: 1.6;
+            font-size: 15px;
+        }
+
+        .step-content p strong {
+            color: var(--color-primary);
+        }
+
+        .info-box {
+            background: var(--color-bg-dark);
+            border-radius: 14px;
+            padding: 28px;
+            margin-bottom: 35px;
+            border: 1px solid var(--color-border);
+        }
+
+        .info-box h4 {
+            color: var(--color-primary);
+            margin-bottom: 18px;
+            font-size: 18px;
+        }
+
+        .info-box ul {
+            list-style: none;
+        }
+
+        .info-box li {
+            color: var(--color-text-secondary);
+            padding: 12px 0;
+            padding-left: 32px;
+            position: relative;
+            line-height: 1.6;
+            font-size: 15px;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .info-box li:last-child {
+            border-bottom: none;
+        }
+
+        .info-box li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--color-success);
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .info-box li strong {
+            color: var(--color-text-primary);
+        }
+
+        .cta-box {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        .highlight-btn {
+            display: inline-block;
+            background: var(--color-primary);
+            color: var(--color-bg-card);
+            padding: 16px 35px;
+            border-radius: var(--border-radius-full);
+            font-weight: 600;
+            font-size: 16px;
+            text-decoration: none;
+            box-shadow: var(--shadow-button);
+            transition: all var(--transition-fast);
+        }
+
+        .highlight-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 45px rgba(223, 202, 97, 0.4);
+        }
+
+        .support-section {
+            background: var(--color-bg-dark);
+            border-radius: 14px;
+            padding: 25px;
+            border: 1px solid var(--color-border);
+            text-align: center;
+        }
+
+        .support-section p {
+            color: var(--color-text-secondary);
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+
+        .support-section p strong {
+            color: var(--color-text-primary);
+        }
+
+        .support-section a {
+            color: var(--color-primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .support-section a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 40px 25px;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+
+            .content {
+                padding: 30px 20px;
+            }
+
+            .success-icon {
+                width: 80px;
+                height: 80px;
+                font-size: 40px;
+            }
+
+            .step {
+                gap: 14px;
+            }
+
+            .step-number {
+                width: 35px;
+                height: 35px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="success-icon">🎉</div>
+            <div class="tagline">Pago completado</div>
+            <h1>Bienvenido a Camino Vital!</h1>
+            <p class="subtitle">Tu programa Base Vital esta activado</p>
+        </div>
+
+        <div class="content">
+            <div class="confirmation-box">
+                <h3>Tu programa esta listo</h3>
+                <p><strong>Acabas de dar el primer paso</strong> hacia recuperar tu movilidad, fuerza y autonomia.</p>
+                <p>En pocos minutos recibiras un email de bienvenida con toda la informacion.</p>
+            </div>
+
+            <div class="next-steps">
+                <h3>Que va a pasar ahora:</h3>
+
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>Email de bienvenida</h4>
+                        <p>En los proximos 5 minutos recibiras un email confirmando tu acceso y explicando como funciona todo.</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>Primer email con ejercicios</h4>
+                        <p>Recibiras tu primera rutina el proximo <strong>Lunes, Miercoles o Viernes a las 9:00 AM</strong>.</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>Haz los ejercicios y da feedback</h4>
+                        <p>Cada email incluye ejercicios con videos. Al terminar, solo haz click en: <strong>Facil / Adecuado / Dificil</strong>.</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h4>El programa se adapta a ti</h4>
+                        <p>Segun tu feedback, ajustaremos la intensidad para que siempre sea desafiante pero alcanzable.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <h4>Recordatorios importantes:</h4>
+                <ul>
+                    <li><strong>Frecuencia:</strong> 3 emails por semana (Lunes, Miercoles y Viernes a las 9:00 AM)</li>
+                    <li><strong>Duracion:</strong> Tu programa esta adaptado para 8-12 semanas segun tu nivel</li>
+                    <li><strong>Flexibilidad:</strong> Si un dia no puedes, no pasa nada. Continua cuando puedas</li>
+                    <li><strong>Soporte:</strong> Dudas o problemas? Responde cualquier email y te ayudamos</li>
+                </ul>
+            </div>
+
+            <div class="cta-box">
+                <a href="mailto:" class="highlight-btn">Revisa tu email ahora</a>
+            </div>
+
+            <div class="support-section">
+                <p><strong>No encuentras el email de bienvenida?</strong></p>
+                <p>Revisa la carpeta de spam o promociones</p>
+                <p>Si no aparece en 10 minutos, escribenos a <a href="mailto:hola@habitos-vitales.com">hola@habitos-vitales.com</a></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

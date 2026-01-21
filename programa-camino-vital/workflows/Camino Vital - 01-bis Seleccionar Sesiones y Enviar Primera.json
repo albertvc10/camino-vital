@@ -1,0 +1,317 @@
+{
+  "name": "Camino Vital - 01-bis Seleccionar Sesiones y Enviar Primera",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "seleccionar-sesiones",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "ba0c3e79-9019-43da-badd-98b1cf36062f",
+      "name": "Webhook Seleccionar Sesiones",
+      "type": "n8n-nodes-base.webhook",
+      "position": [976, 16],
+      "webhookId": "seleccionar-sesiones",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=-- Configurar sesiones (IDEMPOTENTE)\nWITH usuario_actual AS (\n  SELECT *, (sesiones_objetivo_semana > 0) AS ya_configurado\n  FROM programa_users\n  WHERE id = {{ $json.query.user_id }}\n)\nUPDATE programa_users u\nSET \n  sesiones_objetivo_semana = CASE WHEN ua.ya_configurado THEN u.sesiones_objetivo_semana ELSE {{ $json.query.sesiones }} END,\n  sesiones_completadas_semana = CASE WHEN ua.ya_configurado THEN u.sesiones_completadas_semana ELSE 0 END,\n  sesion_actual_dentro_semana = CASE WHEN ua.ya_configurado THEN u.sesion_actual_dentro_semana ELSE 1 END,\n  updated_at = CASE WHEN ua.ya_configurado THEN u.updated_at ELSE NOW() END\nFROM usuario_actual ua\nWHERE u.id = {{ $json.query.user_id }}\nRETURNING u.*, ua.ya_configurado;",
+        "options": {}
+      },
+      "id": "04ce61d2-1894-4711-afbe-1da0dbbeb4d7",
+      "name": "Guardar Sesiones Objetivo",
+      "type": "n8n-nodes-base.postgres",
+      "position": [1136, 16],
+      "typeVersion": 2.4,
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {"leftValue": "", "caseSensitive": true, "typeValidation": "strict"},
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "verificacion_configuracion",
+              "operator": {"type": "boolean", "operation": "equals"},
+              "leftValue": "={{ $json.ya_configurado }}",
+              "rightValue": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4882f9ad-86ca-4a55-ac77-719b0d658524",
+      "name": "IF: ¿Sesiones ya configuradas?",
+      "type": "n8n-nodes-base.if",
+      "position": [1344, 16],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT html_template FROM email_templates WHERE nombre = 'pagina_ya_configurado' AND version = 1;",
+        "options": {}
+      },
+      "id": "obtener-template-ya-configurado",
+      "name": "Obtener Template Ya Configurado",
+      "type": "n8n-nodes-base.postgres",
+      "position": [1536, 200],
+      "typeVersion": 2.4,
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.html_template }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [{"name": "Content-Type", "value": "text/html; charset=utf-8"}]
+          }
+        }
+      },
+      "id": "c0fbdea0-cf0b-4bbb-b309-81a9858426a2",
+      "name": "Responder Ya Configurado",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [1744, 200],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT html_template FROM email_templates WHERE nombre = 'pagina_procesando_primera' AND version = 1;",
+        "options": {}
+      },
+      "id": "obtener-template-procesando",
+      "name": "Obtener Template Procesando",
+      "type": "n8n-nodes-base.postgres",
+      "position": [1536, -100],
+      "typeVersion": 2.4,
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Renderizar template con variables\nconst template = $json.html_template;\nconst usuario = $node['Guardar Sesiones Objetivo'].json;\n\nconst html = template\n  .replace(/\\{\\{sesiones_objetivo_semana\\}\\}/g, usuario.sesiones_objetivo_semana || '2');\n\nreturn { json: { html, usuario_id: usuario.id, usuario } };"
+      },
+      "id": "renderizar-procesando",
+      "name": "Renderizar Procesando",
+      "type": "n8n-nodes-base.code",
+      "position": [1744, -100],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.html }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [{"name": "Content-Type", "value": "text/html; charset=utf-8"}]
+          }
+        }
+      },
+      "id": "responder-procesando",
+      "name": "Responder Procesando",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [1952, -100],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://localhost:5678/webhook/generar-sesion-ia",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"user_id\": $node['Renderizar Procesando'].json.usuario.id } }}",
+        "options": {"timeout": 120000}
+      },
+      "id": "04db5472-b6b1-49cc-b02f-74ade2035091",
+      "name": "Generar Sesión con IA",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [2160, -100],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT \n  id as sesion_id,\n  titulo,\n  introduccion_personalizada,\n  enfoque,\n  duracion_estimada,\n  calentamiento,\n  trabajo_principal,\n  tipo_actividad,\n  calentamiento_texto,\n  actividad_principal\nFROM programa_sesiones\nWHERE id = {{ $json.sesion_id }};",
+        "options": {}
+      },
+      "id": "e3c660d2-0199-4f97-a185-2fb1a56fc0ea",
+      "name": "Obtener Sesión Completa",
+      "type": "n8n-nodes-base.postgres",
+      "position": [2368, -100],
+      "typeVersion": 2.4,
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT html_template FROM email_templates WHERE nombre = 'email_primera_sesion' AND version = 1;",
+        "options": {}
+      },
+      "id": "bfc07d5c-8deb-4508-9c47-1701dab8e682",
+      "name": "Obtener Template Email",
+      "type": "n8n-nodes-base.postgres",
+      "position": [2576, -100],
+      "typeVersion": 2.4,
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar email usando template de BD\nconst template = $json.html_template;\nconst usuario = $node['Renderizar Procesando'].json.usuario;\nconst sesion = $node['Obtener Sesión Completa'].json;\n\nconsole.log('📧 Preparando email con sesión usando template BD');\n\nconst webhookUrl = process.env.WEBHOOK_URL || 'http://localhost:5678';\nconst sesionUrl = `${webhookUrl}/webhook/view-session/sesion/${sesion.sesion_id}?token=${usuario.auth_token}`;\n\n// Calcular total de ejercicios según tipo\nlet totalEjercicios = 'N/A';\nlet enfoqueTexto = sesion.enfoque || 'Mixto';\n\nif (sesion.enfoque === 'fuerza' && sesion.calentamiento && sesion.trabajo_principal) {\n  const calentamiento = typeof sesion.calentamiento === 'string' ? JSON.parse(sesion.calentamiento) : sesion.calentamiento;\n  const trabajoPrincipal = typeof sesion.trabajo_principal === 'string' ? JSON.parse(sesion.trabajo_principal) : sesion.trabajo_principal;\n  totalEjercicios = `${(calentamiento?.length || 0) + (trabajoPrincipal?.length || 0)} ejercicios personalizados`;\n  enfoqueTexto = 'Fuerza Funcional';\n} else if (sesion.enfoque === 'cardio') {\n  totalEjercicios = 'Actividad cardiovascular guiada';\n  enfoqueTexto = 'Cardio y Resistencia';\n}\n\n// Reemplazar variables en el template\nconst emailHTML = template\n  .replace(/\\{\\{sesiones_objetivo\\}\\}/g, usuario.sesiones_objetivo_semana || '')\n  .replace(/\\{\\{nombre\\}\\}/g, usuario.nombre || '')\n  .replace(/\\{\\{introduccion\\}\\}/g, sesion.introduccion_personalizada || 'Sesión diseñada para tu nivel y objetivos.')\n  .replace(/\\{\\{duracion\\}\\}/g, sesion.duracion_estimada || '25-30 minutos')\n  .replace(/\\{\\{enfoque\\}\\}/g, enfoqueTexto)\n  .replace(/\\{\\{contenido\\}\\}/g, totalEjercicios)\n  .replace(/\\{\\{nivel\\}\\}/g, usuario.nivel_actual || '')\n  .replace(/\\{\\{sesion_url\\}\\}/g, sesionUrl);\n\nreturn {\n  json: {\n    user_id: usuario.id,\n    user_email: usuario.email,\n    user_nombre: usuario.nombre,\n    sesion_id: sesion.sesion_id,\n    sesiones_objetivo: usuario.sesiones_objetivo_semana,\n    semana: usuario.semana_actual,\n    sesion_numero: 1,\n    email_html: emailHTML,\n    asunto: `🎯 Tu Sesión 1 de ${usuario.sesiones_objetivo_semana}: ${sesion.titulo}`\n  }\n};"
+      },
+      "id": "752bb13b-18f5-43f5-bc31-4b30910735b4",
+      "name": "Preparar Email Sesión",
+      "type": "n8n-nodes-base.code",
+      "position": [2784, -100],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar body JSON para Brevo\nconst input = $input.first().json;\n\nconst brevoBody = {\n  sender: {\n    name: \"Camino Vital\",\n    email: \"hola@habitos-vitales.com\"\n  },\n  to: [\n    {\n      email: input.user_email,\n      name: input.user_nombre\n    }\n  ],\n  subject: input.asunto,\n  htmlContent: input.email_html\n};\n\nreturn {\n  json: {\n    ...input,\n    brevo_body: brevoBody\n  }\n};"
+      },
+      "id": "5200ddf7-8148-4d40-b840-3b98ffec2544",
+      "name": "Preparar Body Brevo",
+      "type": "n8n-nodes-base.code",
+      "position": [2992, -100],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brevo.com/v3/smtp/email",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "api-key", "value": "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"},
+            {"name": "content-type", "value": "application/json"}
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.brevo_body }}",
+        "options": {}
+      },
+      "id": "ddf75df5-3691-4481-8aee-709c5213cab5",
+      "name": "Enviar Email vía Brevo",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [3200, -100],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "jsCode": "// Recuperar datos del envío después del HTTP Request de Brevo\nconst datosEnvio = $node['Preparar Body Brevo'].json;\n\nreturn {\n  json: {\n    user_id: datosEnvio.user_id,\n    sesion_id: datosEnvio.sesion_id,\n    user_email: datosEnvio.user_email,\n    sesiones_objetivo: datosEnvio.sesiones_objetivo\n  }\n};"
+      },
+      "id": "a50835c1-b160-4911-83a4-5fcc501220ab",
+      "name": "Recuperar Datos Envío",
+      "type": "n8n-nodes-base.code",
+      "position": [3408, -100],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=-- Registrar envío de sesión personalizada\nWITH envio_insertado AS (\n  INSERT INTO programa_envios (user_id, sesion_id, estado, fecha_envio)\n  VALUES (\n    {{ $json.user_id }},\n    {{ $json.sesion_id }},\n    'enviado',\n    NOW()\n  )\n  RETURNING id, user_id, sesion_id\n),\nusuario_actualizado AS (\n  UPDATE programa_users\n  SET \n    fecha_ultimo_envio = NOW(),\n    envios_totales = envios_totales + 1\n  WHERE id = {{ $json.user_id }}\n  RETURNING id, envios_totales\n)\nSELECT \n  e.id as envio_id,\n  e.user_id,\n  e.sesion_id,\n  u.envios_totales,\n  {{ $json.sesiones_objetivo }} as sesiones_objetivo\nFROM envio_insertado e, usuario_actualizado u;",
+        "options": {}
+      },
+      "id": "f42551cc-2364-4213-99ec-550ac3a4c471",
+      "name": "Registrar Envío",
+      "type": "n8n-nodes-base.postgres",
+      "position": [3616, -100],
+      "typeVersion": 2.4,
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Seleccionar Sesiones": {
+      "main": [[{"node": "Guardar Sesiones Objetivo", "type": "main", "index": 0}]]
+    },
+    "Guardar Sesiones Objetivo": {
+      "main": [[{"node": "IF: ¿Sesiones ya configuradas?", "type": "main", "index": 0}]]
+    },
+    "IF: ¿Sesiones ya configuradas?": {
+      "main": [
+        [{"node": "Obtener Template Ya Configurado", "type": "main", "index": 0}],
+        [{"node": "Obtener Template Procesando", "type": "main", "index": 0}]
+      ]
+    },
+    "Obtener Template Ya Configurado": {
+      "main": [[{"node": "Responder Ya Configurado", "type": "main", "index": 0}]]
+    },
+    "Obtener Template Procesando": {
+      "main": [[{"node": "Renderizar Procesando", "type": "main", "index": 0}]]
+    },
+    "Renderizar Procesando": {
+      "main": [[{"node": "Responder Procesando", "type": "main", "index": 0}]]
+    },
+    "Responder Procesando": {
+      "main": [[{"node": "Generar Sesión con IA", "type": "main", "index": 0}]]
+    },
+    "Generar Sesión con IA": {
+      "main": [[{"node": "Obtener Sesión Completa", "type": "main", "index": 0}]]
+    },
+    "Obtener Sesión Completa": {
+      "main": [[{"node": "Obtener Template Email", "type": "main", "index": 0}]]
+    },
+    "Obtener Template Email": {
+      "main": [[{"node": "Preparar Email Sesión", "type": "main", "index": 0}]]
+    },
+    "Preparar Email Sesión": {
+      "main": [[{"node": "Preparar Body Brevo", "type": "main", "index": 0}]]
+    },
+    "Preparar Body Brevo": {
+      "main": [[{"node": "Enviar Email vía Brevo", "type": "main", "index": 0}]]
+    },
+    "Enviar Email vía Brevo": {
+      "main": [[{"node": "Recuperar Datos Envío", "type": "main", "index": 0}]]
+    },
+    "Recuperar Datos Envío": {
+      "main": [[{"node": "Registrar Envío", "type": "main", "index": 0}]]
+    },
+    "Registrar Envío": {
+      "main": [[]]
+    }
+  },
+  "active": true,
+  "settings": {"executionOrder": "v1"},
+  "versionId": "v2-templates-bd",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "84e52699fab62b1fb2c5be95d249c5bcabdd7574acb0d2876e03aca6f6c8a022"
+  },
+  "id": "j8LKtzkqviJXn32R",
+  "tags": []
+}

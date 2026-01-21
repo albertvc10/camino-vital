@@ -1,0 +1,18 @@
+# Configuración de Caddy para n8n con SSL automático
+# Caddy obtiene certificados SSL de Let's Encrypt automáticamente
+
+n8n.habitos-vitales.com {
+    # Reverse proxy a n8n
+    reverse_proxy n8n:5678 {
+        # Headers necesarios para webhooks y websockets
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    # Logs (opcional, para debugging)
+    log {
+        output file /data/access.log
+    }
+}

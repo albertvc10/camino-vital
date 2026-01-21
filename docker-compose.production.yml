@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  # ============================================
+  # POSTGRESQL - La base de datos
+  # ============================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: n8n_postgres
+    restart: unless-stopped
+
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_NON_ROOT_USER=${POSTGRES_NON_ROOT_USER}
+      - POSTGRES_NON_ROOT_PASSWORD=${POSTGRES_NON_ROOT_PASSWORD}
+
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+      - ./init-data.sh:/docker-entrypoint-initdb.d/init-data.sh
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+    networks:
+      - n8n-network
+
+  # ============================================
+  # N8N - La estrella del show
+  # ============================================
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: unless-stopped
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    environment:
+      # Configuración de n8n para PRODUCCIÓN
+      - N8N_HOST=${N8N_HOST}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - N8N_WEBHOOK_URL=https://${N8N_HOST}
+      - WEBHOOK_URL=https://${N8N_HOST}
+
+      # Autenticación básica (cambiar después por usuarios)
+      - N8N_BASIC_AUTH_ACTIVE=${N8N_BASIC_AUTH_ACTIVE}
+      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
+
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
+      - EXECUTIONS_PROCESS=main
+
+      # Base de datos
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_DATABASE=${DB_POSTGRESDB_DATABASE}
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_USER=${DB_POSTGRESDB_USER}
+      - DB_POSTGRESDB_PASSWORD=${DB_POSTGRESDB_PASSWORD}
+
+      # Encriptación
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+
+      # API Keys
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+
+    volumes:
+      - ./data/n8n:/home/node/.n8n
+
+    networks:
+      - n8n-network
+
+  # ============================================
+  # CADDY - Reverse proxy con SSL automático
+  # ============================================
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: unless-stopped
+
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"  # HTTP/3
+
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./data/caddy:/data
+      - ./data/caddy/config:/config
+
+    networks:
+      - n8n-network
+
+# ============================================
+# NETWORKS
+# ============================================
+networks:
+  n8n-network:
+    driver: bridge
+    name: n8n-network

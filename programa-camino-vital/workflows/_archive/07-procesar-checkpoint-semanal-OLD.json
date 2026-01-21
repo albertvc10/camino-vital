@@ -1,0 +1,266 @@
+{
+  "name": "Camino Vital - 07 Procesar Checkpoint Semanal",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "checkpoint-semanal",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-checkpoint",
+      "name": "Webhook Checkpoint Semanal",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "checkpoint-semanal"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=-- Obtener estadísticas y análisis de la semana\nWITH stats AS (\n  SELECT * FROM obtener_estadisticas_semana({{ $json.query.user_id }})\n),\nfeedback_analisis AS (\n  SELECT * FROM analizar_feedback_sesiones({{ $json.query.user_id }})\n),\nrecomendacion AS (\n  SELECT * FROM recomendar_ajuste_nivel({{ $json.query.user_id }})\n),\nusuario AS (\n  SELECT id, email, nombre, etapa, nivel_actual, semana_actual\n  FROM programa_users\n  WHERE id = {{ $json.query.user_id }}\n)\nSELECT\n  u.id,\n  u.email,\n  u.nombre,\n  u.etapa,\n  u.nivel_actual,\n  u.semana_actual,\n  s.sesiones_objetivo,\n  s.sesiones_completadas,\n  s.porcentaje_completado,\n  s.racha_completadas,\n  f.total_sesiones as feedback_total,\n  f.sesiones_facil as feedback_facil,\n  f.sesiones_adecuado as feedback_adecuado,\n  f.sesiones_dificil as feedback_dificil,\n  f.recomendacion as feedback_recomendacion,\n  r.accion as ajuste_accion,\n  r.nuevo_nivel as ajuste_nivel,\n  r.nuevas_sesiones as ajuste_sesiones,\n  r.razon as ajuste_razon\nFROM usuario u, stats s, feedback_analisis f, recomendacion r;",
+        "options": {}
+      },
+      "id": "analizar-semana",
+      "name": "Analizar Semana",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [460, 300],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-local",
+          "name": "PostgreSQL local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=-- Registrar feedback semanal\nINSERT INTO programa_feedback (\n  user_id,\n  semana,\n  etapa,\n  nivel,\n  tipo_feedback,\n  respuesta,\n  respuesta_extendida,\n  accion_tomada\n)\nVALUES (\n  {{ $json.id }},\n  {{ $json.semana_actual }},\n  '{{ $json.etapa }}',\n  '{{ $json.nivel_actual }}',\n  'checkpoint_semanal',\n  '{{ $node[\"Webhook Checkpoint Semanal\"].json.query.sentimiento }}',\n  'Sesiones: {{ $node[\"Webhook Checkpoint Semanal\"].json.query.sesiones }}/{{ $node[\"Webhook Checkpoint Semanal\"].json.query.objetivo }}',\n  '{{ $json.ajuste_accion }}'\n)\nRETURNING *;",
+        "options": {}
+      },
+      "id": "registrar-feedback-semanal",
+      "name": "Registrar Feedback Semanal",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [680, 300],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-local",
+          "name": "PostgreSQL local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "necesita-ajuste",
+              "leftValue": "={{ $node[\"Analizar Semana\"].json.ajuste_accion }}",
+              "rightValue": "mantener",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-necesita-ajuste",
+      "name": "IF: ¿Necesita ajuste?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=-- Aplicar ajustes al usuario (con intensidad y volumen)\nUPDATE programa_users\nSET\n  nivel_actual = '{{ $node[\"Analizar Semana\"].json.ajuste_nivel }}',\n  intensidad_nivel = {{ $node[\"Analizar Semana\"].json.nueva_intensidad }},\n  volumen_extra = {{ $node[\"Analizar Semana\"].json.nuevo_volumen }},\n  sesiones_objetivo_semana = {{ $node[\"Analizar Semana\"].json.ajuste_sesiones }},\n  updated_at = NOW()\nWHERE id = {{ $node[\"Analizar Semana\"].json.id }}\nRETURNING *;",
+        "options": {}
+      },
+      "id": "aplicar-ajustes",
+      "name": "Aplicar Ajustes",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1120, 200],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-local",
+          "name": "PostgreSQL local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=-- Resetear contadores semanales\nSELECT * FROM resetear_semana({{ $node[\"Analizar Semana\"].json.id }});",
+        "options": {}
+      },
+      "id": "resetear-semana",
+      "name": "Resetear Semana",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1340, 200],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-local",
+          "name": "PostgreSQL local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=-- Resetear contadores sin cambiar nivel\nSELECT * FROM resetear_semana({{ $node[\"Analizar Semana\"].json.id }});",
+        "options": {}
+      },
+      "id": "resetear-semana-sin-ajuste",
+      "name": "Resetear Semana (sin ajuste)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1120, 400],
+      "credentials": {
+        "postgres": {
+          "id": "postgres-local",
+          "name": "PostgreSQL local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\">\n  <title>¡Gracias por tu feedback!</title>\n  <style>\n    body {\n      font-family: Arial, sans-serif;\n      max-width: 600px;\n      margin: 50px auto;\n      padding: 20px;\n      text-align: center;\n      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n      min-height: 100vh;\n      display: flex;\n      align-items: center;\n      justify-content: center;\n    }\n    .card {\n      background: white;\n      border-radius: 12px;\n      padding: 40px;\n      box-shadow: 0 10px 40px rgba(0,0,0,0.2);\n    }\n    h1 {\n      color: #4CAF50;\n      margin: 0 0 20px 0;\n      font-size: 32px;\n    }\n    p {\n      font-size: 18px;\n      line-height: 1.6;\n      color: #555;\n    }\n    .icon {\n      font-size: 64px;\n      margin-bottom: 20px;\n    }\n    .highlight {\n      background: #e8f5e9;\n      padding: 15px;\n      border-radius: 8px;\n      margin: 20px 0;\n      color: #2e7d32;\n      font-weight: bold;\n    }\n    .stats {\n      background: #f5f5f5;\n      padding: 15px;\n      border-radius: 8px;\n      margin: 20px 0;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"card\">\n    <div class=\"icon\">🎉</div>\n    <h1>¡Gracias {{ $node[\"Analizar Semana\"].json.nombre }}!</h1>\n    \n    <div class=\"stats\">\n      <p style=\"margin: 0;\"><strong>Semana {{ $node[\"Analizar Semana\"].json.semana_actual }} completada</strong></p>\n      <p style=\"margin: 5px 0 0 0;\">{{ $node[\"Analizar Semana\"].json.sesiones_completadas }} de {{ $node[\"Analizar Semana\"].json.sesiones_objetivo }} sesiones ({{ $node[\"Analizar Semana\"].json.porcentaje_completado }}%)</p>\n    </div>\n\n    <div class=\"highlight\">\n      {{ $node[\"Analizar Semana\"].json.ajuste_razon }}\n    </div>\n\n    <p style=\"margin-top: 30px; color: #888; font-size: 14px;\">\n      La próxima semana empezará con tus nuevos ajustes.<br>\n      ¡Nos vemos el lunes! 💪\n    </p>\n  </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "responder-confirmacion",
+      "name": "Responder Confirmación",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Error</title>\n  <style>\n    body {\n      font-family: Arial, sans-serif;\n      max-width: 600px;\n      margin: 50px auto;\n      padding: 20px;\n      text-align: center;\n      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);\n      min-height: 100vh;\n      display: flex;\n      align-items: center;\n      justify-content: center;\n    }\n    .card {\n      background: white;\n      border-radius: 12px;\n      padding: 40px;\n      box-shadow: 0 10px 40px rgba(0,0,0,0.2);\n    }\n    h1 {\n      color: #ee5a6f;\n      margin: 0 0 20px 0;\n    }\n    .icon {\n      font-size: 64px;\n      margin-bottom: 20px;\n    }\n    a {\n      color: #4CAF50;\n      text-decoration: none;\n      font-weight: bold;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"card\">\n    <div class=\"icon\">😕</div>\n    <h1>Algo no funcionó</h1>\n    <p>Hubo un problema al procesar tu checkpoint.</p>\n    <p style=\"margin-top: 30px;\">Contáctanos:<br>\n    <a href=\"mailto:hola@habitos-vitales.com\">hola@habitos-vitales.com</a></p>\n  </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "responder-error",
+      "name": "Responder Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 600]
+    }
+  ],
+  "connections": {
+    "Webhook Checkpoint Semanal": {
+      "main": [
+        [
+          {
+            "node": "Analizar Semana",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analizar Semana": {
+      "main": [
+        [
+          {
+            "node": "Registrar Feedback Semanal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "error": [
+        [
+          {
+            "node": "Responder Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar Feedback Semanal": {
+      "main": [
+        [
+          {
+            "node": "IF: ¿Necesita ajuste?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: ¿Necesita ajuste?": {
+      "main": [
+        [
+          {
+            "node": "Aplicar Ajustes",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resetear Semana (sin ajuste)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aplicar Ajustes": {
+      "main": [
+        [
+          {
+            "node": "Resetear Semana",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resetear Semana": {
+      "main": [
+        [
+          {
+            "node": "Responder Confirmación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resetear Semana (sin ajuste)": {
+      "main": [
+        [
+          {
+            "node": "Responder Confirmación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2025-01-02T00:00:00.000Z",
+  "versionId": "v1"
+}

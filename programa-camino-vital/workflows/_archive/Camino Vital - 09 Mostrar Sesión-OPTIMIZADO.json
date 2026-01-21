@@ -1,0 +1,210 @@
+{
+  "name": "Camino Vital - 09 Mostrar Sesión",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "sesion/:sesion_id",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "4a989723-b882-40be-a0d1-9d748d5c2c5a",
+      "name": "Webhook Mostrar Sesión",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "view-session"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT id as user_id, nombre, email, auth_token\nFROM programa_users\nWHERE auth_token = '{{ $json.query.token }}';",
+        "options": {}
+      },
+      "id": "31c1f1a9-adc5-4d92-a11b-9ae679869bff",
+      "name": "Validar Token",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        224,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const usuarios = $input.all();\n\nif (usuarios.length === 0) {\n  throw new Error('Token inválido o expirado');\n}\n\nconst usuario = usuarios[0].json;\nconst sesionId = $node[\"Webhook Mostrar Sesión\"].json.params.sesion_id;\n\nconsole.log('✅ Token válido para usuario:', usuario.nombre);\n\nreturn {\n  json: {\n    user_id: usuario.user_id,\n    user_nombre: usuario.nombre,\n    user_email: usuario.email,\n    sesion_id: sesionId,\n    params: {\n      sesion_id: sesionId\n    }\n  }\n};"
+      },
+      "id": "1fdbc566-1a9a-4fc5-855d-7701a79883e9",
+      "name": "Verificar Token Válido",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=-- Obtener sesión completa con datos del usuario\nSELECT \n  s.id,\n  s.titulo,\n  s.descripcion,\n  s.introduccion_personalizada,\n  s.enfoque,\n  s.duracion_estimada,\n  s.calentamiento,\n  s.trabajo_principal,\n  s.tipo_actividad,\n  s.calentamiento_texto,\n  s.actividad_principal,\n  s.senales_de_alerta,\n  s.consejos_seguridad,\n  s.progresion_sugerida,\n  s.numero_sesion,\n  s.semana,\n  s.completada,\n  u.id as user_id,\n  u.nombre as user_nombre,\n  u.email as user_email,\n  u.sesiones_objetivo_semana,\n  u.nivel_actual\nFROM programa_sesiones s\nJOIN programa_users u ON s.user_id = u.id\nWHERE s.id = {{ $json.params.sesion_id }}\n  AND u.id = {{ $json.user_id }};",
+        "options": {}
+      },
+      "id": "e85d89f1-9c90-4096-94d7-d6630179f54e",
+      "name": "Obtener Sesión",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        672,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ================================================================\n// CÓDIGO OPTIMIZADO PARA NODO \"Generar HTML Sesión\"\n// Workflow: 09 Mostrar Sesión\n// ================================================================\n//\n// SOPORTE PARA DOS TIPOS DE SESIÓN:\n// 1. FUERZA: Con videos (formato actual)\n// 2. CARDIO: Instrucciones textuales (nuevo formato)\n//\n// ================================================================\n\nconst sesion = $input.first().json;\n\nif (!sesion || !sesion.id) {\n  throw new Error('Sesión no encontrada');\n}\n\n// Detectar tipo de sesión\nconst esFuerza = sesion.calentamiento && sesion.trabajo_principal;\nconst esCardio = sesion.tipo_actividad && sesion.actividad_principal;\n\nconsole.log('📋 Tipo de sesión:', esFuerza ? 'FUERZA (con videos)' : 'CARDIO (textual)');\n\n// Mapa de iconos\nconst iconosEnfoque = {\n  'movilidad': '🧘',\n  'fuerza': '💪',\n  'cardio': '❤️',\n  'equilibrio': '⚖️',\n  'mixto': '🎯'\n};\n\nconst iconoEnfoque = iconosEnfoque[sesion.enfoque] || '🎯';\nconst webhookUrl = process.env.WEBHOOK_URL || 'http://localhost:5678';\n\n// ================================================================\n// GENERAR HTML SEGÚN TIPO DE SESIÓN\n// ================================================================\n\nlet contenidoPrincipal = '';\n\nif (esFuerza) {\n  // ========================================\n  // SESIÓN DE FUERZA (CON VIDEOS)\n  // ========================================\n\n  // Parsear JSONs\n  const calentamiento = typeof sesion.calentamiento === 'string'\n    ? JSON.parse(sesion.calentamiento)\n    : sesion.calentamiento;\n\n  const trabajoPrincipal = typeof sesion.trabajo_principal === 'string'\n    ? JSON.parse(sesion.trabajo_principal)\n    : sesion.trabajo_principal;\n\n  console.log(`🏋️ ${calentamiento.length} ejercicios calentamiento`);\n  console.log(`💪 ${trabajoPrincipal.length} ejercicios principales`);\n\n  const firebaseBaseUrl = 'https://firebasestorage.googleapis.com/v0/b/habit-tracker-73235.appspot.com/o/ejercicios%2F';\n  const firebaseToken = '?alt=media&token=6fefb8ba-de8e-44cb-a60f-f5b91c7c8f22';\n\n  // Función para generar HTML de ejercicio\n  function generarEjercicioHTML(ejercicio, index, esCalentamiento = false) {\n    const videoUrl = `${firebaseBaseUrl}${encodeURIComponent(ejercicio.nombre_archivo)}${firebaseToken}`;\n    const numeroEjercicio = esCalentamiento ? `C${index + 1}` : index + 1;\n    const colorBorde = esCalentamiento ? '#4CAF50' : '#667eea';\n\n    return `\n      <div class=\"ejercicio\" style=\"background: white; border-radius: 12px; padding: 25px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-left: 6px solid ${colorBorde};\">\n        <div class=\"ejercicio-header\" style=\"display: flex; align-items: center; margin-bottom: 15px;\">\n          <div class=\"ejercicio-numero\" style=\"background: ${colorBorde}; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; margin-right: 15px;\">\n            ${numeroEjercicio}\n          </div>\n          <h3 style=\"margin: 0; color: #333; font-size: 20px; flex: 1;\">${ejercicio.nombre_espanol}</h3>\n        </div>\n\n        <div class=\"video-container\" style=\"position: relative; width: 100%; padding-bottom: 56.25%; background: #000; border-radius: 8px; overflow: hidden; margin-bottom: 15px;\">\n          <video\n            controls\n            playsinline\n            preload=\"metadata\"\n            style=\"position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain;\"\n            poster=\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23333' width='100' height='100'/%3E%3Ctext fill='%23fff' x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle' font-family='Arial' font-size='14'%3ECargando...%3C/text%3E%3C/svg%3E\"\n          >\n            <source src=\"${videoUrl}\" type=\"video/quicktime\">\n            <source src=\"${videoUrl}\" type=\"video/mp4\">\n            Tu navegador no soporta el tag de video.\n          </video>\n        </div>\n\n        <div class=\"ejercicio-detalles\" style=\"background: #f8f9fa; padding: 15px; border-radius: 8px;\">\n          <div style=\"margin-bottom: 10px;\">\n            <strong style=\"color: #667eea;\">📊 Repeticiones:</strong>\n            <span style=\"color: #555; font-size: 16px;\">${ejercicio.repeticiones}</span>\n          </div>\n          <div style=\"margin-bottom: 10px;\">\n            <strong style=\"color: #667eea;\">⏱️ Duración:</strong>\n            <span style=\"color: #555; font-size: 16px;\">${ejercicio.duracion_aprox}</span>\n          </div>\n          ${ejercicio.notas ? `\n          <div style=\"background: #fff3cd; padding: 12px; border-radius: 6px; border-left: 3px solid #ffc107; margin-top: 10px;\">\n            <strong style=\"color: #856404;\">💡 Consejo:</strong>\n            <span style=\"color: #856404;\">${ejercicio.notas}</span>\n          </div>\n          ` : ''}\n        </div>\n      </div>\n    `;\n  }\n\n  const htmlCalentamiento = calentamiento.map((ej, idx) =>\n    generarEjercicioHTML(ej, idx, true)\n  ).join('');\n\n  const htmlTrabajoPrincipal = trabajoPrincipal.map((ej, idx) =>\n    generarEjercicioHTML(ej, idx, false)\n  ).join('');\n\n  contenidoPrincipal = `\n    <!-- Calentamiento -->\n    <h2 class=\"seccion-titulo\">🔥 Calentamiento</h2>\n    <p style=\"color: #666; margin-bottom: 25px; font-size: 16px;\">\n      Prepara tu cuerpo con estos ejercicios suaves. Ve a tu ritmo y respira profundamente.\n    </p>\n    ${htmlCalentamiento}\n\n    <!-- Trabajo Principal -->\n    <h2 class=\"seccion-titulo\">💪 Trabajo Principal</h2>\n    <p style=\"color: #666; margin-bottom: 25px; font-size: 16px;\">\n      Estos son los ejercicios principales de tu sesión. Recuerda: calidad sobre cantidad.\n    </p>\n    ${htmlTrabajoPrincipal}\n  `;\n\n} else if (esCardio) {\n  // ========================================\n  // SESIÓN DE CARDIO (TEXTUAL)\n  // ========================================\n\n  const actividad = typeof sesion.actividad_principal === 'string'\n    ? JSON.parse(sesion.actividad_principal)\n    : sesion.actividad_principal;\n\n  console.log(`❤️ Sesión de cardio: ${sesion.tipo_actividad}`);\n\n  // Generar HTML de fases\n  const htmlFases = actividad.fases ? actividad.fases.map((fase, idx) => `\n    <div class=\"fase-cardio\" style=\"background: white; border-radius: 12px; padding: 25px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-left: 6px solid #FF6B6B;\">\n      <div style=\"display: flex; align-items: center; margin-bottom: 15px;\">\n        <div style=\"background: #FF6B6B; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; margin-right: 15px;\">\n          ${idx + 1}\n        </div>\n        <h3 style=\"margin: 0; color: #333; font-size: 20px; flex: 1;\">${fase.fase}</h3>\n      </div>\n\n      <div style=\"background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;\">\n        <div style=\"margin-bottom: 10px;\">\n          <strong style=\"color: #FF6B6B;\">⏱️ Duración:</strong>\n          <span style=\"color: #555; font-size: 16px;\">${fase.duracion}</span>\n        </div>\n        <div style=\"margin-bottom: 10px;\">\n          <strong style=\"color: #FF6B6B;\">💪 Intensidad:</strong>\n          <span style=\"color: #555; font-size: 16px;\">${fase.intensidad}</span>\n        </div>\n      </div>\n\n      <p style=\"color: #555; font-size: 16px; line-height: 1.6; margin: 0;\">\n        ${fase.descripcion}\n      </p>\n    </div>\n  `).join('') : '';\n\n  // Señales de alerta\n  const htmlAlertas = sesion.senales_de_alerta ? `\n    <div style=\"background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; border-radius: 8px; margin: 30px 0;\">\n      <h3 style=\"margin: 0 0 15px 0; color: #856404; font-size: 18px;\">⚠️ Señales de Alerta - Detente si sientes:</h3>\n      <ul style=\"margin: 0; padding-left: 20px; color: #856404; line-height: 2;\">\n        ${sesion.senales_de_alerta.map(senal => `<li>${senal}</li>`).join('')}\n      </ul>\n    </div>\n  ` : '';\n\n  // Consejos de seguridad\n  const htmlConsejos = sesion.consejos_seguridad ? `\n    <div style=\"background: #e8f5e9; border-left: 4px solid #4CAF50; padding: 20px; border-radius: 8px; margin: 30px 0;\">\n      <h3 style=\"margin: 0 0 15px 0; color: #2e7d32; font-size: 18px;\">✅ Consejos de Seguridad:</h3>\n      <ul style=\"margin: 0; padding-left: 20px; color: #2e7d32; line-height: 2;\">\n        ${sesion.consejos_seguridad.map(consejo => `<li>${consejo}</li>`).join('')}\n      </ul>\n    </div>\n  ` : '';\n\n  contenidoPrincipal = `\n    <!-- Tipo de Actividad -->\n    <div style=\"background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%); color: white; padding: 25px; border-radius: 12px; margin-bottom: 30px; text-align: center;\">\n      <h2 style=\"margin: 0; font-size: 28px; text-transform: capitalize;\">\n        ${sesion.tipo_actividad || 'Actividad Cardiovascular'}\n      </h2>\n      <p style=\"margin: 10px 0 0; opacity: 0.9; font-size: 16px;\">\n        ${actividad.duracion} · Intensidad ${actividad.intensidad_objetivo}\n      </p>\n    </div>\n\n    <!-- Calentamiento -->\n    <h2 class=\"seccion-titulo\">🔥 Calentamiento</h2>\n    <div style=\"background: #f0f7ff; border-left: 5px solid #667eea; padding: 20px; border-radius: 8px; margin-bottom: 30px;\">\n      <p style=\"margin: 0; color: #333; font-size: 16px; line-height: 1.8;\">\n        ${sesion.calentamiento_texto || 'Comienza con movimientos suaves durante 3-5 minutos.'}\n      </p>\n    </div>\n\n    <!-- Actividad Principal -->\n    <h2 class=\"seccion-titulo\">❤️ Actividad Principal</h2>\n    <div style=\"background: #fff5f5; border-left: 5px solid #FF6B6B; padding: 20px; border-radius: 8px; margin-bottom: 25px;\">\n      <h3 style=\"margin: 0 0 10px 0; color: #333; font-size: 18px;\">📝 Descripción:</h3>\n      <p style=\"margin: 0 0 15px 0; color: #555; font-size: 16px; line-height: 1.8;\">\n        ${actividad.descripcion}\n      </p>\n      <h3 style=\"margin: 20px 0 10px 0; color: #333; font-size: 18px;\">💭 Cómo debes sentirte:</h3>\n      <p style=\"margin: 0; color: #555; font-size: 16px; line-height: 1.8;\">\n        ${actividad.como_debe_sentirse}\n      </p>\n    </div>\n\n    <!-- Fases de la Actividad -->\n    <h3 style=\"color: #333; font-size: 22px; margin: 30px 0 20px;\">📊 Fases de tu Sesión:</h3>\n    ${htmlFases}\n\n    <!-- Señales de Alerta -->\n    ${htmlAlertas}\n\n    <!-- Consejos de Seguridad -->\n    ${htmlConsejos}\n\n    <!-- Progresión -->\n    ${sesion.progresion_sugerida ? `\n    <div style=\"background: #e3f2fd; border-left: 4px solid #2196F3; padding: 20px; border-radius: 8px; margin: 30px 0;\">\n      <h3 style=\"margin: 0 0 10px 0; color: #1565C0; font-size: 18px;\">🚀 Para la Próxima Vez:</h3>\n      <p style=\"margin: 0; color: #1565C0; font-size: 16px; line-height: 1.8;\">\n        ${sesion.progresion_sugerida}\n      </p>\n    </div>\n    ` : ''}\n  `;\n}\n\n// ================================================================\n// HTML COMPLETO DE LA PÁGINA\n// ================================================================\n\nconst paginaHTML = `\n<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>${sesion.titulo} - Camino Vital</title>\n  <style>\n    * {\n      margin: 0;\n      padding: 0;\n      box-sizing: border-box;\n    }\n\n    body {\n      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;\n      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n      color: #333;\n      padding: 20px;\n      min-height: 100vh;\n    }\n\n    .container {\n      max-width: 900px;\n      margin: 0 auto;\n      background: white;\n      border-radius: 16px;\n      overflow: hidden;\n      box-shadow: 0 10px 40px rgba(0,0,0,0.2);\n    }\n\n    .header {\n      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n      color: white;\n      padding: 40px 30px;\n      text-align: center;\n    }\n\n    .header h1 {\n      font-size: 32px;\n      margin-bottom: 10px;\n      text-shadow: 0 2px 4px rgba(0,0,0,0.2);\n    }\n\n    .header-meta {\n      display: flex;\n      justify-content: center;\n      gap: 25px;\n      margin-top: 20px;\n      flex-wrap: wrap;\n    }\n\n    .meta-item {\n      background: rgba(255,255,255,0.2);\n      padding: 10px 20px;\n      border-radius: 20px;\n      font-size: 14px;\n      backdrop-filter: blur(10px);\n    }\n\n    .content {\n      padding: 40px 30px;\n    }\n\n    .introduccion {\n      background: linear-gradient(135deg, #f0f7ff 0%, #e8f4f8 100%);\n      border-left: 5px solid #667eea;\n      padding: 25px;\n      border-radius: 8px;\n      margin-bottom: 40px;\n      line-height: 1.8;\n      font-size: 16px;\n      color: #333;\n    }\n\n    .seccion-titulo {\n      font-size: 28px;\n      color: #333;\n      margin: 40px 0 25px;\n      display: flex;\n      align-items: center;\n      gap: 12px;\n    }\n\n    .seccion-titulo::before {\n      content: '';\n      width: 6px;\n      height: 35px;\n      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n      border-radius: 3px;\n    }\n\n    /* Sistema de feedback mejorado */\n    .feedback-container {\n      background: #f5f5f5;\n      padding: 30px;\n      border-radius: 12px;\n      margin: 50px 0 40px;\n    }\n\n    .feedback-container h3 {\n      text-align: center;\n      margin: 0 0 25px 0;\n      color: #333;\n      font-size: 22px;\n    }\n\n    .feedback-btn {\n      display: block;\n      width: 100%;\n      padding: 18px;\n      margin: 12px 0;\n      border-radius: 8px;\n      text-decoration: none;\n      text-align: center;\n      font-size: 16px;\n      font-weight: 600;\n      transition: all 0.3s ease;\n      color: white;\n    }\n\n    .feedback-btn:hover {\n      transform: translateY(-2px);\n      box-shadow: 0 4px 12px rgba(0,0,0,0.15);\n    }\n\n    .feedback-btn.facil {\n      background: #4CAF50;\n    }\n\n    .feedback-btn.facil:hover {\n      background: #45a049;\n    }\n\n    .feedback-btn.bien {\n      background: #2196F3;\n    }\n\n    .feedback-btn.bien:hover {\n      background: #1976D2;\n    }\n\n    .feedback-btn.dificil {\n      background: #FF9800;\n    }\n\n    .feedback-btn.dificil:hover {\n      background: #F57C00;\n    }\n\n    .feedback-btn.problemas {\n      background: #f44336;\n    }\n\n    .feedback-btn.problemas:hover {\n      background: #d32f2f;\n    }\n\n    .separador {\n      border-top: 2px solid #ddd;\n      margin: 20px 0;\n    }\n\n    .feedback-nota {\n      text-align: center;\n      color: #999;\n      font-size: 13px;\n      margin-top: 15px;\n    }\n\n    .footer {\n      text-align: center;\n      padding: 30px;\n      color: #999;\n      font-size: 14px;\n      border-top: 1px solid #eee;\n      background: #f9f9f9;\n    }\n\n    @media (max-width: 768px) {\n      body {\n        padding: 10px;\n      }\n\n      .header {\n        padding: 30px 20px;\n      }\n\n      .header h1 {\n        font-size: 24px;\n      }\n\n      .content {\n        padding: 20px 15px;\n      }\n\n      .feedback-container {\n        padding: 20px 15px;\n      }\n\n      .feedback-btn {\n        font-size: 15px;\n        padding: 16px;\n      }\n    }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <!-- Header -->\n    <div class=\"header\">\n      <div style=\"font-size: 48px; margin-bottom: 10px;\">${iconoEnfoque}</div>\n      <h1>${sesion.titulo}</h1>\n      <p style=\"opacity: 0.9; margin-top: 10px; font-size: 18px;\">Hola ${sesion.user_nombre}, ¡es hora de moverte!</p>\n\n      <div class=\"header-meta\">\n        <div class=\"meta-item\">⏱️ ${sesion.duracion_estimada}</div>\n        <div class=\"meta-item\">📊 Nivel ${sesion.nivel_actual}</div>\n        <div class=\"meta-item\">🎯 ${sesion.enfoque}</div>\n        <div class=\"meta-item\">📅 Sesión ${sesion.numero_sesion} de ${sesion.sesiones_objetivo_semana}</div>\n      </div>\n    </div>\n\n    <!-- Contenido -->\n    <div class=\"content\">\n      <!-- Introducción -->\n      <div class=\"introduccion\">\n        <strong style=\"font-size: 18px; color: #667eea; display: block; margin-bottom: 12px;\">✨ Tu sesión personalizada</strong>\n        ${sesion.introduccion_personalizada}\n      </div>\n\n      <!-- Contenido Principal (Fuerza o Cardio) -->\n      ${contenidoPrincipal}\n\n      <!-- Sistema de Feedback Mejorado -->\n      <div class=\"feedback-container\">\n        <h3>¿Cómo te fue la sesión?</h3>\n\n        <a href=\"${webhookUrl}/webhook/sesion-completada?user_id=${sesion.user_id}&sesion=${sesion.numero_sesion}&feedback=completa_facil\" class=\"feedback-btn facil\">\n          😊 Fácil - Podría haber hecho más\n        </a>\n\n        <a href=\"${webhookUrl}/webhook/sesion-completada?user_id=${sesion.user_id}&sesion=${sesion.numero_sesion}&feedback=completa_bien\" class=\"feedback-btn bien\">\n          💪 Apropiado - Nivel perfecto\n        </a>\n\n        <a href=\"${webhookUrl}/webhook/sesion-completada?user_id=${sesion.user_id}&sesion=${sesion.numero_sesion}&feedback=completa_dificil\" class=\"feedback-btn dificil\">\n          😰 Difícil - Me costó pero lo logré\n        </a>\n\n        <div class=\"separador\"></div>\n\n        <a href=\"http://localhost:8000/feedback-problemas.html?user_id=${sesion.user_id}&sesion=${sesion.numero_sesion}\" class=\"feedback-btn problemas\">\n          ⚠️ No pude completarla\n        </a>\n\n        <p class=\"feedback-nota\">\n          Tu siguiente sesión llegará inmediatamente después de responder\n        </p>\n      </div>\n    </div>\n\n    <!-- Footer -->\n    <div class=\"footer\">\n      <p><strong>Camino Vital</strong> | Hábitos Vitales</p>\n      <p style=\"margin-top: 10px;\">Programa personalizado de ejercicio</p>\n    </div>\n  </div>\n\n  <script>\n    // Auto-pause de videos cuando no están visibles (solo para sesiones con video)\n    const videos = document.querySelectorAll('video');\n\n    if (videos.length > 0) {\n      const observerOptions = {\n        threshold: 0.5\n      };\n\n      const observer = new IntersectionObserver((entries) => {\n        entries.forEach(entry => {\n          const video = entry.target;\n          if (!entry.isIntersecting) {\n            video.pause();\n          }\n        });\n      }, observerOptions);\n\n      videos.forEach(video => observer.observe(video));\n    }\n\n    // Log para debugging\n    console.log('Sesión cargada:', {\n      titulo: '${sesion.titulo}',\n      enfoque: '${sesion.enfoque}',\n      tipo: ${esFuerza ? \"'fuerza'\" : \"'cardio'\"},\n      user_id: ${sesion.user_id},\n      sesion_numero: ${sesion.numero_sesion}\n    });\n  </script>\n</body>\n</html>\n`;\n\nreturn {\n  json: {\n    sesion_id: sesion.id,\n    html: paginaHTML\n  }\n};\n"
+      },
+      "id": "878540c2-939b-4b75-8d0f-2c28c2e98403",
+      "name": "Generar HTML Sesión",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.html }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=utf-8"
+              }
+            ]
+          }
+        }
+      },
+      "id": "3b9a857e-429f-4ab9-91bf-549aaf3347e3",
+      "name": "Responder HTML",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Acceso denegado</title>\n  <style>\n    body {\n      font-family: Arial, sans-serif;\n      max-width: 600px;\n      margin: 50px auto;\n      padding: 20px;\n      text-align: center;\n      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);\n      min-height: 100vh;\n      display: flex;\n      align-items: center;\n      justify-content: center;\n    }\n    .card {\n      background: white;\n      border-radius: 12px;\n      padding: 40px;\n      box-shadow: 0 10px 40px rgba(0,0,0,0.2);\n    }\n    h1 {\n      color: #ee5a6f;\n      margin: 0 0 20px 0;\n      font-size: 32px;\n    }\n    p {\n      font-size: 18px;\n      line-height: 1.6;\n      color: #555;\n    }\n    .icon {\n      font-size: 64px;\n      margin-bottom: 20px;\n    }\n    a {\n      color: #4CAF50;\n      text-decoration: none;\n      font-weight: bold;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"card\">\n    <div class=\"icon\">🔒</div>\n    <h1>Acceso denegado</h1>\n    <p>El enlace que estás usando no es válido o ha expirado.</p>\n    <p style=\"margin-top: 30px; font-size: 16px; color: #666;\">\n      Por favor, usa el enlace que recibiste en tu email.<br><br>\n      Si crees que esto es un error, contacta con nosotros:<br>\n      <a href=\"mailto:hola@habitos-vitales.com\">hola@habitos-vitales.com</a>\n    </p>\n  </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "0c6c5bfb-4ce9-4def-996c-ec63711e3a14",
+      "name": "Responder Error Token",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        832,
+        288
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Mostrar Sesión": {
+      "main": [
+        [
+          {
+            "node": "Validar Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar Token": {
+      "main": [
+        [
+          {
+            "node": "Verificar Token Válido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar Token Válido": {
+      "main": [
+        [
+          {
+            "node": "Obtener Sesión",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder Error Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Sesión": {
+      "main": [
+        [
+          {
+            "node": "Generar HTML Sesión",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Responder Error Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generar HTML Sesión": {
+      "main": [
+        [
+          {
+            "node": "Responder HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "358c13bd-97c0-438b-8001-cc7f2a2d8f20",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "84e52699fab62b1fb2c5be95d249c5bcabdd7574acb0d2876e03aca6f6c8a022"
+  },
+  "id": "kKbBsBRr48hFi1aS",
+  "tags": []
+}

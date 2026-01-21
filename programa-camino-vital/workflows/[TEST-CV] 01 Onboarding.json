@@ -1,0 +1,331 @@
+{
+  "name": "[TEST-CV] 01 Onboarding",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "camino-vital-pago-test",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "a44ec715-f529-4ea0-a444-6f5a2ab50c64",
+      "name": "Webhook Stripe/Pago",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        -416
+      ],
+      "webhookId": "camino-vital-pago-test"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extraer datos del pago (Stripe webhook)\nconst body = $input.first().json.body;\n\nconsole.log('🧪 [TEST] Event type:', body.type);\n\n// FILTRO: Solo procesar checkout.session.completed (pago completado)\nif (body.type !== 'checkout.session.completed') {\n  console.log('⏭️ Evento ignorado:', body.type);\n  return [];\n}\n\n// Extraer datos del checkout completado\nconst session = body.data?.object;\nconst customerDetails = session?.customer_details;\n\nlet customerEmail = customerDetails?.email;\nlet customerName = customerDetails?.name || '';\nlet amountPaid = (session?.amount_total || 0) / 100;\nlet stripeCustomerId = session?.customer;\n\nconsole.log('📧 Email:', customerEmail);\nconsole.log('💰 Monto:', amountPaid);\n\nif (!customerEmail) {\n  console.log('⚠️ No se pudo extraer email, ignorando evento');\n  return [];\n}\n\nreturn {\n  json: {\n    email: customerEmail,\n    nombre: customerName,\n    monto_pagado: amountPaid,\n    stripe_customer_id: stripeCustomerId,\n    fecha_pago: new Date().toISOString()\n  }\n};"
+      },
+      "id": "7a6c55bc-1ed0-40a9-bd5b-a44a28a62a2c",
+      "name": "Extraer Datos del Pago",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        -416
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Solo actualizar si NO está ya activo (idempotencia)\nUPDATE programa_users\nSET \n  estado = 'activo',\n  fecha_pago = '{{ $json.fecha_pago }}',\n  monto_pagado = {{ $json.monto_pagado }},\n  stripe_customer_id = '{{ $json.stripe_customer_id }}',\n  fecha_inicio = CURRENT_TIMESTAMP\nWHERE email = '{{ $json.email }}'\n  AND estado != 'activo'\nRETURNING *, TRUE as recien_activado;",
+        "options": {}
+      },
+      "id": "e15181d9-22dc-4d9e-94d8-4e9a6cf3dd81",
+      "name": "Activar Usuario (lead → activo)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        0,
+        -416
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "idempotencia-check",
+              "leftValue": "={{ $json.recien_activado }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-recien-activado",
+      "name": "IF ¿Recién activado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        -416
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ⚠️ NODO CRÍTICO: Formatear datos para asegurar propagación correcta\n// Problema: Los nodos HTTP Request (Brevo) solo devuelven su respuesta API\n// y \"borran\" los datos del usuario que vienen de nodos anteriores.\n// Solución: Este nodo formatea y asegura que los datos se propaguen correctamente.\n\nconst input = $input.first().json;\n\nconsole.log('🔄 Formateando datos de usuario para propagación...');\nconsole.log('📊 Datos recibidos:', JSON.stringify(input, null, 2));\n\nreturn {\n  json: {\n    id: input.id,\n    email: input.email,\n    nombre: input.nombre,\n    nivel_actual: input.nivel_actual,\n    etapa: input.etapa,\n    semana_actual: input.semana_actual,\n    fecha_inicio: input.fecha_inicio,\n    estado: input.estado\n  }\n};"
+      },
+      "id": "43d8d6b7-a2d0-46b7-aae2-c3679c480987",
+      "name": "Formatear Datos Usuario",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        -516
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"received\": true,\n  \"message\": \"Usuario ya estaba activo - ignorando evento duplicado\"\n}",
+        "options": {}
+      },
+      "id": "responder-ya-activo",
+      "name": "Responder Ya Activo",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        448,
+        -316
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brevo.com/v3/contacts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api-key",
+              "value": "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"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"email\": \"{{ $json.email }}\",\n  \"attributes\": {\n    \"NOMBRE\": \"{{ $json.nombre }}\",\n    \"NIVEL\": \"{{ $json.nivel_actual }}\",\n    \"ETAPA\": \"base_vital\",\n    \"ESTADO\": \"activo\",\n    \"FECHA_INICIO\": \"{{ $json.fecha_inicio }}\"\n  },\n  \"listIds\": [17],\n  \"unlinkListIds\": [15],\n  \"updateEnabled\": true\n}",
+        "options": {}
+      },
+      "id": "9ea43276-1323-406f-922e-4c24e681ab24",
+      "name": "Actualizar Brevo [TEST]",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        -516
+      ],
+      "notes": "Lista 17 = TEST Programa Activo, Lista 15 = TEST Leads"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brevo.com/v3/smtp/email",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api-key",
+              "value": "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"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"sender\": {\n    \"name\": \"Camino Vital - Hábitos Vitales [TEST]\",\n    \"email\": \"hola@habitos-vitales.com\"\n  },\n  \"to\": [\n    {\n      \"email\": \"{{ $json.email }}\",\n      \"name\": \"{{ $json.nombre }}\"\n    }\n  ],\n  \"subject\": \"[TEST] ✨ ¡Bienvenido a Camino Vital! Tu recorrido empieza aquí\",\n  \"htmlContent\": \"<!DOCTYPE html><html><head><meta charset='UTF-8'></head><body style='font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #232323; color: #E8E8E8;'><div style='background: rgba(223, 202, 97, 0.15); border: 2px solid #DFCA61; padding: 15px; margin-bottom: 20px; border-radius: 8px; color: #DFCA61;'><strong>🧪 MODO TEST - Este es un email de prueba</strong></div><div style='background: #1C1C1C; border-radius: 18px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08);'><div style='background: linear-gradient(180deg, #2A2A2A 0%, #1C1C1C 100%); padding: 40px; text-align: center;'><h1 style='margin: 0; font-size: 28px; color: #DFCA61;'>¡Bienvenido a Camino Vital!</h1><p style='margin: 10px 0 0; color: #B5B5B5;'>Tu camino hacia una vida más activa</p></div><div style='padding: 40px;'><p style='font-size: 18px; line-height: 1.6; color: #E8E8E8;'>Hola <strong style=\\\"color: #DFCA61;\\\">{{ $json.nombre }}</strong>,</p><p style='font-size: 16px; line-height: 1.6; color: #B5B5B5;'>Gracias por unirte a <strong style=\\\"color: #62B882;\\\">Camino Vital</strong>.</p><p style='font-size: 16px; line-height: 1.6; color: #B5B5B5;'>Has dado el primer paso para cuidar tu autonomía y tu longevidad. Y eso ya es mucho.</p><div style='background: rgba(98, 184, 130, 0.1); border-left: 4px solid #62B882; padding: 20px; margin: 30px 0; border-radius: 4px;'><h3 style='color: #62B882; margin: 0 0 15px 0;'>Tu programa personalizado:</h3><ul style='margin: 0; padding-left: 20px; line-height: 1.8; color: #B5B5B5;'><li><strong style=\\\"color: #E8E8E8;\\\">Etapa:</strong> Base Vital</li><li><strong style=\\\"color: #E8E8E8;\\\">Nivel:</strong> {{ $json.nivel_actual === 'iniciacion' ? 'Iniciación' : 'Intermedio' }}</li></ul></div><div style='background: rgba(223, 202, 97, 0.1); border: 1px solid rgba(223, 202, 97, 0.3); padding: 30px; border-radius: 12px; text-align: center; margin: 30px 0;'><h3 style='color: #DFCA61; margin: 0 0 15px 0; font-size: 22px;'>🎯 Empecemos: ¿Cuántas sesiones puedes hacer esta semana?</h3><p style='color: #B5B5B5; margin: 0 0 25px 0; font-size: 15px;'>Sé realista, siempre puedes ajustar cada semana</p><div style='display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;'><a href='http://localhost:5678/webhook/seleccionar-sesiones?user_id={{ $json.id }}&sesiones=2' style='background: #DFCA61; color: #1C1C1C; padding: 15px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; margin: 5px; min-width: 90px; text-align: center;'>2 sesiones</a><a href='http://localhost:5678/webhook/seleccionar-sesiones?user_id={{ $json.id }}&sesiones=3' style='background: #DFCA61; color: #1C1C1C; padding: 15px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; margin: 5px; min-width: 90px; text-align: center;'>3 sesiones<br><span style='font-size: 11px; font-weight: normal;'>(Recomendado)</span></a><a href='http://localhost:5678/webhook/seleccionar-sesiones?user_id={{ $json.id }}&sesiones=4' style='background: #DFCA61; color: #1C1C1C; padding: 15px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; margin: 5px; min-width: 90px; text-align: center;'>4 sesiones</a><a href='http://localhost:5678/webhook/seleccionar-sesiones?user_id={{ $json.id }}&sesiones=5' style='background: #DFCA61; color: #1C1C1C; padding: 15px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; margin: 5px; min-width: 90px; text-align: center;'>5 sesiones</a></div></div><h3 style='color: #DFCA61; margin: 30px 0 15px;'>¿Qué puedes esperar?</h3><ul style='line-height: 1.8; color: #B5B5B5;'><li>📧 Cuando termines una sesión, recibirás la siguiente inmediatamente</li><li>📹 Videos demostrativos para cada movimiento</li><li>🔄 El programa se adapta a tu ritmo y feedback</li><li>💬 Soporte personalizado si tienes dudas</li></ul><div style='background: rgba(223, 202, 97, 0.1); border-left: 4px solid #DFCA61; padding: 20px; margin: 30px 0; border-radius: 4px;'><p style='margin: 0; font-weight: 600; color: #DFCA61;'>💡 <strong>Consejo importante:</strong></p><p style='margin: 10px 0 0; color: #B5B5B5;'>Empieza con 2-3 sesiones si tienes dudas. Es mejor hacer menos y ser constante que planificar mucho y abandonar.</p></div><div style='text-align: center; margin: 40px 0;'><p style='font-size: 16px; color: #888;'>¿Tienes dudas o necesitas ayuda?</p><p style='margin: 10px 0;'><a href='mailto:hola@habitos-vitales.com' style='color: #DFCA61; text-decoration: none; font-weight: bold;'>Escríbenos →</a></p></div><p style='font-size: 16px; line-height: 1.6; color: #B5B5B5;'>¡Haz click arriba para empezar!</p><p style='font-size: 16px; line-height: 1.6; color: #B5B5B5;'>Un saludo,<br><strong style=\\\"color: #E8E8E8;\\\">El equipo de Camino Vital</strong></p></div></div><div style='text-align: center; margin-top: 30px; padding: 20px; color: #666; font-size: 12px;'><strong style=\\\"color: #DFCA61;\\\">Camino Vital</strong> | Hábitos Vitales<br>Este email es parte de tu programa de ejercicio personalizado</div></body></html>\"\n}",
+        "options": {}
+      },
+      "id": "ded95ab6-af76-4882-a809-2318ecd5ed5a",
+      "name": "Enviar Email Bienvenida [TEST]",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1280,
+        -516
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ⚠️ NODO CRÍTICO: Recuperar datos del usuario después de actualizar Brevo\n// Problema: El nodo HTTP Request de Brevo solo devuelve la respuesta API\n// Solución: Recuperamos los datos originales del nodo \"Formatear Datos Usuario\"\n\nconst datosUsuario = $node[\"Formatear Datos Usuario\"].json;\n\nconsole.log('🔄 Recuperando datos de usuario para enviar email...');\nconsole.log('📊 Datos recuperados:', JSON.stringify(datosUsuario, null, 2));\n\nreturn {\n  json: datosUsuario\n};"
+      },
+      "id": "6f0e527b-a198-49be-a80c-23092af0eb47",
+      "name": "Recuperar Datos Usuario",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1008,
+        -516
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"received\": true,\n  \"message\": \"Webhook procesado correctamente\"\n}",
+        "options": {}
+      },
+      "id": "ad67ded5-dc43-4e72-ad51-0bec5248f30a",
+      "name": "Responder Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1536,
+        -516
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Stripe/Pago": {
+      "main": [
+        [
+          {
+            "node": "Extraer Datos del Pago",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Datos del Pago": {
+      "main": [
+        [
+          {
+            "node": "Activar Usuario (lead → activo)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Activar Usuario (lead → activo)": {
+      "main": [
+        [
+          {
+            "node": "IF ¿Recién activado?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF ¿Recién activado?": {
+      "main": [
+        [
+          {
+            "node": "Formatear Datos Usuario",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder Ya Activo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Datos Usuario": {
+      "main": [
+        [
+          {
+            "node": "Actualizar Brevo [TEST]",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actualizar Brevo [TEST]": {
+      "main": [
+        [
+          {
+            "node": "Recuperar Datos Usuario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recuperar Datos Usuario": {
+      "main": [
+        [
+          {
+            "node": "Enviar Email Bienvenida [TEST]",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Email Bienvenida [TEST]": {
+      "main": [
+        [
+          {
+            "node": "Responder Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9da1f042-ed67-49dd-a7e6-5d054ce7db65",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "84e52699fab62b1fb2c5be95d249c5bcabdd7574acb0d2876e03aca6f6c8a022"
+  },
+  "id": "raqBLvnwiYzVRu0Z",
+  "tags": [
+    {
+      "updatedAt": "2025-12-23T21:22:27.713Z",
+      "createdAt": "2025-12-23T21:22:27.713Z",
+      "id": "YriIAJNwCVbGfQiT",
+      "name": "TEST"
+    },
+    {
+      "updatedAt": "2025-12-23T21:05:34.287Z",
+      "createdAt": "2025-12-23T21:05:34.287Z",
+      "id": "2Np5mmwYXiyeMPtJ",
+      "name": "Camino Vital"
+    }
+  ]
+}

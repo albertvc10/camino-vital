@@ -1,0 +1,619 @@
+# Reglas de Desarrollo - Camino Vital
+
+## 🎯 Contexto del Proyecto
+
+**Proyecto:** Sistema automatizado de programa de ejercicio personalizado por email
+**Stack:** n8n + PostgreSQL + Brevo + Stripe
+**Audiencia:** Miles de seguidores de Instagram (alto potencial de usuarios)
+**Estado:** MVP en producción con usuarios reales
+
+---
+
+## 🏗️ Arquitectura de Entornos
+
+### Entorno LOCAL (Desarrollo)
+- **Ubicación:** `~/Documents/HV_n8n/`
+- **n8n:** http://localhost:5678
+- **PostgreSQL:** localhost:5432 (contenedor `n8n_postgres`)
+- **Propósito:** Desarrollo de workflows de Instagram + pruebas de Camino Vital
+- **Docker Compose:** `docker-compose.yml` (YA EXISTE Y FUNCIONA)
+- **Credenciales:** Usuario `admin`, password en `.env`
+- **Base de datos:** `n8n` (PostgreSQL)
+
+**IMPORTANTE:** Este n8n local ya está en uso para workflows de Instagram.
+Para probar workflows de Camino Vital debes:
+1. Crear schema separado `camino_vital` en la misma DB
+2. Duplicar workflows con prefijo `[TEST-CV]`
+3. NO interferir con workflows de Instagram existentes
+
+**Setup inicial (primera vez):**
+```bash
+cd ~/Documents/HV_n8n/programa-camino-vital
+./setup-local.sh
+```
+Este script:
+- ✅ Crea schema `camino_vital` en PostgreSQL local
+- ✅ Crea todas las tablas necesarias
+- ✅ Inserta datos de prueba (3 usuarios + contenido)
+- ✅ NO afecta workflows de Instagram existentes
+
+### Entorno PRODUCCIÓN (Digital Ocean)
+- **Servidor:** 167.71.51.148
+- **n8n:** https://n8n.habitos-vitales.com
+- **Landing:** https://camino-vital.habitos-vitales.com
+- **PostgreSQL:** postgres:5432 (Docker interno)
+- **Propósito:** Sistema en vivo con usuarios reales
+- **Base de datos:** Múltiples schemas (Instagram + Camino Vital)
+
+---
+
+## ⚠️ REGLAS CRÍTICAS - NUNCA ROMPER
+
+### 🚫 PROHIBIDO en Producción Directamente
+
+1. **NO modificar workflows activos sin probar en local primero**
+   - Riesgo: Usuarios dejan de recibir emails
+   - Consecuencia: Pérdida de confianza, churning
+
+2. **NO ejecutar queries SQL destructivas sin backup**
+   ```sql
+   -- ❌ PROHIBIDO sin backup previo:
+   DELETE FROM programa_users WHERE ...
+   UPDATE programa_users SET estado = ...
+   DROP TABLE ...
+   ALTER TABLE ... DROP COLUMN ...
+   ```
+
+3. **NO modificar workflows en horarios de envío**
+   - Horarios críticos: L/M/V 8:00-10:00 AM (UTC)
+   - Si necesitas cambio urgente → Desactivar workflow primero
+
+4. **NO probar integraciones con datos reales de usuarios**
+   - Usar siempre emails de prueba (albertvc10@gmail.com, test@local.com)
+   - Stripe en modo test hasta validar completamente
+
+5. **NO hacer deploy directo sin exportar workflow antes**
+   - Siempre exportar versión actual como backup
+   - Nombrar: `01-onboarding-backup-YYYY-MM-DD.json`
+
+---
+
+## ✅ WORKFLOW OBLIGATORIO de Desarrollo
+
+### Paso 1: Desarrollo Local
+```bash
+# 1. Iniciar entorno local (si no está corriendo)
+cd ~/Documents/HV_n8n
+docker-compose up -d
+
+# Verificar que está corriendo
+docker-compose ps
+# Debes ver: n8n y n8n_postgres con status "Up"
+
+# 2. Abrir n8n local
+open http://localhost:5678
+
+# 3. Crear/modificar workflows con prefijo [TEST-CV]
+# Ejemplo: "[TEST-CV] 02-envio-programado"
+
+# 4. Configurar workflow para usar schema camino_vital
+# En nodos PostgreSQL:
+# - Host: postgres
+# - Database: n8n
+# - Schema: camino_vital (o usar queries con camino_vital.tabla)
+
+# 5. Probar con datos de prueba
+# 6. Ejecutar manualmente múltiples veces
+# 7. Verificar logs y resultados en DB local
+```
+
+### Paso 2: Validación Local
+```sql
+-- Conectar a DB local (usando el contenedor existente)
+docker exec -it n8n_postgres psql -U n8n -d n8n
+
+-- Cambiar al schema de Camino Vital
+SET search_path TO camino_vital;
+
+-- Verificar datos creados/modificados
+SELECT * FROM programa_users;
+SELECT * FROM programa_envios;
+SELECT * FROM programa_feedback;
+
+-- O usar queries con schema explícito
+SELECT * FROM camino_vital.programa_users;
+
+-- Validar que la lógica es correcta
+```
+
+### Paso 3: Exportar y Documentar
+```bash
+# 1. Exportar workflow desde local
+# n8n → Workflows → [workflow] → Download
+
+# 2. Guardar en carpeta de workflows con versión
+# Ejemplo: workflows/02-envio-programado-v2.json
+
+# 3. Documentar cambios en git commit o archivo CHANGELOG
+```
+
+### Paso 4: Deploy a Producción
+```bash
+# 1. Conectar al servidor de producción
+# (Solo desde hotspot móvil)
+ssh root@167.71.51.148
+
+# 2. Hacer backup de DB (cambios importantes)
+docker exec n8n-postgres-1 pg_dump -U n8n -d n8n > backup-$(date +%Y%m%d).sql
+
+# 3. Ir a n8n producción
+open https://n8n.habitos-vitales.com
+
+# 4. DESACTIVAR workflow actual (toggle OFF)
+
+# 5. Exportar workflow actual como backup
+# Download → Guardar como [nombre]-backup-YYYY-MM-DD.json
+
+# 6. Importar nuevo workflow
+# Option 1: Import from File → Upload
+# Option 2: Editar workflow existente (copiar/pegar nodos)
+
+# 7. PROBAR ejecución manual UNA VEZ
+# Click "Execute Workflow"
+# Verificar que funciona correctamente
+
+# 8. Si OK → ACTIVAR workflow (toggle ON)
+# Si FALLA → Revertir a versión anterior
+```
+
+### Paso 5: Monitoreo Post-Deploy
+```bash
+# 1. Verificar ejecuciones en n8n
+# Executions → Ver últimas 5 ejecuciones
+# Buscar errores
+
+# 2. Verificar logs de Docker (si es crítico)
+ssh root@167.71.51.148
+docker logs n8n-n8n-1 --tail 50 -f
+
+# 3. Verificar DB
+docker exec -it n8n-postgres-1 psql -U n8n -d n8n
+SELECT * FROM programa_envios ORDER BY created_at DESC LIMIT 5;
+
+# 4. Monitorear próximo envío programado
+# Estar atento durante la primera ejecución automática
+```
+
+---
+
+## 🗄️ Gestión de Base de Datos
+
+### Backups Obligatorios ANTES de:
+
+- ✅ Modificar schema (ALTER TABLE, DROP, etc.)
+- ✅ Actualizar datos masivamente (UPDATE con WHERE amplio)
+- ✅ Migrar usuarios (cambio de estado, nivel, etc.)
+- ✅ Deploy de cambios que tocan lógica de DB
+
+```bash
+# Backup completo
+ssh root@167.71.51.148
+docker exec n8n-postgres-1 pg_dump -U n8n -d n8n > backup-$(date +%Y%m%d-%H%M).sql
+
+# Backup solo schema
+docker exec n8n-postgres-1 pg_dump -U n8n -d n8n --schema-only > schema-backup.sql
+
+# Backup solo datos de tabla específica
+docker exec n8n-postgres-1 pg_dump -U n8n -d n8n -t programa_users > users-backup.sql
+
+# Restaurar backup (si es necesario)
+docker exec -i n8n-postgres-1 psql -U n8n -d n8n < backup-20250115.sql
+```
+
+### Queries Destructivas Seguras
+
+```sql
+-- ❌ MAL (sin WHERE):
+UPDATE programa_users SET estado = 'activo';
+
+-- ✅ BIEN (con WHERE específico):
+UPDATE programa_users
+SET estado = 'activo'
+WHERE email = 'usuario@ejemplo.com';
+
+-- ✅ MEJOR (con RETURNING para verificar):
+UPDATE programa_users
+SET estado = 'activo'
+WHERE email = 'usuario@ejemplo.com'
+RETURNING id, email, nombre, estado;
+
+-- ✅ ÓPTIMO (con BEGIN/ROLLBACK para probar):
+BEGIN;
+UPDATE programa_users SET estado = 'activo' WHERE ...;
+SELECT * FROM programa_users WHERE ...;  -- Verificar
+-- Si OK:
+COMMIT;
+-- Si MAL:
+ROLLBACK;
+```
+
+---
+
+## 📦 Estructura de Archivos del Proyecto
+
+```
+HV_n8n/                                  # Carpeta raíz
+├── docker-compose.yml                   # n8n + PostgreSQL local
+├── .env                                 # Credenciales local
+├── data/                                # Datos persistentes
+│   ├── postgres/                        # DB local (Instagram + Camino Vital)
+│   └── n8n/                            # Workflows locales
+└── programa-camino-vital/              # ← Proyecto Camino Vital
+    ├── .clinerules                     # Este archivo (reglas de desarrollo)
+    ├── setup-local.sh                  # 🆕 Script de configuración local
+    ├── SETUP-LOCAL.md                  # 🆕 Guía de setup paso a paso
+    ├── docs/
+    │   ├── README.md                   # Documentación técnica completa
+    │   ├── ESTADO-ACTUAL.md            # Estado del deployment
+    │   ├── RESUMEN-EJECUTIVO.md        # Visión de negocio
+    │   ├── REGLAS-FLUJO-PROYECTO.md    # Flujos del usuario
+    │   └── STRIPE-SETUP.md             # Configuración Stripe
+    ├── database/
+    │   ├── schema.sql                  # Schema principal
+    │   ├── functions.sql               # Funciones SQL reutilizables (futuro)
+    │   └── seed-contenido.sql          # Datos de ejemplo
+    ├── workflows/
+    │   ├── 01-onboarding-v2.json       # ✅ FUNCIONANDO
+    │   ├── 02-envio-programado.json    # ⏸️ No probado completamente
+    │   ├── 03-feedback.json            # ⏸️ No probado
+    │   ├── 04-guardar-lead.json        # ✅ FUNCIONANDO
+    │   ├── 05-remarketing-leads.json   # ⏸️ No probado
+    │   └── backups/                    # Backups de workflows
+    │       └── [workflow]-YYYY-MM-DD.json
+    └── landing/
+        ├── index.html                  # Landing principal
+        ├── cuestionario.html           # Cuestionario multi-paso
+        ├── resultados.html             # Resultados + checkout
+        └── gracias.html                # Post-pago
+```
+
+---
+
+## 🔧 Comandos Útiles para Claude
+
+### Entorno Local (n8n existente para Instagram + Camino Vital)
+
+```bash
+# Verificar estado
+cd ~/Documents/HV_n8n
+docker-compose ps
+
+# Iniciar (si está apagado)
+docker-compose up -d
+
+# Ver logs
+docker-compose logs -f n8n
+
+# Conectar a DB local
+docker exec -it n8n_postgres psql -U n8n -d n8n
+
+# Ver tablas de Camino Vital
+docker exec -it n8n_postgres psql -U n8n -d n8n -c "\dt camino_vital.*"
+
+# Detener (CUIDADO: también detiene workflows de Instagram)
+docker-compose stop
+
+# Reiniciar solo n8n (sin tocar DB)
+docker-compose restart n8n
+
+# ⚠️ NUNCA ejecutar esto (borraría workflows de Instagram):
+# docker-compose down -v
+```
+
+### Entorno Producción
+
+```bash
+# Conectar SSH (requiere hotspot móvil)
+ssh root@167.71.51.148
+
+# Ver logs n8n
+docker logs n8n-n8n-1 --tail 50 -f
+
+# Ver logs PostgreSQL
+docker logs n8n-postgres-1 --tail 50 -f
+
+# Conectar a DB producción
+docker exec -it n8n-postgres-1 psql -U n8n -d n8n
+
+# Reiniciar servicios
+cd /root/n8n
+docker-compose restart
+
+# Ver workflows activos
+docker exec -it n8n-n8n-1 ls -la /home/node/.n8n/workflows/
+```
+
+---
+
+## 🧪 Testing
+
+### Tests Mínimos Antes de Deploy
+
+**Para workflows de envío (02, 05):**
+- [ ] Ejecutar manualmente en local con 3 usuarios de prueba
+- [ ] Verificar que emails se "envían" (mock) correctamente
+- [ ] Verificar que se registra en `programa_envios`
+- [ ] Verificar que `fecha_ultimo_envio` se actualiza
+- [ ] Probar con usuario sin contenido disponible
+- [ ] Probar con usuario ya recibió email hoy
+
+**Para workflows de feedback (03):**
+- [ ] Simular webhook con parámetros: user_id, semana, respuesta
+- [ ] Verificar que se guarda en `programa_feedback`
+- [ ] Verificar que actualiza `semana_actual` correctamente
+- [ ] Probar las 3 respuestas: facil, adecuado, dificil
+- [ ] Verificar lógica de progresión
+
+**Para workflows de pago (01, 04):**
+- [ ] Usar Stripe test mode SIEMPRE en local
+- [ ] Verificar usuario pasa de 'lead' a 'activo'
+- [ ] Verificar email de bienvenida se envía
+- [ ] Verificar movimiento en listas Brevo (mock)
+- [ ] Probar con email que NO existe en DB
+- [ ] Probar con email duplicado
+
+---
+
+## 📊 Monitoreo de Salud del Sistema
+
+### Queries de Diagnóstico
+
+```sql
+-- Usuarios activos vs leads
+SELECT
+  estado,
+  COUNT(*) as cantidad
+FROM programa_users
+GROUP BY estado;
+
+-- Envíos de hoy
+SELECT
+  u.email,
+  u.nombre,
+  e.created_at,
+  e.estado
+FROM programa_envios e
+JOIN programa_users u ON e.user_id = u.id
+WHERE e.created_at::date = CURRENT_DATE
+ORDER BY e.created_at DESC;
+
+-- Usuarios que NO recibieron email hoy (debiendo recibirlo)
+SELECT
+  email,
+  nombre,
+  nivel_actual,
+  semana_actual,
+  fecha_ultimo_envio
+FROM programa_users
+WHERE estado = 'activo'
+  AND (fecha_ultimo_envio IS NULL OR fecha_ultimo_envio::date < CURRENT_DATE)
+  AND EXTRACT(DOW FROM NOW()) IN (1,3,5);  -- L/M/V
+
+-- Tasa de respuesta promedio
+SELECT
+  ROUND(AVG(tasa_respuesta), 2) as tasa_promedio,
+  COUNT(*) as usuarios_activos
+FROM programa_users
+WHERE estado = 'activo';
+
+-- Usuarios sin contenido disponible para su nivel/semana
+SELECT
+  u.email,
+  u.nivel_actual,
+  u.semana_actual,
+  u.etapa
+FROM programa_users u
+LEFT JOIN programa_contenido c
+  ON c.etapa = u.etapa
+  AND c.nivel = u.nivel_actual
+  AND c.semana = u.semana_actual
+WHERE u.estado = 'activo'
+  AND c.id IS NULL;
+```
+
+---
+
+## 🚨 Plan de Contingencia
+
+### Si rompes algo en producción:
+
+**Nivel 1: Workflow no funciona**
+```bash
+# 1. DESACTIVAR workflow inmediatamente
+# n8n → Workflow → Toggle OFF
+
+# 2. Revisar última ejecución
+# Executions → Ver error
+
+# 3. Revertir a versión anterior
+# Import workflow backup más reciente
+
+# 4. Activar versión antigua
+# Toggle ON
+
+# 5. Investigar error en local
+```
+
+**Nivel 2: Base de datos corrupta**
+```bash
+# 1. Detener n8n para evitar más escrituras
+docker stop n8n-n8n-1
+
+# 2. Restaurar backup más reciente
+docker exec -i n8n-postgres-1 psql -U n8n -d n8n < backup-latest.sql
+
+# 3. Verificar datos
+docker exec -it n8n-postgres-1 psql -U n8n -d n8n
+SELECT COUNT(*) FROM programa_users;
+
+# 4. Reiniciar n8n
+docker start n8n-n8n-1
+```
+
+**Nivel 3: Servidor caído**
+```bash
+# 1. Verificar uptime
+ssh root@167.71.51.148
+uptime
+
+# 2. Reiniciar Docker
+docker-compose restart
+
+# 3. Si persiste, reiniciar servidor
+reboot
+
+# 4. Verificar que servicios vuelven
+# Esperar 2-3 minutos
+docker ps
+
+# 5. Comunicar a usuarios (si caída >30 min)
+# Email manual desde Brevo
+```
+
+---
+
+## 📝 Reglas de Comunicación con Usuarios
+
+### Cuándo avisar a usuarios:
+
+- ✅ Caída del sistema >1 hora
+- ✅ Error que afectó envío programado (perdieron email del día)
+- ✅ Cambio significativo en el sistema (nueva funcionalidad)
+- ✅ Migración que requiere acción del usuario
+
+### Cuándo NO avisar:
+
+- ❌ Bugs menores corregidos en <30 min
+- ❌ Mejoras internas que no afectan experiencia
+- ❌ Testing en local
+- ❌ Updates de infraestructura transparentes
+
+### Plantilla de comunicación de incidencia:
+
+```
+Asunto: [Resuelto] Pequeño problema técnico en Camino Vital
+
+Hola {nombre},
+
+Te escribo para contarte que hoy entre las X:XX y X:XX hubo un
+problema técnico que [descripción del impacto].
+
+✅ Ya está resuelto y todo funciona con normalidad.
+
+[Si perdieron un email:]
+Como compensación, recibirás tu próximo email con contenido extra.
+
+Gracias por tu paciencia,
+Albert - Equipo Camino Vital
+```
+
+---
+
+## 🎯 Criterios de Éxito
+
+### Métricas que NUNCA deben bajar:
+
+- **Uptime del sistema:** >99% mensual
+- **Tasa de entrega de emails:** >95% (emails enviados vs programados)
+- **Tasa de error en workflows:** <5%
+
+### Alertas que debes configurar (futuro):
+
+- [ ] Email si workflow falla 2+ veces consecutivas
+- [ ] Email si >10 usuarios no reciben email programado
+- [ ] Email si DB no responde por >5 minutos
+- [ ] Monitoreo de uptime con UptimeRobot
+
+---
+
+## 🔐 Seguridad
+
+### Credenciales y Secretos
+
+**NUNCA hacer:**
+- ❌ Commitear `.env` a git
+- ❌ Poner API keys en código
+- ❌ Compartir credenciales de producción
+- ❌ Usar mismas passwords en local y producción
+
+**SIEMPRE hacer:**
+- ✅ Usar variables de entorno
+- ✅ Rotar API keys cada 3-6 meses
+- ✅ Passwords diferentes para local vs producción
+- ✅ Backup de .env en lugar seguro (1Password, etc.)
+
+### Ubicación de credenciales:
+
+```
+PRODUCCIÓN:
+- .env en servidor: /root/n8n/.env
+- n8n credentials: Encriptadas en DB PostgreSQL
+- Stripe keys: Dashboard Stripe (live mode)
+- Brevo API: xkeysib-2cd29536... (documentado en ESTADO-ACTUAL.md)
+
+LOCAL:
+- .env en laptop: ~/Documents/HV_n8n/local-dev/.env
+- Usar API keys de TEST/STAGING
+- Stripe: Test mode keys
+```
+
+---
+
+## 🤖 Instrucciones para Claude Code
+
+Cuando trabajes en este proyecto:
+
+1. **SIEMPRE pregunta antes de:**
+   - Modificar workflows en producción
+   - Ejecutar queries DELETE o DROP
+   - Hacer cambios en schema de DB
+   - Deploy de cambios significativos
+
+2. **SIEMPRE asume:**
+   - Hay usuarios reales usando el sistema
+   - Un error puede afectar a cientos de personas
+   - Necesitas probar en local primero
+
+3. **SIEMPRE prioriza:**
+   - No romper funcionalidad existente
+   - Mantener servicio funcionando 24/7
+   - Simplicidad sobre complejidad
+   - Documentar cambios importantes
+
+4. **Si necesitas hacer cambios urgentes en producción:**
+   - Avisar al usuario (Albert) claramente
+   - Explicar riesgos
+   - Pedir confirmación explícita
+   - Hacer backup antes
+
+5. **Cuando sugieras soluciones:**
+   - Considera que hay miles de seguidores potenciales
+   - El sistema debe escalar a 100-1000 usuarios
+   - Prioriza estabilidad sobre features nuevas
+   - Piensa en mantenibilidad a largo plazo
+
+---
+
+## 📞 Contactos de Emergencia
+
+**Desarrollador:** Albert Villanueva (albertvc10@gmail.com)
+**Servidor:** Digital Ocean - 167.71.51.148
+**Proveedor Email:** Brevo (app.brevo.com)
+**Procesador Pagos:** Stripe (dashboard.stripe.com)
+**Dominio:** Namecheap (habitos-vitales.com)
+
+---
+
+**Última actualización:** 2025-01-15
+**Versión:** 1.0.0
+**Mantenido por:** Albert Villanueva
