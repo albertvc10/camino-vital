@@ -203,7 +203,7 @@
       "name": "Llamar Generador Sesión IA",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1340, 500]
+      "position": [1460, 500]
     },
     {
       "parameters": {
@@ -215,7 +215,7 @@
       "name": "Obtener Sesión Generada",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [1560, 500],
+      "position": [1680, 500],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -233,7 +233,7 @@
       "name": "Obtener Template Nueva Semana",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [1780, 500],
+      "position": [1900, 500],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -249,7 +249,7 @@
       "name": "Preparar Email Sesión",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2000, 500]
+      "position": [2120, 500]
     },
     {
       "parameters": {
@@ -264,22 +264,22 @@
       "name": "Enviar Email Sesión (UTIL)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2220, 500]
+      "position": [2340, 500]
     },
     {
       "parameters": {
         "respondWith": "text",
-        "responseBody": "=<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>¡Confirmado!</title></head><body style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #232323; color: #E8E8E8; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0;\"><div style=\"background: #1C1C1C; padding: 40px; border-radius: 18px; text-align: center; max-width: 450px;\"><div style=\"font-size: 64px; margin-bottom: 20px;\">🎉</div><h1 style=\"color: #62B882; margin: 0 0 15px 0;\">¡Perfecto, {{ $node['Procesar Checkpoint'].json.nombre }}!</h1><p style=\"color: #B5B5B5; font-size: 16px; margin: 0 0 25px 0;\">Tu configuración para la <strong style=\"color: #DFCA61;\">Semana {{ $node['Procesar Checkpoint'].json.semana_actual }}</strong></p><div style=\"background: rgba(98,184,130,0.1); border-radius: 12px; padding: 20px; margin: 20px 0;\"><p style=\"margin: 5px 0; color: #B5B5B5;\">📊 Nivel: <strong style=\"color: #E8E8E8;\">{{ $node['Procesar Checkpoint'].json.nivel_actual.toUpperCase() }}</strong></p><p style=\"margin: 5px 0; color: #B5B5B5;\">⚡ Intensidad: <strong style=\"color: #E8E8E8;\">{{ $node['Procesar Checkpoint'].json.intensidad_nivel }}%</strong></p><p style=\"margin: 5px 0; color: #B5B5B5;\">📅 Sesiones/semana: <strong style=\"color: #E8E8E8;\">{{ $node['Procesar Checkpoint'].json.sesiones_objetivo_semana }}</strong></p></div><p style=\"color: #62B882; margin: 20px 0 0 0;\">📬 Revisa tu email para tu primera sesión</p></div></body></html>",
+        "responseBody": "=<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>¡Confirmado!</title></head><body style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #232323; color: #E8E8E8; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0;\"><div style=\"background: #1C1C1C; padding: 40px; border-radius: 18px; text-align: center; max-width: 450px;\"><div style=\"font-size: 64px; margin-bottom: 20px;\">🎉</div><h1 style=\"color: #62B882; margin: 0 0 15px 0;\">¡Perfecto, {{ $node['Procesar Checkpoint'].json.nombre }}!</h1><p style=\"color: #B5B5B5; font-size: 16px; margin: 0 0 25px 0;\">Tu configuración para la <strong style=\"color: #DFCA61;\">Semana {{ $node['Procesar Checkpoint'].json.semana_actual }}</strong></p><div style=\"background: rgba(98,184,130,0.1); border-radius: 12px; padding: 20px; margin: 20px 0;\"><p style=\"margin: 5px 0; color: #B5B5B5;\">📊 Nivel: <strong style=\"color: #E8E8E8;\">{{ $node['Procesar Checkpoint'].json.nivel_actual.toUpperCase() }}</strong></p><p style=\"margin: 5px 0; color: #B5B5B5;\">⚡ Intensidad: <strong style=\"color: #E8E8E8;\">{{ $node['Procesar Checkpoint'].json.intensidad_nivel }}%</strong></p><p style=\"margin: 5px 0; color: #B5B5B5;\">📅 Sesiones/semana: <strong style=\"color: #E8E8E8;\">{{ $node['Procesar Checkpoint'].json.sesiones_objetivo_semana }}</strong></p></div><p style=\"color: #62B882; margin: 20px 0 0 0;\">📬 En breve recibirás tu primera sesión por email</p></div></body></html>",
         "options": {
           "responseCode": 200,
           "responseHeaders": {"entries": [{"name": "Content-Type", "value": "text/html; charset=utf-8"}]}
         }
       },
       "id": "responder-confirmacion",
-      "name": "Responder Confirmación",
+      "name": "Responder Confirmación Inmediata",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [2440, 500]
+      "position": [1240, 500]
     },
     {
       "parameters": {
@@ -318,8 +318,11 @@
     "IF: ¿Programa completado (>12 sem)?": {
       "main": [
         [{"node": "Marcar Programa Completado", "type": "main", "index": 0}],
-        [{"node": "Llamar Generador Sesión IA", "type": "main", "index": 0}]
+        [{"node": "Responder Confirmación Inmediata", "type": "main", "index": 0}]
       ]
+    },
+    "Responder Confirmación Inmediata": {
+      "main": [[{"node": "Llamar Generador Sesión IA", "type": "main", "index": 0}]]
     },
     "Marcar Programa Completado": {
       "main": [[{"node": "Obtener Template Fin Programa", "type": "main", "index": 0}]]
@@ -346,10 +349,10 @@
       "main": [[{"node": "Enviar Email Sesión (UTIL)", "type": "main", "index": 0}]]
     },
     "Enviar Email Sesión (UTIL)": {
-      "main": [[{"node": "Responder Confirmación", "type": "main", "index": 0}]]
+      "main": []
     }
   },
   "settings": {"executionOrder": "v1"},
   "pinData": {},
-  "versionId": "v4-sesiones-selection"
+  "versionId": "v5-respuesta-inmediata"
 }
