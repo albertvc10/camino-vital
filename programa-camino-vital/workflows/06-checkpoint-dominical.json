@@ -17,6 +17,19 @@
     },
     {
       "parameters": {
+        "httpMethod": "GET",
+        "path": "test-checkpoint-dominical",
+        "options": {}
+      },
+      "id": "webhook-test",
+      "name": "Webhook Test (Manual)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 460],
+      "webhookId": "test-checkpoint-dominical"
+    },
+    {
+      "parameters": {
         "operation": "executeQuery",
         "query": "-- Resetear flag semanal para todos los usuarios activos\nUPDATE programa_users\nSET ajustado_esta_semana = FALSE\nWHERE estado = 'activo'\n  AND ajustado_esta_semana = TRUE\nRETURNING id, email, 'flag reseteado' as accion;",
         "options": {}
@@ -139,7 +152,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "// Preparar email de checkpoint semanal CON mensaje personalizado\n\nfunction replaceVariables(template, variables) {\n  let result = template;\n  for (const [key, value] of Object.entries(variables)) {\n    const safeValue = String(value ?? '');\n    const regex = new RegExp(`\\\\{\\\\{${key}\\\\}\\\\}`, 'g');\n    result = result.replace(regex, safeValue);\n  }\n  return result;\n}\n\n// Usuario actual con análisis (viene del IF, es el item actual del loop)\nconst usuario = $json;\n// Template obtenido al inicio del workflow\nconst template = $('Obtener Templates').first().json.template_checkpoint;\n\nconsole.log('📧 Preparando checkpoint para:', usuario.email);\nconsole.log('💬 Mensaje personalizado:', usuario.mensaje_usuario);\n\nconst variables = {\n  nombre: usuario.nombre,\n  semana_actual: usuario.semana_actual,\n  semana_siguiente: usuario.semana_actual + 1,\n  sesiones_completadas: usuario.sesiones_completadas_semana,\n  sesiones_objetivo: usuario.sesiones_objetivo_semana,\n  adherencia_porcentaje: usuario.adherencia_porcentaje || 0,\n  nivel_actual: usuario.nivel_actual,\n  intensidad: usuario.intensidad_nivel,\n  mensaje_usuario: usuario.mensaje_usuario || 'Sigue así, ¡vas muy bien!',\n  user_id: usuario.id,\n  webhook_url: process.env.WEBHOOK_URL || 'http://localhost:5678'\n};\n\nconst emailHTML = replaceVariables(template, variables);\n\nreturn {\n  json: {\n    user_id: usuario.id,\n    user_email: usuario.email,\n    user_nombre: usuario.nombre,\n    semana: usuario.semana_actual,\n    email_html: emailHTML,\n    asunto: `📊 Checkpoint Semana ${usuario.semana_actual} - ¿Cómo quieres continuar?`\n  }\n};"
+        "jsCode": "// Preparar email de checkpoint semanal CON mensaje personalizado\n\nfunction replaceVariables(template, variables) {\n  let result = template;\n  for (const [key, value] of Object.entries(variables)) {\n    const safeValue = String(value ?? '');\n    const regex = new RegExp(`\\\\{\\\\{${key}\\\\}\\\\}`, 'g');\n    result = result.replace(regex, safeValue);\n  }\n  return result;\n}\n\n// Usuario actual con análisis (viene del IF, es el item actual del loop)\nconst usuario = $json;\n// Template obtenido al inicio del workflow\nconst template = $('Obtener Templates').first().json.template_checkpoint;\n\nconsole.log('📧 Preparando checkpoint para:', usuario.email);\nconsole.log('💬 Mensaje personalizado:', usuario.mensaje_usuario);\n\n// Construir mensaje con contexto de sesiones\nconst sesionesInfo = `Completaste ${usuario.sesiones_completadas_semana} de ${usuario.sesiones_objetivo_semana} sesiones esta semana. `;\nconst mensajeCompleto = sesionesInfo + (usuario.mensaje_usuario || 'Sigue así, ¡vas muy bien!');\n\nconst variables = {\n  nombre: usuario.nombre,\n  semana_actual: usuario.semana_actual,\n  semana_siguiente: usuario.semana_actual + 1,\n  sesiones_completadas: usuario.sesiones_completadas_semana,\n  sesiones_objetivo: usuario.sesiones_objetivo_semana,\n  adherencia_porcentaje: usuario.adherencia_porcentaje || 0,\n  nivel_actual: usuario.nivel_actual,\n  intensidad: usuario.intensidad_nivel,\n  mensaje_usuario: mensajeCompleto,\n  user_id: usuario.id,\n  webhook_url: process.env.WEBHOOK_URL || 'http://localhost:5678'\n};\n\nconst emailHTML = replaceVariables(template, variables);\n\nreturn {\n  json: {\n    user_id: usuario.id,\n    user_email: usuario.email,\n    user_nombre: usuario.nombre,\n    semana: usuario.semana_actual,\n    email_html: emailHTML,\n    asunto: `📊 Checkpoint Semana ${usuario.semana_actual} - ¿Cómo quieres continuar?`\n  }\n};"
       },
       "id": "preparar-email-checkpoint",
       "name": "Preparar Email Checkpoint",
@@ -165,6 +178,9 @@
   ],
   "connections": {
     "Cron: Cada Domingo 18:00": {
+      "main": [[{"node": "Resetear Flag Semanal", "type": "main", "index": 0}]]
+    },
+    "Webhook Test (Manual)": {
       "main": [[{"node": "Resetear Flag Semanal", "type": "main", "index": 0}]]
     },
     "Resetear Flag Semanal": {
@@ -194,5 +210,5 @@
   },
   "settings": {"executionOrder": "v1"},
   "pinData": {},
-  "versionId": "v6-mensaje-personalizado"
+  "versionId": "v7-mensaje-con-sesiones"
 }
