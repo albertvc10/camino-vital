@@ -1,4 +1,5 @@
 {
+  "id": "xpthbEm1BVvFGemC",
   "name": "Camino Vital - 07 Procesar Checkpoint Semanal",
   "active": true,
   "nodes": [
@@ -19,14 +20,33 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=SET search_path TO public;\n\nWITH usuario_actual AS (\n  SELECT * FROM programa_users WHERE id = {{ $json.query.user_id }}\n),\najuste_calculado AS (\n  SELECT a.* FROM usuario_actual u,\n  LATERAL calcular_ajuste_por_feedback(\n    u.id, \n    u.semana_actual,\n    '{{ $json.query.feedback || 'apropiado' }}'\n  ) a\n),\nusuario_actualizado AS (\n  UPDATE programa_users u\n  SET \n    nivel_actual = a.ajuste_nivel,\n    intensidad_nivel = a.ajuste_intensidad,\n    semana_actual = u.semana_actual + 1,\n    sesiones_completadas_semana = 0,\n    sesion_actual_dentro_semana = 1,\n    ajustado_esta_semana = TRUE,\n    updated_at = NOW()\n  FROM usuario_actual orig, ajuste_calculado a\n  WHERE u.id = orig.id\n    AND orig.ajustado_esta_semana = FALSE\n  RETURNING u.*\n)\nSELECT \n  COALESCE(upd.id, orig.id) as id,\n  COALESCE(upd.email, orig.email) as email,\n  COALESCE(upd.nombre, orig.nombre) as nombre,\n  COALESCE(upd.semana_actual, orig.semana_actual) as semana_actual,\n  COALESCE(upd.nivel_actual, orig.nivel_actual) as nivel_actual,\n  COALESCE(upd.intensidad_nivel, orig.intensidad_nivel) as intensidad_nivel,\n  COALESCE(upd.volumen_extra, orig.volumen_extra) as volumen_extra,\n  COALESCE(upd.sesiones_objetivo_semana, orig.sesiones_objetivo_semana) as sesiones_objetivo_semana,\n  CASE WHEN upd.id IS NULL THEN TRUE ELSE FALSE END as ya_procesado,\n  a.ajuste_accion,\n  a.ajuste_nivel,\n  a.ajuste_intensidad,\n  a.ajuste_razon,\n  a.feedback_stats\nFROM usuario_actual orig\nLEFT JOIN usuario_actualizado upd ON TRUE\nCROSS JOIN ajuste_calculado a;",
+        "query": "=-- Analizar la semana del usuario para obtener recomendaciones\nSELECT * FROM analizar_semana_para_checkpoint({{ $json.query.user_id }});",
+        "options": {}
+      },
+      "id": "analizar-semana",
+      "name": "Analizar Semana",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [460, 300],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=-- Procesar checkpoint con la elección del usuario\nSELECT * FROM procesar_checkpoint_interactivo(\n  {{ $node['Analizar Semana'].json.out_user_id }},\n  {{ $node['Webhook Checkpoint Semanal'].json.query.sesiones || 3 }},\n  '{{ $node['Analizar Semana'].json.accion_nivel }}',\n  {{ $node['Analizar Semana'].json.accion_intensidad }},\n  '{{ $node['Analizar Semana'].json.adherencia_nivel }}',\n  '{{ $node['Analizar Semana'].json.feedback_mayoritario }}',\n  '{{ $node['Analizar Semana'].json.explicacion_corta }}'\n);",
         "options": {}
       },
       "id": "procesar-checkpoint",
       "name": "Procesar Checkpoint",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [460, 300],
+      "position": [680, 300],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -42,9 +62,9 @@
           "conditions": [
             {
               "id": "ya-procesado",
-              "leftValue": "={{ $json.ya_procesado }}",
-              "rightValue": true,
-              "operator": {"type": "boolean", "operation": "equals"}
+              "leftValue": "={{ $json.estado_checkpoint }}",
+              "rightValue": "ya_procesado",
+              "operator": {"type": "string", "operation": "equals"}
             }
           ],
           "combinator": "and"
@@ -55,31 +75,16 @@
       "name": "IF: ¿Checkpoint ya procesado?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [680, 300]
-    },
-    {
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "SELECT * FROM get_email_template('checkpoint_ya_procesado');",
-        "options": {}
-      },
-      "id": "obtener-template-ya-procesado",
-      "name": "Obtener Template Ya Procesado",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.4,
-      "position": [900, 200],
-      "credentials": {
-        "postgres": {
-          "id": "nLcUOvLreXurFbBs",
-          "name": "PostgreSQL Camino Vital Local"
-        }
-      }
+      "position": [900, 300]
     },
     {
       "parameters": {
         "respondWith": "text",
-        "responseBody": "=Ya has procesado el checkpoint de esta semana. ¡Gracias!",
-        "options": {"responseCode": 200}
+        "responseBody": "=<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Ya procesado</title></head><body style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #232323; color: #E8E8E8; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0;\"><div style=\"background: #1C1C1C; padding: 40px; border-radius: 18px; text-align: center; max-width: 400px;\"><div style=\"font-size: 48px; margin-bottom: 20px;\">✅</div><h1 style=\"color: #62B882; margin: 0 0 15px 0;\">¡Ya procesado!</h1><p style=\"color: #B5B5B5; margin: 0;\">Tu checkpoint de esta semana ya fue registrado. Revisa tu email para ver tu primera sesión de la nueva semana.</p></div></body></html>",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {"entries": [{"name": "Content-Type", "value": "text/html; charset=utf-8"}]}
+        }
       },
       "id": "responder-ya-procesado",
       "name": "Responder Ya Procesado",
@@ -107,19 +112,19 @@
       "name": "IF: ¿Programa completado (>12 sem)?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [900, 400]
+      "position": [1120, 400]
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=UPDATE programa_users\nSET estado = 'completado', updated_at = NOW()\nWHERE id = {{ $node['Procesar Checkpoint'].json.id }}\nRETURNING *;",
+        "query": "=UPDATE programa_users\nSET estado = 'completado', updated_at = NOW()\nWHERE id = {{ $json.id }}\nRETURNING *;",
         "options": {}
       },
       "id": "marcar-programa-completado",
       "name": "Marcar Programa Completado",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [1120, 350],
+      "position": [1340, 350],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -137,7 +142,7 @@
       "name": "Obtener Template Fin Programa",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [1340, 350],
+      "position": [1560, 350],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -147,13 +152,13 @@
     },
     {
       "parameters": {
-        "jsCode": "// Preparar email usando template de BD\nconst template = $json.html_template;\nconst usuario = $node['Marcar Programa Completado'].json;\n\nconsole.log('🏆 Preparando email de programa completado para:', usuario.nombre);\n\n// Reemplazar variables en el template\nconst emailHTML = template\n  .replace(/\\{\\{nombre\\}\\}/g, usuario.nombre || 'Usuario');\n\nreturn {\n  json: {\n    user_id: usuario.id,\n    user_email: usuario.email,\n    user_nombre: usuario.nombre,\n    email_html: emailHTML,\n    asunto: '🏆 ¡Felicidades! Has completado Base Vital'\n  }\n};"
+        "jsCode": "// Preparar email de programa completado\nconst template = $json.html_template;\nconst usuario = $node['Marcar Programa Completado'].json;\n\nconst emailHTML = template\n  .replace(/\\{\\{nombre\\}\\}/g, usuario.nombre || 'Usuario')\n  .replace(/\\{\\{nivel_actual\\}\\}/g, usuario.nivel_actual || '')\n  .replace(/\\{\\{intensidad\\}\\}/g, usuario.intensidad_nivel || '');\n\nreturn {\n  json: {\n    user_id: usuario.id,\n    user_email: usuario.email,\n    user_nombre: usuario.nombre,\n    email_html: emailHTML,\n    asunto: '🏆 ¡Felicidades! Has completado Camino Vital'\n  }\n};"
       },
       "id": "preparar-email-fin",
       "name": "Preparar Email Fin Programa",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1560, 350]
+      "position": [1780, 350]
     },
     {
       "parameters": {
@@ -168,19 +173,22 @@
       "name": "Enviar Email Fin (UTIL)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1780, 350]
+      "position": [2000, 350]
     },
     {
       "parameters": {
         "respondWith": "text",
-        "responseBody": "=🏆 ¡Felicidades! Has completado el programa Base Vital.",
-        "options": {"responseCode": 200}
+        "responseBody": "=<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>¡Programa Completado!</title></head><body style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #232323; color: #E8E8E8; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0;\"><div style=\"background: #1C1C1C; padding: 40px; border-radius: 18px; text-align: center; max-width: 400px;\"><div style=\"font-size: 64px; margin-bottom: 20px;\">🏆</div><h1 style=\"color: #DFCA61; margin: 0 0 15px 0;\">¡Felicidades!</h1><p style=\"color: #B5B5B5; font-size: 18px; margin: 0 0 20px 0;\">Has completado el programa Camino Vital</p><p style=\"color: #62B882; margin: 0;\">Revisa tu email para más información.</p></div></body></html>",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {"entries": [{"name": "Content-Type", "value": "text/html; charset=utf-8"}]}
+        }
       },
       "id": "responder-programa-completado",
       "name": "Responder Programa Completado",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [2000, 350]
+      "position": [2220, 350]
     },
     {
       "parameters": {
@@ -188,14 +196,14 @@
         "url": "={{ $env.WEBHOOK_URL }}/webhook/generar-sesion-ia",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ user_id: $node['Procesar Checkpoint'].json.id }) }}",
-        "options": {"timeout": 60000}
+        "jsonBody": "={{ JSON.stringify({ user_id: $json.id }) }}",
+        "options": {"timeout": 120000}
       },
       "id": "llamar-generador-ia",
       "name": "Llamar Generador Sesión IA",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1120, 500]
+      "position": [1340, 500]
     },
     {
       "parameters": {
@@ -207,7 +215,7 @@
       "name": "Obtener Sesión Generada",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [1340, 500],
+      "position": [1560, 500],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -225,7 +233,7 @@
       "name": "Obtener Template Nueva Semana",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [1560, 500],
+      "position": [1780, 500],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -235,13 +243,13 @@
     },
     {
       "parameters": {
-        "jsCode": "// Preparar email usando templates de BD\nconst templates = $json;\nconst sesion = $node['Obtener Sesión Generada'].json;\nconst analisis = $node['Procesar Checkpoint'].json;\n\nconsole.log('📧 Preparando email checkpoint con sesión nueva semana usando template BD');\n\nconst webhookUrl = process.env.WEBHOOK_URL || 'http://localhost:5678';\nconst sesionUrl = `${webhookUrl}/webhook/view-session/sesion/${sesion.id}?token=${sesion.auth_token}`;\n\n// Calcular total ejercicios y enfoque\nlet totalEjercicios = 'N/A';\nlet enfoqueTexto = 'Mixto';\n\nif (sesion.enfoque === 'fuerza' && sesion.calentamiento && sesion.trabajo_principal) {\n  const calentamiento = typeof sesion.calentamiento === 'string' ? JSON.parse(sesion.calentamiento) : sesion.calentamiento;\n  const trabajoPrincipal = typeof sesion.trabajo_principal === 'string' ? JSON.parse(sesion.trabajo_principal) : sesion.trabajo_principal;\n  totalEjercicios = `${(calentamiento?.length || 0) + (trabajoPrincipal?.length || 0)} ejercicios personalizados`;\n  enfoqueTexto = 'Fuerza Funcional';\n} else if (sesion.enfoque === 'cardio') {\n  totalEjercicios = 'Actividad cardiovascular guiada';\n  enfoqueTexto = 'Cardio y Resistencia';\n}\n\n// Determinar banner de ajuste\nlet bannerAjuste = '';\nif (analisis.ajuste_accion !== 'mantener') {\n  const accion = analisis.ajuste_accion;\n  let bannerTemplate = '';\n  \n  if (accion === 'subir' || accion === 'mejorar' || analisis.ajuste_intensidad > analisis.intensidad_nivel) {\n    bannerTemplate = templates.banner_subir;\n  } else {\n    bannerTemplate = templates.banner_bajar;\n  }\n  \n  // Reemplazar variables en el banner\n  bannerAjuste = bannerTemplate\n    .replace(/\\{\\{ajuste_razon\\}\\}/g, analisis.ajuste_razon || '')\n    .replace(/\\{\\{ajuste_nivel\\}\\}/g, (analisis.ajuste_nivel || '').toUpperCase())\n    .replace(/\\{\\{ajuste_intensidad\\}\\}/g, analisis.ajuste_intensidad || '');\n}\n\n// Reemplazar variables en el template principal\nconst emailHTML = templates.html_template\n  .replace(/\\{\\{semana\\}\\}/g, sesion.semana || '')\n  .replace(/\\{\\{nombre\\}\\}/g, sesion.user_nombre || '')\n  .replace(/\\{\\{semana_anterior\\}\\}/g, (analisis.semana_actual - 1) || '')\n  .replace(/\\{\\{banner_ajuste\\}\\}/g, bannerAjuste)\n  .replace(/\\{\\{titulo\\}\\}/g, sesion.titulo || '')\n  .replace(/\\{\\{descripcion\\}\\}/g, sesion.descripcion || 'Sesión personalizada para tu nivel')\n  .replace(/\\{\\{duracion\\}\\}/g, sesion.duracion_estimada || '30')\n  .replace(/\\{\\{enfoque\\}\\}/g, enfoqueTexto)\n  .replace(/\\{\\{contenido\\}\\}/g, totalEjercicios)\n  .replace(/\\{\\{sesion_url\\}\\}/g, sesionUrl);\n\nreturn {\n  json: {\n    user_id: sesion.user_id,\n    user_email: sesion.user_email,\n    user_nombre: sesion.user_nombre,\n    sesion_id: sesion.id,\n    email_html: emailHTML,\n    asunto: `🎯 Semana ${sesion.semana} - Sesión 1: ${sesion.titulo}`\n  }\n};"
+        "jsCode": "// Preparar email usando templates de BD\nconst templates = $json;\nconst sesion = $node['Obtener Sesión Generada'].json;\nconst checkpointData = $node['Procesar Checkpoint'].json;\n\nconsole.log('📧 Preparando email checkpoint con sesión nueva semana');\n\nconst webhookUrl = process.env.WEBHOOK_URL || 'http://localhost:5678';\nconst sesionUrl = `${webhookUrl}/webhook/view-session/sesion/${sesion.id}?token=${sesion.auth_token}`;\n\n// Calcular total ejercicios y enfoque\nlet totalEjercicios = 'N/A';\nlet enfoqueTexto = 'Mixto';\n\nif (sesion.enfoque === 'fuerza' && sesion.calentamiento && sesion.trabajo_principal) {\n  const calentamiento = typeof sesion.calentamiento === 'string' ? JSON.parse(sesion.calentamiento) : sesion.calentamiento;\n  const trabajoPrincipal = typeof sesion.trabajo_principal === 'string' ? JSON.parse(sesion.trabajo_principal) : sesion.trabajo_principal;\n  totalEjercicios = `${(calentamiento?.length || 0) + (trabajoPrincipal?.length || 0)} ejercicios personalizados`;\n  enfoqueTexto = 'Fuerza Funcional';\n} else if (sesion.enfoque === 'cardio') {\n  totalEjercicios = 'Actividad cardiovascular guiada';\n  enfoqueTexto = 'Cardio y Resistencia';\n}\n\n// Determinar banner de ajuste\nlet bannerAjuste = '';\nconst accion = checkpointData.ajuste_nivel;\nif (accion && accion !== 'mantener') {\n  let bannerTemplate = '';\n  \n  if (accion === 'subir' || accion === 'subir_mucho') {\n    bannerTemplate = templates.banner_subir;\n  } else if (accion === 'bajar' || accion === 'bajar_mucho') {\n    bannerTemplate = templates.banner_bajar;\n  }\n  \n  if (bannerTemplate) {\n    bannerAjuste = bannerTemplate\n      .replace(/\\{\\{ajuste_razon\\}\\}/g, checkpointData.ajuste_razon || '')\n      .replace(/\\{\\{ajuste_nivel\\}\\}/g, (checkpointData.ajuste_nivel || '').toUpperCase())\n      .replace(/\\{\\{ajuste_intensidad\\}\\}/g, checkpointData.ajuste_intensidad || '');\n  }\n}\n\n// Reemplazar variables en el template principal\nconst emailHTML = templates.html_template\n  .replace(/\\{\\{semana\\}\\}/g, sesion.semana || '')\n  .replace(/\\{\\{nombre\\}\\}/g, sesion.user_nombre || '')\n  .replace(/\\{\\{semana_anterior\\}\\}/g, (checkpointData.semana_actual - 1) || '')\n  .replace(/\\{\\{banner_ajuste\\}\\}/g, bannerAjuste)\n  .replace(/\\{\\{titulo\\}\\}/g, sesion.titulo || '')\n  .replace(/\\{\\{descripcion\\}\\}/g, sesion.descripcion || 'Sesión personalizada para tu nivel')\n  .replace(/\\{\\{duracion\\}\\}/g, sesion.duracion_estimada || '30')\n  .replace(/\\{\\{enfoque\\}\\}/g, enfoqueTexto)\n  .replace(/\\{\\{contenido\\}\\}/g, totalEjercicios)\n  .replace(/\\{\\{sesion_url\\}\\}/g, sesionUrl)\n  .replace(/\\{\\{sesiones_objetivo\\}\\}/g, checkpointData.sesiones_objetivo_semana || '');\n\nreturn {\n  json: {\n    user_id: sesion.user_id,\n    user_email: sesion.user_email,\n    user_nombre: sesion.user_nombre,\n    sesion_id: sesion.id,\n    email_html: emailHTML,\n    asunto: `🎯 Semana ${sesion.semana} - Sesión 1: ${sesion.titulo}`\n  }\n};"
       },
       "id": "preparar-email-sesion",
       "name": "Preparar Email Sesión",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1780, 500]
+      "position": [2000, 500]
     },
     {
       "parameters": {
@@ -256,25 +264,31 @@
       "name": "Enviar Email Sesión (UTIL)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2000, 500]
+      "position": [2220, 500]
     },
     {
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ { success: true, message: 'Checkpoint procesado. Nueva sesión enviada.', semana: $node['Procesar Checkpoint'].json.semana_actual, email_resultado: $json } }}",
-        "options": {"responseCode": 200}
+        "respondWith": "text",
+        "responseBody": "=<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>¡Confirmado!</title></head><body style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #232323; color: #E8E8E8; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0;\"><div style=\"background: #1C1C1C; padding: 40px; border-radius: 18px; text-align: center; max-width: 450px;\"><div style=\"font-size: 64px; margin-bottom: 20px;\">🎉</div><h1 style=\"color: #62B882; margin: 0 0 15px 0;\">¡Perfecto, {{ $node['Procesar Checkpoint'].json.nombre }}!</h1><p style=\"color: #B5B5B5; font-size: 16px; margin: 0 0 25px 0;\">Tu configuración para la <strong style=\"color: #DFCA61;\">Semana {{ $node['Procesar Checkpoint'].json.semana_actual }}</strong></p><div style=\"background: rgba(98,184,130,0.1); border-radius: 12px; padding: 20px; margin: 20px 0;\"><p style=\"margin: 5px 0; color: #B5B5B5;\">📊 Nivel: <strong style=\"color: #E8E8E8;\">{{ $node['Procesar Checkpoint'].json.nivel_actual.toUpperCase() }}</strong></p><p style=\"margin: 5px 0; color: #B5B5B5;\">⚡ Intensidad: <strong style=\"color: #E8E8E8;\">{{ $node['Procesar Checkpoint'].json.intensidad_nivel }}%</strong></p><p style=\"margin: 5px 0; color: #B5B5B5;\">📅 Sesiones/semana: <strong style=\"color: #E8E8E8;\">{{ $node['Procesar Checkpoint'].json.sesiones_objetivo_semana }}</strong></p></div><p style=\"color: #62B882; margin: 20px 0 0 0;\">📬 Revisa tu email para tu primera sesión</p></div></body></html>",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {"entries": [{"name": "Content-Type", "value": "text/html; charset=utf-8"}]}
+        }
       },
       "id": "responder-confirmacion",
       "name": "Responder Confirmación",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [2220, 500]
+      "position": [2440, 500]
     },
     {
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ { success: false, error: $json.message || 'Error procesando checkpoint' } }}",
-        "options": {"responseCode": 500}
+        "respondWith": "text",
+        "responseBody": "=<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Error</title></head><body style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #232323; color: #E8E8E8; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0;\"><div style=\"background: #1C1C1C; padding: 40px; border-radius: 18px; text-align: center; max-width: 400px;\"><div style=\"font-size: 48px; margin-bottom: 20px;\">❌</div><h1 style=\"color: #EF5350; margin: 0 0 15px 0;\">Error</h1><p style=\"color: #B5B5B5; margin: 0;\">Hubo un problema procesando tu checkpoint. Por favor, intenta de nuevo o contacta soporte.</p></div></body></html>",
+        "options": {
+          "responseCode": 500,
+          "responseHeaders": {"entries": [{"name": "Content-Type", "value": "text/html; charset=utf-8"}]}
+        }
       },
       "id": "responder-error",
       "name": "Responder Error",
@@ -285,7 +299,11 @@
   ],
   "connections": {
     "Webhook Checkpoint Semanal": {
-      "main": [[{"node": "Procesar Checkpoint", "type": "main", "index": 0}]]
+      "main": [[{"node": "Analizar Semana", "type": "main", "index": 0}]]
+    },
+    "Analizar Semana": {
+      "main": [[{"node": "Procesar Checkpoint", "type": "main", "index": 0}]],
+      "error": [[{"node": "Responder Error", "type": "main", "index": 0}]]
     },
     "Procesar Checkpoint": {
       "main": [[{"node": "IF: ¿Checkpoint ya procesado?", "type": "main", "index": 0}]],
@@ -293,12 +311,9 @@
     },
     "IF: ¿Checkpoint ya procesado?": {
       "main": [
-        [{"node": "Obtener Template Ya Procesado", "type": "main", "index": 0}],
+        [{"node": "Responder Ya Procesado", "type": "main", "index": 0}],
         [{"node": "IF: ¿Programa completado (>12 sem)?", "type": "main", "index": 0}]
       ]
-    },
-    "Obtener Template Ya Procesado": {
-      "main": [[{"node": "Responder Ya Procesado", "type": "main", "index": 0}]]
     },
     "IF: ¿Programa completado (>12 sem)?": {
       "main": [
@@ -336,5 +351,5 @@
   },
   "settings": {"executionOrder": "v1"},
   "pinData": {},
-  "versionId": "v3-templates-bd"
+  "versionId": "v4-sesiones-selection"
 }
