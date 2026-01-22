@@ -19,7 +19,7 @@
       "parameters": {
         "operation": "executeQuery",
         "query": "-- Resetear flag semanal para todos los usuarios activos\nUPDATE programa_users\nSET ajustado_esta_semana = FALSE\nWHERE estado = 'activo'\n  AND ajustado_esta_semana = TRUE\nRETURNING id, email, 'flag reseteado' as accion;",
-        "options": {"alwaysOutputData": true}
+        "options": {}
       },
       "id": "resetear-flags",
       "name": "Resetear Flag Semanal",
@@ -37,6 +37,24 @@
     {
       "parameters": {
         "operation": "executeQuery",
+        "query": "-- Obtener ambos templates de una sola vez\nSELECT \n  (SELECT html_template FROM email_templates WHERE nombre = 'checkpoint_semanal' AND version = 1) as template_checkpoint,\n  (SELECT html_template FROM email_templates WHERE nombre = 'programa_completado' AND version = 1) as template_completado;",
+        "options": {}
+      },
+      "id": "obtener-templates",
+      "name": "Obtener Templates",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [680, 300],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
         "query": "-- Obtener TODOS los usuarios activos (semanas 1-12)\nSELECT\n  id,\n  email,\n  nombre,\n  etapa,\n  nivel_actual,\n  semana_actual,\n  sesiones_objetivo_semana,\n  sesiones_completadas_semana,\n  semanas_consecutivas_completas,\n  intensidad_nivel\nFROM programa_users\nWHERE estado = 'activo'\n  AND semana_actual >= 1\n  AND semana_actual <= 12\nORDER BY id;",
         "options": {}
       },
@@ -44,7 +62,7 @@
       "name": "Obtener Usuarios Activos",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [680, 300],
+      "position": [900, 300],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -72,30 +90,12 @@
       "name": "IF: ¿Semana 12 (Programa completado)?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [900, 300]
+      "position": [1120, 300]
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT html_template FROM email_templates WHERE nombre = 'programa_completado' AND version = 1;",
-        "options": {}
-      },
-      "id": "obtener-template-completado",
-      "name": "Obtener Template Programa Completado",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.4,
-      "position": [1120, 200],
-      "credentials": {
-        "postgres": {
-          "id": "nLcUOvLreXurFbBs",
-          "name": "PostgreSQL Camino Vital Local"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "=-- Marcar programa como completado\nUPDATE programa_users\nSET estado = 'completado', updated_at = NOW()\nWHERE id = {{ $node['Obtener Usuarios Activos'].json.id }}\nRETURNING *;",
+        "query": "=-- Marcar programa como completado\nUPDATE programa_users\nSET estado = 'completado', updated_at = NOW()\nWHERE id = {{ $json.id }}\nRETURNING *;",
         "options": {}
       },
       "id": "marcar-completado",
@@ -112,7 +112,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Preparar email de programa completado\n\nfunction replaceVariables(template, variables) {\n  let result = template;\n  for (const [key, value] of Object.entries(variables)) {\n    const safeValue = String(value ?? '');\n    const regex = new RegExp(`\\\\{\\\\{${key}\\\\}\\\\}`, 'g');\n    result = result.replace(regex, safeValue);\n  }\n  return result;\n}\n\nconst usuario = $node['Marcar Programa Completado'].json;\nconst template = $node['Obtener Template Programa Completado'].json.html_template;\n\nconsole.log('🏆 Preparando email de programa completado para:', usuario.email);\n\nconst variables = {\n  nombre: usuario.nombre,\n  nivel_actual: usuario.nivel_actual,\n  intensidad: usuario.intensidad_nivel\n};\n\nconst emailHTML = replaceVariables(template, variables);\n\nreturn {\n  json: {\n    user_id: usuario.id,\n    user_email: usuario.email,\n    user_nombre: usuario.nombre,\n    email_html: emailHTML,\n    asunto: '🏆 ¡Felicidades! Has completado Camino Vital'\n  }\n};"
+        "jsCode": "// Preparar email de programa completado\n\nfunction replaceVariables(template, variables) {\n  let result = template;\n  for (const [key, value] of Object.entries(variables)) {\n    const safeValue = String(value ?? '');\n    const regex = new RegExp(`\\\\{\\\\{${key}\\\\}\\\\}`, 'g');\n    result = result.replace(regex, safeValue);\n  }\n  return result;\n}\n\n// Usuario actual (del nodo anterior en el loop)\nconst usuario = $json;\n// Template obtenido al inicio del workflow\nconst template = $node['Obtener Templates'].first().json.template_completado;\n\nconsole.log('🏆 Preparando email de programa completado para:', usuario.email);\n\nconst variables = {\n  nombre: usuario.nombre,\n  nivel_actual: usuario.nivel_actual,\n  intensidad: usuario.intensidad_nivel\n};\n\nconst emailHTML = replaceVariables(template, variables);\n\nreturn {\n  json: {\n    user_id: usuario.id,\n    user_email: usuario.email,\n    user_nombre: usuario.nombre,\n    email_html: emailHTML,\n    asunto: '🏆 ¡Felicidades! Has completado Camino Vital'\n  }\n};"
       },
       "id": "preparar-email-completado",
       "name": "Preparar Email Programa Completado",
@@ -137,25 +137,7 @@
     },
     {
       "parameters": {
-        "operation": "executeQuery",
-        "query": "-- Obtener template de checkpoint semanal\nSELECT * FROM get_email_template('checkpoint_semanal');",
-        "options": {}
-      },
-      "id": "obtener-template-checkpoint",
-      "name": "Obtener Template Checkpoint",
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.4,
-      "position": [1120, 400],
-      "credentials": {
-        "postgres": {
-          "id": "nLcUOvLreXurFbBs",
-          "name": "PostgreSQL Camino Vital Local"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "// Preparar email de checkpoint semanal con botones de feedback\n\nfunction replaceVariables(template, variables) {\n  let result = template;\n  for (const [key, value] of Object.entries(variables)) {\n    const safeValue = String(value ?? '');\n    const regex = new RegExp(`\\\\{\\\\{${key}\\\\}\\\\}`, 'g');\n    result = result.replace(regex, safeValue);\n  }\n  return result;\n}\n\nconst usuario = $node['Obtener Usuarios Activos'].json;\nconst template = $json.html_template;\n\nconsole.log('📧 Preparando checkpoint para:', usuario.email);\n\n// Calcular adherencia\nconst adherencia = usuario.sesiones_objetivo_semana > 0 \n  ? Math.round((usuario.sesiones_completadas_semana / usuario.sesiones_objetivo_semana) * 100)\n  : 0;\n\nconst variables = {\n  nombre: usuario.nombre,\n  semana_actual: usuario.semana_actual,\n  semana_siguiente: usuario.semana_actual + 1,\n  sesiones_completadas: usuario.sesiones_completadas_semana,\n  sesiones_objetivo: usuario.sesiones_objetivo_semana,\n  adherencia_porcentaje: adherencia,\n  semanas_consecutivas: usuario.semanas_consecutivas_completas || 0,\n  nivel_actual: usuario.nivel_actual,\n  intensidad: usuario.intensidad_nivel,\n  user_id: usuario.id,\n  webhook_url: process.env.WEBHOOK_URL || 'http://localhost:5678'\n};\n\nconst emailHTML = replaceVariables(template, variables);\n\nreturn {\n  json: {\n    user_id: usuario.id,\n    user_email: usuario.email,\n    user_nombre: usuario.nombre,\n    semana: usuario.semana_actual,\n    email_html: emailHTML,\n    asunto: `📊 Checkpoint Semana ${usuario.semana_actual} - ¿Cómo quieres continuar?`\n  }\n};"
+        "jsCode": "// Preparar email de checkpoint semanal\n\nfunction replaceVariables(template, variables) {\n  let result = template;\n  for (const [key, value] of Object.entries(variables)) {\n    const safeValue = String(value ?? '');\n    const regex = new RegExp(`\\\\{\\\\{${key}\\\\}\\\\}`, 'g');\n    result = result.replace(regex, safeValue);\n  }\n  return result;\n}\n\n// Usuario actual (viene del IF, es el item actual del loop)\nconst usuario = $json;\n// Template obtenido al inicio del workflow\nconst template = $node['Obtener Templates'].first().json.template_checkpoint;\n\nconsole.log('📧 Preparando checkpoint para:', usuario.email);\n\n// Calcular adherencia\nconst adherencia = usuario.sesiones_objetivo_semana > 0 \n  ? Math.round((usuario.sesiones_completadas_semana / usuario.sesiones_objetivo_semana) * 100)\n  : 0;\n\nconst variables = {\n  nombre: usuario.nombre,\n  semana_actual: usuario.semana_actual,\n  semana_siguiente: usuario.semana_actual + 1,\n  sesiones_completadas: usuario.sesiones_completadas_semana,\n  sesiones_objetivo: usuario.sesiones_objetivo_semana,\n  adherencia_porcentaje: adherencia,\n  semanas_consecutivas: usuario.semanas_consecutivas_completas || 0,\n  nivel_actual: usuario.nivel_actual,\n  intensidad: usuario.intensidad_nivel,\n  user_id: usuario.id,\n  webhook_url: process.env.WEBHOOK_URL || 'http://localhost:5678'\n};\n\nconst emailHTML = replaceVariables(template, variables);\n\nreturn {\n  json: {\n    user_id: usuario.id,\n    user_email: usuario.email,\n    user_nombre: usuario.nombre,\n    semana: usuario.semana_actual,\n    email_html: emailHTML,\n    asunto: `📊 Checkpoint Semana ${usuario.semana_actual} - ¿Cómo quieres continuar?`\n  }\n};"
       },
       "id": "preparar-email-checkpoint",
       "name": "Preparar Email Checkpoint",
@@ -184,6 +166,9 @@
       "main": [[{"node": "Resetear Flag Semanal", "type": "main", "index": 0}]]
     },
     "Resetear Flag Semanal": {
+      "main": [[{"node": "Obtener Templates", "type": "main", "index": 0}]]
+    },
+    "Obtener Templates": {
       "main": [[{"node": "Obtener Usuarios Activos", "type": "main", "index": 0}]]
     },
     "Obtener Usuarios Activos": {
@@ -191,12 +176,9 @@
     },
     "IF: ¿Semana 12 (Programa completado)?": {
       "main": [
-        [{"node": "Obtener Template Programa Completado", "type": "main", "index": 0}],
-        [{"node": "Obtener Template Checkpoint", "type": "main", "index": 0}]
+        [{"node": "Marcar Programa Completado", "type": "main", "index": 0}],
+        [{"node": "Preparar Email Checkpoint", "type": "main", "index": 0}]
       ]
-    },
-    "Obtener Template Programa Completado": {
-      "main": [[{"node": "Marcar Programa Completado", "type": "main", "index": 0}]]
     },
     "Marcar Programa Completado": {
       "main": [[{"node": "Preparar Email Programa Completado", "type": "main", "index": 0}]]
@@ -204,14 +186,11 @@
     "Preparar Email Programa Completado": {
       "main": [[{"node": "Enviar Email Completado (UTIL)", "type": "main", "index": 0}]]
     },
-    "Obtener Template Checkpoint": {
-      "main": [[{"node": "Preparar Email Checkpoint", "type": "main", "index": 0}]]
-    },
     "Preparar Email Checkpoint": {
       "main": [[{"node": "Enviar Checkpoint (UTIL)", "type": "main", "index": 0}]]
     }
   },
   "settings": {"executionOrder": "v1"},
   "pinData": {},
-  "versionId": "v4-all-users"
+  "versionId": "v5-loop-fix"
 }
