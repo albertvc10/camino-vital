@@ -55,11 +55,11 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "-- Obtener TODOS los usuarios activos (semanas 1-12)\nSELECT\n  id,\n  email,\n  nombre,\n  etapa,\n  nivel_actual,\n  semana_actual,\n  sesiones_objetivo_semana,\n  sesiones_completadas_semana,\n  semanas_consecutivas_completas,\n  intensidad_nivel\nFROM programa_users\nWHERE estado = 'activo'\n  AND semana_actual >= 1\n  AND semana_actual <= 12\nORDER BY id;",
+        "query": "-- Obtener usuarios activos CON análisis y mensaje personalizado\nSELECT \n  a.out_user_id as id,\n  a.out_email as email,\n  a.out_nombre as nombre,\n  a.out_nivel_actual as nivel_actual,\n  a.out_semana_actual as semana_actual,\n  a.out_sesiones_objetivo as sesiones_objetivo_semana,\n  a.out_sesiones_completadas as sesiones_completadas_semana,\n  a.out_intensidad_actual as intensidad_nivel,\n  a.adherencia_porcentaje,\n  a.adherencia_nivel,\n  a.feedback_mayoritario,\n  a.accion_nivel,\n  a.mensaje_usuario,\n  a.explicacion_corta\nFROM programa_users u\nCROSS JOIN LATERAL analizar_semana_para_checkpoint(u.id) a\nWHERE u.estado = 'activo'\n  AND u.semana_actual >= 1\n  AND u.semana_actual <= 12\nORDER BY a.out_user_id;",
         "options": {}
       },
       "id": "obtener-usuarios-activos",
-      "name": "Obtener Usuarios Activos",
+      "name": "Obtener Usuarios con Análisis",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
       "position": [900, 300],
@@ -139,7 +139,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "// Preparar email de checkpoint semanal\n\nfunction replaceVariables(template, variables) {\n  let result = template;\n  for (const [key, value] of Object.entries(variables)) {\n    const safeValue = String(value ?? '');\n    const regex = new RegExp(`\\\\{\\\\{${key}\\\\}\\\\}`, 'g');\n    result = result.replace(regex, safeValue);\n  }\n  return result;\n}\n\n// Usuario actual (viene del IF, es el item actual del loop)\nconst usuario = $json;\n// Template obtenido al inicio del workflow\nconst template = $('Obtener Templates').first().json.template_checkpoint;\n\nconsole.log('📧 Preparando checkpoint para:', usuario.email);\n\n// Calcular adherencia\nconst adherencia = usuario.sesiones_objetivo_semana > 0 \n  ? Math.round((usuario.sesiones_completadas_semana / usuario.sesiones_objetivo_semana) * 100)\n  : 0;\n\nconst variables = {\n  nombre: usuario.nombre,\n  semana_actual: usuario.semana_actual,\n  semana_siguiente: usuario.semana_actual + 1,\n  sesiones_completadas: usuario.sesiones_completadas_semana,\n  sesiones_objetivo: usuario.sesiones_objetivo_semana,\n  adherencia_porcentaje: adherencia,\n  semanas_consecutivas: usuario.semanas_consecutivas_completas || 0,\n  nivel_actual: usuario.nivel_actual,\n  intensidad: usuario.intensidad_nivel,\n  user_id: usuario.id,\n  webhook_url: process.env.WEBHOOK_URL || 'http://localhost:5678'\n};\n\nconst emailHTML = replaceVariables(template, variables);\n\nreturn {\n  json: {\n    user_id: usuario.id,\n    user_email: usuario.email,\n    user_nombre: usuario.nombre,\n    semana: usuario.semana_actual,\n    email_html: emailHTML,\n    asunto: `📊 Checkpoint Semana ${usuario.semana_actual} - ¿Cómo quieres continuar?`\n  }\n};"
+        "jsCode": "// Preparar email de checkpoint semanal CON mensaje personalizado\n\nfunction replaceVariables(template, variables) {\n  let result = template;\n  for (const [key, value] of Object.entries(variables)) {\n    const safeValue = String(value ?? '');\n    const regex = new RegExp(`\\\\{\\\\{${key}\\\\}\\\\}`, 'g');\n    result = result.replace(regex, safeValue);\n  }\n  return result;\n}\n\n// Usuario actual con análisis (viene del IF, es el item actual del loop)\nconst usuario = $json;\n// Template obtenido al inicio del workflow\nconst template = $('Obtener Templates').first().json.template_checkpoint;\n\nconsole.log('📧 Preparando checkpoint para:', usuario.email);\nconsole.log('💬 Mensaje personalizado:', usuario.mensaje_usuario);\n\nconst variables = {\n  nombre: usuario.nombre,\n  semana_actual: usuario.semana_actual,\n  semana_siguiente: usuario.semana_actual + 1,\n  sesiones_completadas: usuario.sesiones_completadas_semana,\n  sesiones_objetivo: usuario.sesiones_objetivo_semana,\n  adherencia_porcentaje: usuario.adherencia_porcentaje || 0,\n  nivel_actual: usuario.nivel_actual,\n  intensidad: usuario.intensidad_nivel,\n  mensaje_usuario: usuario.mensaje_usuario || 'Sigue así, ¡vas muy bien!',\n  user_id: usuario.id,\n  webhook_url: process.env.WEBHOOK_URL || 'http://localhost:5678'\n};\n\nconst emailHTML = replaceVariables(template, variables);\n\nreturn {\n  json: {\n    user_id: usuario.id,\n    user_email: usuario.email,\n    user_nombre: usuario.nombre,\n    semana: usuario.semana_actual,\n    email_html: emailHTML,\n    asunto: `📊 Checkpoint Semana ${usuario.semana_actual} - ¿Cómo quieres continuar?`\n  }\n};"
       },
       "id": "preparar-email-checkpoint",
       "name": "Preparar Email Checkpoint",
@@ -171,9 +171,9 @@
       "main": [[{"node": "Obtener Templates", "type": "main", "index": 0}]]
     },
     "Obtener Templates": {
-      "main": [[{"node": "Obtener Usuarios Activos", "type": "main", "index": 0}]]
+      "main": [[{"node": "Obtener Usuarios con Análisis", "type": "main", "index": 0}]]
     },
-    "Obtener Usuarios Activos": {
+    "Obtener Usuarios con Análisis": {
       "main": [[{"node": "IF: ¿Semana 12 (Programa completado)?", "type": "main", "index": 0}]]
     },
     "IF: ¿Semana 12 (Programa completado)?": {
@@ -194,5 +194,5 @@
   },
   "settings": {"executionOrder": "v1"},
   "pinData": {},
-  "versionId": "v5-loop-fix"
+  "versionId": "v6-mensaje-personalizado"
 }
