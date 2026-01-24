@@ -122,7 +122,14 @@
       "Bash(for wf in \"Camino Vital - 01-bis Seleccionar Sesiones y Enviar Primera\" \"Camino Vital - 03-bis Feedback y Siguiente Sesión\" \"Camino Vital - 07 Procesar Checkpoint Semanal\")",
       "Bash(# Restore workflow 07 jq ''.nodes'' \"\"/Users/albertvillanueva/Documents/HV_n8n/programa-camino-vital/workflows/Camino Vital - 07 Procesar Checkpoint Semanal.json\"\" 2>&1 jq ''.connections'' \"\"/Users/albertvillanueva/Documents/HV_n8n/programa-camino-vital/workflows/Camino Vital - 07 Procesar Checkpoint Semanal.json\"\" 2>&1 jq -c ''.'' /tmp/restore_07_nodes.json)",
       "Bash(# Restore from data folder version jq ''.nodes'' \"\"/Users/albertvillanueva/Documents/HV_n8n/data/n8n/workflow-07.json\"\" 2>&1 jq ''.connections'' \"\"/Users/albertvillanueva/Documents/HV_n8n/data/n8n/workflow-07.json\"\" 2>&1 jq -c ''.'' /tmp/restore_07_v2_nodes.json)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd: Camino Vital program - complete implementation\n\n- Database schema with progression system, feedback tracking, email templates\n- Workflows: onboarding, session generation, feedback processing, checkpoints\n- Landing pages: questionnaire, results, feedback forms\n- Documentation: setup guides, workflow instructions, template usage\n- Email templates stored in DB following dark theme \\(Hábitos Vitales\\)\n- Instagram auto-responder variations and Vizard automation updates\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit:*)",
+      "Bash(lo entendemos. Ajustamos para la próxima.\"\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(xxd:*)",
+      "Bash(API_KEY=\"n8n-local-api-key-camino-vital-2024\")",
+      "WebFetch(domain:localhost)",
+      "Bash(PGPASSWORD='5+05GaaaRQPbTjRbRNj3N3pl17K1zhyv' psql -h localhost -p 5432 -U n8n -d n8n -c \"SELECT html_template FROM email_templates WHERE nombre = ''pagina_sesion'';\")"
     ],
     "deny": [],
     "ask": []
