@@ -128,9 +128,8 @@
         }
 
         .countdown-mini-label {
-            font-size: 12px;
+            font-size: 11px;
             color: var(--color-text-secondary);
-            text-transform: uppercase;
         }
 
         .countdown-mini-time {
@@ -627,7 +626,7 @@
 
             <!-- Mini Countdown -->
             <div class="countdown-mini">
-                <span class="countdown-mini-label">Oferta termina en:</span>
+                <span class="countdown-mini-label">Acceso anticipado hasta:</span>
                 <div class="countdown-mini-time">
                     <div class="countdown-mini-item">
                         <span class="countdown-mini-num" id="days">0</span>
@@ -723,9 +722,9 @@
 
             <div class="pricing-section">
                 <h3 class="pricing-title">Acceso completo a Base Vital</h3>
-                <div class="price-original">89€</div>
-                <div class="price">35€</div>
-                <div class="price-note">Precio acceso anticipado</div>
+                <div class="price-detail" style="margin-bottom: 5px;">Valor del programa: 89€</div>
+                <div class="price">39€</div>
+                <div class="price-note">Acceso anticipado</div>
                 <div class="price-detail">Pago unico • <span id="priceDuration"></span></div>
 
                 <div class="program-start-info">
@@ -907,7 +906,7 @@
         document.getElementById('testimonialName').textContent = programData.testimonial.name;
         document.getElementById('testimonialAvatar').textContent = programData.testimonial.avatar;
 
-        // Funcion para redirigir a checkout de Stripe con cupon EARLYBIRD10
+        // Funcion para redirigir a checkout de Stripe
         async function redirectToCheckout() {
             // Mostrar estado de carga
             const ctaButton = document.getElementById('ctaButton');
@@ -926,10 +925,9 @@
             console.log('Entorno:', isLocal ? 'LOCAL (Stripe TEST)' : 'PRODUCCION');
             console.log('Stripe URL:', stripeURL);
 
-            // Redirigir a Stripe Checkout con cupon EARLYBIRD10 pre-aplicado
+            // Redirigir a Stripe Checkout
             try {
-                // Nota: prefilled_promo_code solo funciona si el Payment Link tiene promociones habilitadas
-                window.location.href = `${stripeURL}?prefilled_email=${encodeURIComponent(quizData.email)}&client_reference_id=${encodeURIComponent(quizData.email)}&prefilled_promo_code=EARLYBIRD10`;
+                window.location.href = `${stripeURL}?prefilled_email=${encodeURIComponent(quizData.email)}&client_reference_id=${encodeURIComponent(quizData.email)}`;
             } catch (error) {
                 console.error('Error:', error);
                 ctaButton.classList.remove('loading');
