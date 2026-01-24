@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acceso Anticipado - Camino Vital</title>
+    <title>Reserva tu Plaza - Camino Vital</title>
     <style>
         /* Variables CSS */
         :root {
@@ -82,9 +82,40 @@
         }
 
         .hero .subtitle {
-            font-size: 20px;
-            color: var(--color-text-secondary);
+            font-size: 18px;
+            color: var(--color-text-primary);
             margin-bottom: 30px;
+            background: rgba(98, 184, 130, 0.15);
+            border: 1px solid rgba(98, 184, 130, 0.3);
+            padding: 15px 25px;
+            border-radius: 12px;
+            display: inline-block;
+            max-width: 600px;
+        }
+
+        /* Session Example */
+        .session-example {
+            margin: 40px 0;
+            text-align: center;
+        }
+
+        .session-example h3 {
+            color: var(--color-primary);
+            margin-bottom: 20px;
+            font-size: 22px;
+        }
+
+        .session-example img {
+            max-width: 100%;
+            border-radius: var(--border-radius-card);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+            border: 1px solid var(--color-border);
+        }
+
+        .session-example-caption {
+            margin-top: 15px;
+            color: var(--color-text-secondary);
+            font-size: 14px;
         }
 
         /* Countdown */
@@ -750,13 +781,13 @@
 
         <!-- Hero Section -->
         <div class="hero">
-            <span class="early-bird-badge">Acceso Anticipado</span>
+            <span class="early-bird-badge">Plazas Limitadas</span>
             <h1>Camino Vital</h1>
-            <p class="subtitle">El recorrido de movimiento para cuidar tu autonomia y tu longevidad a cualquier edad</p>
+            <p class="subtitle">🚶 Un programa de movimiento para cuidar tu autonomia y tu longevidad a cualquier edad</p>
 
             <!-- Countdown -->
             <div class="countdown-container">
-                <div class="countdown-label">Acceso anticipado disponible hasta:</div>
+                <div class="countdown-label">Reservas abiertas hasta:</div>
                 <div class="countdown" id="countdown">
                     <div class="countdown-item">
                         <span class="countdown-num" id="days">0</span>
@@ -780,8 +811,8 @@
             <!-- Price -->
             <div class="price-hero">
                 <div class="price-note" style="margin-bottom: 5px;">Valor del programa: 89€</div>
-                <div class="price-current">39€</div>
-                <div class="price-note">Acceso anticipado - Inicio 1 de marzo</div>
+                <div class="price-current">35€</div>
+                <div class="price-note">Precio de reserva · El 1 de marzo sube a 39€</div>
             </div>
 
             <a href="#quiz" class="btn-cta">Reservar mi plaza</a>
@@ -789,7 +820,7 @@
 
         <!-- Section: El Camino Vital -->
         <div class="section">
-            <h2>El Camino Vital</h2>
+            <h2>🛤️ El Camino Vital</h2>
             <p>Camino Vital es un programa de movimiento disenado para ayudarte a <strong>mantener tu capacidad fisica y tu calidad de vida</strong> con el paso del tiempo, adaptandose a como estas hoy y a como evolucionas con los anos.</p>
             <p>El recorrido comienza con un <strong>ciclo guiado de 12 semanas</strong>, disenado para construir una base solida, segura y sostenible.</p>
 
@@ -803,7 +834,7 @@
 
         <!-- Section: Para quien es -->
         <div class="section">
-            <h2>¿Para quien es Camino Vital?</h2>
+            <h2>🎯 ¿Para quien es Camino Vital?</h2>
             <p>Camino Vital es para personas que quieren moverse mejor hoy y seguir siendo autonomas con el paso del tiempo.</p>
             <p><strong>Da igual si:</strong></p>
             <ul>
@@ -826,33 +857,33 @@
 
         <!-- Section: Que trabajas -->
         <div class="section">
-            <h2>¿Que trabajas en Camino Vital?</h2>
+            <h2>💪 ¿Que trabajas en Camino Vital?</h2>
             <p>Durante las primeras 12 semanas, el programa trabaja de forma equilibrada todo lo que tu cuerpo necesita:</p>
 
             <div class="work-items">
                 <div class="work-item">
-                    <strong>Fuerza</strong>
+                    <strong>🏋️ Fuerza</strong>
                     <span>Levantarte, cargar peso, proteger articulaciones</span>
                 </div>
                 <div class="work-item">
-                    <strong>Resistencia</strong>
+                    <strong>❤️ Resistencia</strong>
                     <span>Mas energia en tu dia a dia</span>
                 </div>
                 <div class="work-item">
-                    <strong>Movilidad</strong>
+                    <strong>🧘 Movilidad</strong>
                     <span>Moverte con libertad y sin rigidez</span>
                 </div>
                 <div class="work-item">
-                    <strong>Estabilidad</strong>
+                    <strong>⚖️ Estabilidad</strong>
                     <span>Prevenir caidas, mas seguridad</span>
                 </div>
                 <div class="work-item">
-                    <strong>Impacto progresivo</strong>
+                    <strong>🦴 Impacto progresivo</strong>
                     <span>Huesos y tejidos fuertes</span>
                 </div>
             </div>
 
-            <h3>Con el tiempo notaras:</h3>
+            <h3>✨ Con el tiempo notaras:</h3>
             <ul>
                 <li>Mas seguridad al moverte</li>
                 <li>Menos miedo a lesionarte</li>
@@ -864,26 +895,33 @@
 
         <!-- Section: Como funciona -->
         <div class="section">
-            <h2>¿Como funciona?</h2>
+            <h2>📧 ¿Como funciona?</h2>
             <p>Camino Vital se entrega por email, de forma sencilla y acompanada.</p>
 
             <div class="features-grid">
                 <div class="feature-item">
-                    <h4>Propuestas claras</h4>
+                    <h4>📋 Propuestas claras</h4>
                     <p>Recibes ejercicios faciles de seguir, con videos demostrativos</p>
                 </div>
                 <div class="feature-item">
-                    <h4>Estructura guiada</h4>
+                    <h4>📅 Estructura guiada</h4>
                     <p>12 semanas con progresion adaptada a tu ritmo</p>
                 </div>
                 <div class="feature-item">
-                    <h4>Sin gimnasio</h4>
+                    <h4>🏠 Sin gimnasio</h4>
                     <p>Todo desde casa con tu propio peso corporal</p>
                 </div>
                 <div class="feature-item">
-                    <h4>Sin presion</h4>
+                    <h4>🔄 Sin presion</h4>
                     <p>Tu eliges cuantas sesiones hacer cada semana</p>
                 </div>
+            </div>
+
+            <!-- Session Example Screenshot -->
+            <div class="session-example">
+                <h3>📱 Asi es una sesion de ejemplo:</h3>
+                <img src="https://habitos-vitales.com/wp-content/uploads/2026/01/sesion_ejemplo.png" alt="Ejemplo de sesion de Camino Vital">
+                <p class="session-example-caption">Cada sesion incluye ejercicios con video, instrucciones claras y botones de feedback</p>
             </div>
 
             <div class="highlight-box">
@@ -893,10 +931,10 @@
 
         <!-- Section: Acceso al programa -->
         <div class="section">
-            <h2>Acceso al programa</h2>
+            <h2>🎟️ Reserva tu plaza</h2>
             <p><strong>En este momento, Camino Vital abre un numero limitado de plazas</strong> para poder acompanar de forma cercana a quienes empiezan ahora el recorrido.</p>
 
-            <h3>Incluye:</h3>
+            <h3>📦 Incluye:</h3>
             <ul>
                 <li>Acceso completo al programa Camino Vital</li>
                 <li>Ciclo guiado de 12 semanas</li>
@@ -907,22 +945,22 @@
             </ul>
 
             <div class="program-start">
-                <p style="color: var(--color-text-secondary); margin-bottom: 10px;">Inicio del programa</p>
+                <p style="color: var(--color-text-secondary); margin-bottom: 10px;">📅 Inicio del programa</p>
                 <div class="date">1 de marzo de 2026</div>
             </div>
 
             <div style="text-align: center; margin: 30px 0;">
                 <div class="price-note" style="font-size: 16px; margin-bottom: 5px;">Valor del programa: 89€</div>
-                <div class="price-current" style="font-size: 48px;">39€</div>
-                <div class="price-note">Precio acceso anticipado</div>
+                <div class="price-current" style="font-size: 48px;">35€</div>
+                <div class="price-note">Precio de reserva · El 1 de marzo sube a 39€</div>
             </div>
 
             <div class="guarantee">
-                <p>Si despues de empezar sientes que Camino Vital no es para ti, te devolvemos el dinero. Sin explicaciones.</p>
+                <p>🔒 Si despues de empezar sientes que Camino Vital no es para ti, te devolvemos el dinero. Sin explicaciones.</p>
             </div>
 
             <div style="text-align: center;">
-                <a href="#quiz" class="btn-cta">Reservar mi plaza por 39€</a>
+                <a href="#quiz" class="btn-cta">Reservar mi plaza por 35€</a>
             </div>
         </div>
 
@@ -1247,7 +1285,7 @@
                 document.getElementById('hours').textContent = '0';
                 document.getElementById('minutes').textContent = '0';
                 document.getElementById('seconds').textContent = '0';
-                document.querySelector('.countdown-label').textContent = 'Acceso anticipado cerrado';
+                document.querySelector('.countdown-label').textContent = 'Reservas cerradas';
                 return;
             }
 
