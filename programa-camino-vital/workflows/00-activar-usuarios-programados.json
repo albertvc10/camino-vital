@@ -1,38 +1,48 @@
 {
   "name": "Camino Vital - 00 Activar Usuarios Programados",
+  "active": false,
   "nodes": [
     {
-      "parameters": {
-        "rule": {
-          "interval": [
-            {
-              "field": "cronExpression",
-              "expression": "0 9 * * *"
-            }
-          ]
-        }
-      },
-      "id": "schedule-trigger",
-      "name": "Schedule Trigger (9:00 AM)",
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.2,
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
       "position": [240, 300],
-      "notes": "Se ejecuta todos los dias a las 9:00 AM"
+      "notes": "Ejecutar manualmente el 1 de marzo para activar usuarios de preventa"
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "-- Buscar usuarios cuya fecha de inicio programada ya ha llegado\nSELECT \n  id, \n  email, \n  nombre, \n  nivel_actual,\n  etapa,\n  perfil_inicial,\n  fecha_inicio_programa\nFROM programa_users\nWHERE estado = 'pagado_esperando_inicio'\n  AND fecha_inicio_programa <= NOW()\n  AND fecha_inicio_programa > NOW() - INTERVAL '1 day';",
+        "query": "SELECT html_template FROM email_templates WHERE nombre = 'email_bienvenida' AND activo = true;",
+        "options": {}
+      },
+      "id": "obtener-template-bienvenida",
+      "name": "Obtener Template Bienvenida",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [460, 300],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Buscar usuarios pendientes de activar (preventa)\nSELECT \n  id, \n  email, \n  nombre, \n  nivel_actual,\n  etapa,\n  perfil_inicial\nFROM programa_users\nWHERE estado = 'pagado_esperando_inicio';",
         "options": {}
       },
       "id": "buscar-usuarios-pendientes",
       "name": "Buscar Usuarios Pendientes",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [460, 300],
+      "position": [680, 300],
       "credentials": {
         "postgres": {
-          "id": "postgres-local",
+          "id": "nLcUOvLreXurFbBs",
           "name": "PostgreSQL local"
         }
       }
@@ -43,7 +53,7 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "loose"
           },
           "conditions": [
             {
@@ -51,8 +61,8 @@
               "leftValue": "={{ $json.id }}",
               "rightValue": "",
               "operator": {
-                "type": "string",
-                "operation": "isNotEmpty"
+                "type": "number",
+                "operation": "exists"
               }
             }
           ],
@@ -64,27 +74,17 @@
       "name": "IF ¿Hay usuarios?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [680, 300]
+      "position": [900, 300]
     },
     {
       "parameters": {
-        "jsCode": "// Log cuando no hay usuarios para activar\nconsole.log('ℹ️ No hay usuarios pendientes de activar hoy');\n\nreturn {\n  json: {\n    message: 'No hay usuarios pendientes de activar',\n    timestamp: new Date().toISOString()\n  }\n};"
+        "jsCode": "// Log cuando no hay usuarios para activar\nconsole.log('ℹ️ No hay usuarios pendientes de activar');\n\nreturn {\n  json: {\n    message: 'No hay usuarios pendientes de activar',\n    timestamp: new Date().toISOString()\n  }\n};"
       },
       "id": "log-sin-usuarios",
       "name": "Log Sin Usuarios",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [900, 400]
-    },
-    {
-      "parameters": {
-        "jsCode": "// Preparar datos del usuario para activacion\nconst user = $input.first().json;\n\nconsole.log('🚀 Activando usuario:', user.email);\n\nreturn {\n  json: {\n    id: user.id,\n    email: user.email,\n    nombre: user.nombre,\n    nivel_actual: user.nivel_actual,\n    etapa: user.etapa || 'base_vital',\n    perfil_inicial: user.perfil_inicial\n  }\n};"
-      },
-      "id": "preparar-usuario",
-      "name": "Preparar Usuario",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [900, 200]
+      "position": [1120, 400]
     },
     {
       "parameters": {
@@ -99,49 +99,20 @@
       "position": [1120, 200],
       "credentials": {
         "postgres": {
-          "id": "postgres-local",
+          "id": "nLcUOvLreXurFbBs",
           "name": "PostgreSQL local"
         }
       }
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "https://api.brevo.com/v3/contacts",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "api-key",
-              "value": "={{$env.BREVO_API_KEY}}"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"email\": \"{{ $json.email }}\",\n  \"attributes\": {\n    \"NOMBRE\": \"{{ $json.nombre }}\",\n    \"NIVEL\": \"{{ $json.nivel_actual }}\",\n    \"ETAPA\": \"base_vital\",\n    \"ESTADO\": \"activo\",\n    \"FECHA_INICIO\": \"{{ $json.fecha_inicio }}\"\n  },\n  \"listIds\": [4],\n  \"unlinkListIds\": [3],\n  \"updateEnabled\": true\n}",
-        "options": {}
+        "jsCode": "// Renderizar template para TODOS los usuarios del array\nconst items = $input.all();\nconst template = $('Obtener Template Bienvenida').first().json.html_template;\n\n// Determinar base_url según entorno\nconst isLocal = $env.N8N_HOST === 'localhost' || $env.N8N_HOST?.includes('localhost');\nconst baseUrl = isLocal ? 'http://localhost:5678' : 'https://n8n.habitos-vitales.com';\n\nconsole.log('📧 Procesando', items.length, 'usuarios');\n\n// Procesar cada usuario\nconst results = items.map(item => {\n  const usuario = item.json;\n  const nivel = usuario.nivel_actual === 'iniciacion' ? 'Iniciación' : 'Intermedio';\n  \n  console.log('  → Renderizando email para:', usuario.email);\n  \n  const html = template\n    .replace(/\\{\\{nombre\\}\\}/g, usuario.nombre || '')\n    .replace(/\\{\\{nivel\\}\\}/g, nivel)\n    .replace(/\\{\\{user_id\\}\\}/g, usuario.id)\n    .replace(/\\{\\{base_url\\}\\}/g, baseUrl);\n  \n  return {\n    json: {\n      html_renderizado: html,\n      email: usuario.email,\n      nombre: usuario.nombre,\n      user_id: usuario.id\n    }\n  };\n});\n\nreturn results;"
       },
-      "id": "actualizar-brevo-activo",
-      "name": "Actualizar Brevo (Activo)",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [1340, 200],
-      "notes": "Lista 4 = Programa Activo, Lista 3 = Pagados esperando inicio"
-    },
-    {
-      "parameters": {
-        "jsCode": "// Recuperar datos del usuario activado\nconst datosUsuario = $node[\"Activar Usuario en DB\"].first().json;\n\nconsole.log('🔄 Preparando email de bienvenida para:', datosUsuario.email);\n\nreturn {\n  json: datosUsuario\n};"
-      },
-      "id": "recuperar-datos-activado",
-      "name": "Recuperar Datos Activado",
+      "id": "renderizar-template",
+      "name": "Renderizar Template",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1560, 200]
+      "position": [1340, 200]
     },
     {
       "parameters": {
@@ -162,28 +133,39 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"sender\": {\n    \"name\": \"Camino Vital - Hábitos Vitales\",\n    \"email\": \"hola@habitos-vitales.com\"\n  },\n  \"to\": [\n    {\n      \"email\": \"{{ $json.email }}\",\n      \"name\": \"{{ $json.nombre }}\"\n    }\n  ],\n  \"subject\": \"✨ ¡Tu Camino Vital empieza hoy! Elige cuántas sesiones hacer\",\n  \"htmlContent\": \"<!DOCTYPE html><html><head><meta charset='UTF-8'></head><body style='font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #232323; color: #E8E8E8;'><div style='background: #1C1C1C; border-radius: 18px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08);'><div style='text-align: center; padding: 30px 20px 20px;'><img src='https://habitos-vitales.com/img/logo-habitos-vitales.png' alt='Hábitos Vitales' style='max-width: 150px; height: auto;'></div><div style='background: linear-gradient(180deg, #2A2A2A 0%, #1C1C1C 100%); padding: 40px; text-align: center;'><h1 style='margin: 0; font-size: 28px; color: #DFCA61;'>¡Bienvenido a Camino Vital!</h1><p style='margin: 10px 0 0; color: #B5B5B5;'>Tu camino hacia una vida más activa comienza hoy</p></div><div style='padding: 40px;'><p style='font-size: 18px; line-height: 1.6; color: #E8E8E8;'>Hola <strong style=\\\"color: #DFCA61;\\\">{{ $json.nombre }}</strong>,</p><p style='font-size: 16px; line-height: 1.6; color: #B5B5B5;'>¡Ha llegado el día! Tu programa <strong style=\\\"color: #62B882;\\\">Camino Vital</strong> está listo para empezar.</p><p style='font-size: 16px; line-height: 1.6; color: #B5B5B5;'>Has dado el primer paso para cuidar tu autonomía y tu longevidad. Y eso ya es mucho.</p><div style='background: rgba(98, 184, 130, 0.1); border-left: 4px solid #62B882; padding: 20px; margin: 30px 0; border-radius: 4px;'><h3 style='color: #62B882; margin: 0 0 15px 0;'>Tu programa personalizado:</h3><ul style='margin: 0; padding-left: 20px; line-height: 1.8; color: #B5B5B5;'><li><strong style=\\\"color: #E8E8E8;\\\">Etapa:</strong> Base Vital</li><li><strong style=\\\"color: #E8E8E8;\\\">Nivel:</strong> {{ $json.nivel_actual === 'iniciacion' ? 'Iniciación' : 'Intermedio' }}</li></ul></div><div style='background: rgba(223, 202, 97, 0.1); border: 1px solid rgba(223, 202, 97, 0.3); padding: 30px; border-radius: 12px; text-align: center; margin: 30px 0;'><h3 style='color: #DFCA61; margin: 0 0 15px 0; font-size: 22px;'>🎯 Empecemos: ¿Cuántas sesiones puedes hacer esta semana?</h3><p style='color: #B5B5B5; margin: 0 0 25px 0; font-size: 15px;'>Sé realista, siempre puedes ajustar cada semana</p><div style='display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;'><a href='https://n8n.habitos-vitales.com/webhook/seleccionar-sesiones?user_id={{ $json.id }}&sesiones=2' style='background: #DFCA61; color: #1C1C1C; padding: 15px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; margin: 5px; min-width: 90px; text-align: center;'>2 sesiones</a><a href='https://n8n.habitos-vitales.com/webhook/seleccionar-sesiones?user_id={{ $json.id }}&sesiones=3' style='background: #DFCA61; color: #1C1C1C; padding: 15px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; margin: 5px; min-width: 90px; text-align: center;'>3 sesiones<br><span style='font-size: 11px; font-weight: normal;'>(Recomendado)</span></a><a href='https://n8n.habitos-vitales.com/webhook/seleccionar-sesiones?user_id={{ $json.id }}&sesiones=4' style='background: #DFCA61; color: #1C1C1C; padding: 15px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; margin: 5px; min-width: 90px; text-align: center;'>4 sesiones</a><a href='https://n8n.habitos-vitales.com/webhook/seleccionar-sesiones?user_id={{ $json.id }}&sesiones=5' style='background: #DFCA61; color: #1C1C1C; padding: 15px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; margin: 5px; min-width: 90px; text-align: center;'>5 sesiones</a></div></div><h3 style='color: #DFCA61; margin: 30px 0 15px;'>¿Qué puedes esperar?</h3><ul style='line-height: 1.8; color: #B5B5B5;'><li>📧 Cuando termines una sesión, recibirás la siguiente inmediatamente</li><li>📹 Videos demostrativos para cada movimiento</li><li>🔄 El programa se adapta a tu ritmo y feedback</li><li>💬 Soporte personalizado si tienes dudas</li></ul><div style='background: rgba(223, 202, 97, 0.1); border-left: 4px solid #DFCA61; padding: 20px; margin: 30px 0; border-radius: 4px;'><p style='margin: 0; font-weight: 600; color: #DFCA61;'>💡 <strong>Consejo importante:</strong></p><p style='margin: 10px 0 0; color: #B5B5B5;'>Empieza con 2-3 sesiones si tienes dudas. Es mejor hacer menos y ser constante que planificar mucho y abandonar.</p></div><div style='text-align: center; margin: 40px 0;'><p style='font-size: 16px; color: #888;'>¿Tienes dudas o necesitas ayuda?</p><p style='margin: 10px 0;'><a href='mailto:hola@habitos-vitales.com' style='color: #DFCA61; text-decoration: none; font-weight: bold;'>Escríbenos →</a></p></div><p style='font-size: 16px; line-height: 1.6; color: #B5B5B5;'>¡Haz click arriba para empezar!</p><p style='font-size: 16px; line-height: 1.6; color: #B5B5B5;'>Un saludo,<br><strong style=\\\"color: #E8E8E8;\\\">El equipo de Camino Vital</strong></p></div></div><div style='text-align: center; margin-top: 30px; padding: 20px; color: #666; font-size: 12px;'><strong style=\\\"color: #DFCA61;\\\">Camino Vital</strong> | Hábitos Vitales<br>Este email es parte de tu programa de ejercicio personalizado</div></body></html>\"\n}",
+        "jsonBody": "={\n  \"sender\": {\n    \"name\": \"Camino Vital - Hábitos Vitales\",\n    \"email\": \"hola@habitos-vitales.com\"\n  },\n  \"to\": [\n    {\n      \"email\": \"{{ $json.email }}\",\n      \"name\": \"{{ $json.nombre }}\"\n    }\n  ],\n  \"subject\": \"✨ ¡Tu Camino Vital empieza hoy! Elige cuántas sesiones hacer\",\n  \"htmlContent\": {{ JSON.stringify($json.html_renderizado) }}\n}",
         "options": {}
       },
       "id": "enviar-email-bienvenida",
       "name": "Enviar Email Bienvenida",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1780, 200]
+      "position": [1560, 200]
     },
     {
       "parameters": {
-        "jsCode": "// Log usuario activado exitosamente\nconst email = $input.first().json.to?.[0]?.email || 'desconocido';\n\nconsole.log('✅ Usuario activado y email enviado:', email);\n\nreturn {\n  json: {\n    success: true,\n    email: email,\n    timestamp: new Date().toISOString()\n  }\n};"
+        "jsCode": "// Log usuario activado exitosamente\nconst email = $json.to?.[0]?.email || $json.email || 'desconocido';\n\nconsole.log('✅ Email de bienvenida enviado a:', email);\n\nreturn {\n  json: {\n    success: true,\n    email: email,\n    timestamp: new Date().toISOString()\n  }\n};"
       },
       "id": "log-exito",
       "name": "Log Éxito",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2000, 200]
+      "position": [1780, 200]
     }
   ],
   "connections": {
-    "Schedule Trigger (9:00 AM)": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Obtener Template Bienvenida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Template Bienvenida": {
       "main": [
         [
           {
@@ -209,7 +191,7 @@
       "main": [
         [
           {
-            "node": "Preparar Usuario",
+            "node": "Activar Usuario en DB",
             "type": "main",
             "index": 0
           }
@@ -223,40 +205,18 @@
         ]
       ]
     },
-    "Preparar Usuario": {
-      "main": [
-        [
-          {
-            "node": "Activar Usuario en DB",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Activar Usuario en DB": {
       "main": [
         [
           {
-            "node": "Actualizar Brevo (Activo)",
+            "node": "Renderizar Template",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Actualizar Brevo (Activo)": {
-      "main": [
-        [
-          {
-            "node": "Recuperar Datos Activado",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Recuperar Datos Activado": {
+    "Renderizar Template": {
       "main": [
         [
           {
@@ -297,5 +257,5 @@
     "instanceId": "local"
   },
   "pinData": {},
-  "versionId": "1"
+  "versionId": "5"
 }

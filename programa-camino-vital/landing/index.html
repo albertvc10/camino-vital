@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Camino Vital - Recupera tu movilidad en 12 semanas</title>
+    <title>Camino Vital - El recorrido de movimiento para cuidar tu autonomia y longevidad</title>
     <style>
-        /* Variables CSS */
         :root {
             --color-primary: #DFCA61;
             --color-success: #62B882;
@@ -37,7 +36,6 @@
             min-height: 100vh;
         }
 
-        /* Contenedor principal */
         .page-container {
             max-width: 100%;
             overflow-x: hidden;
@@ -48,39 +46,42 @@
             padding: 80px 20px;
         }
 
+        .section-alt {
+            background: var(--color-bg-card);
+        }
+
         .section-container {
-            max-width: 900px;
+            max-width: 800px;
             margin: 0 auto;
         }
 
-        /* Tipografia */
         h1 {
-            font-size: 44px;
+            font-size: 52px;
             font-weight: 700;
             color: var(--color-primary);
-            line-height: 1.2;
+            line-height: 1.1;
         }
 
         h2 {
             font-size: 32px;
             font-weight: 600;
             color: var(--color-text-primary);
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
 
         h3 {
             font-size: 22px;
             font-weight: 600;
             color: var(--color-text-primary);
+            margin-bottom: 15px;
         }
 
-        .tagline {
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.16em;
-            color: var(--color-success);
-            margin-bottom: 16px;
-            font-weight: 600;
+        p {
+            margin-bottom: 18px;
+        }
+
+        strong {
+            color: var(--color-text-primary);
         }
 
         /* Navbar */
@@ -117,7 +118,6 @@
         .navbar-text {
             display: flex;
             flex-direction: column;
-            gap: 0;
         }
 
         .navbar-company {
@@ -151,81 +151,50 @@
             box-shadow: var(--shadow-button);
         }
 
-        /* Hero Section */
+        /* Hero */
         .hero {
             background: linear-gradient(180deg, var(--color-bg-section) 0%, var(--color-bg-dark) 100%);
             text-align: center;
-            padding: 80px 20px 80px;
+            padding: 100px 20px 80px;
         }
 
         .hero-content {
-            max-width: 700px;
+            max-width: 750px;
             margin: 0 auto;
         }
 
-        .hero-visual {
-            width: 160px;
-            height: 160px;
+        .hero-logo {
+            width: 100px;
+            height: 100px;
             margin: 0 auto 30px;
-            animation: pulse 3s ease-in-out infinite;
         }
 
-        .hero-visual img {
+        .hero-logo img {
             width: 100%;
             height: 100%;
             object-fit: contain;
         }
 
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.06); opacity: 0.9; }
-        }
-
         .hero h1 {
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
 
         .hero-subtitle {
-            font-size: 22px;
-            color: var(--color-text-secondary);
+            font-size: 26px;
+            color: var(--color-text-primary);
             margin-bottom: 40px;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
+            font-weight: 500;
+            line-height: 1.4;
         }
 
-        .hero-stats {
-            display: flex;
-            justify-content: center;
-            gap: 40px;
-            margin-top: 50px;
-            flex-wrap: wrap;
-        }
-
-        .stat {
-            text-align: center;
-        }
-
-        .stat-number {
-            font-size: 36px;
-            font-weight: 700;
-            color: var(--color-primary);
-        }
-
-        .stat-label {
-            font-size: 14px;
-            color: var(--color-text-secondary);
-        }
-
-        /* Botones estilo Movegate */
         .btn-primary {
             display: inline-block;
             background: var(--color-primary);
             color: var(--color-bg-card);
             border: none;
             border-radius: var(--border-radius-full);
-            padding: 16px 32px;
-            font-size: 16px;
+            padding: 18px 40px;
+            font-size: 18px;
             font-weight: 600;
             text-decoration: none;
             cursor: pointer;
@@ -238,601 +207,63 @@
             box-shadow: var(--shadow-button-hover);
         }
 
-        .btn-secondary {
-            display: inline-block;
-            background: transparent;
-            color: var(--color-primary);
-            border: 2px solid var(--color-primary);
-            border-radius: var(--border-radius-full);
-            padding: 14px 30px;
-            font-size: 16px;
-            font-weight: 600;
-            text-decoration: none;
-            cursor: pointer;
-            transition: all var(--transition-fast);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(223, 202, 97, 0.1);
-        }
-
         .cta-note {
             margin-top: 16px;
             font-size: 14px;
             color: var(--color-text-secondary);
         }
 
-        /* Pain Points Section */
-        .pain-section {
-            background: var(--color-bg-card);
-        }
-
-        .pain-header {
-            text-align: center;
-            margin-bottom: 50px;
-        }
-
-        .pain-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-        }
-
-        .pain-card {
-            background: rgba(231, 76, 60, 0.08);
-            border: 1px solid rgba(231, 76, 60, 0.2);
-            border-radius: var(--border-radius-card);
-            padding: 24px;
-            display: flex;
-            gap: 16px;
-            align-items: flex-start;
-            transition: all var(--transition-fast);
-        }
-
-        .pain-card:hover {
-            transform: translateY(-2px);
-            border-color: rgba(231, 76, 60, 0.4);
-        }
-
-        .pain-icon {
-            color: var(--color-error);
-            font-size: 24px;
-            flex-shrink: 0;
-        }
-
-        .pain-text {
-            color: var(--color-text-secondary);
-            font-size: 15px;
-            line-height: 1.6;
-        }
-
-        .urgency-box {
-            background: rgba(223, 202, 97, 0.1);
-            border: 1px solid rgba(223, 202, 97, 0.3);
-            border-radius: var(--border-radius-card);
-            padding: 30px;
-            text-align: center;
-            margin-top: 50px;
-        }
-
-        .urgency-box p {
-            font-size: 18px;
-            color: var(--color-text-primary);
-        }
-
-        .urgency-box strong {
-            color: var(--color-primary);
-        }
-
-        /* Solution Section */
-        .solution-section {
-            background: var(--color-bg-dark);
-        }
-
-        .solution-header {
-            text-align: center;
-            margin-bottom: 50px;
-        }
-
-        .solution-header h2 {
-            color: var(--color-primary);
-        }
-
-        .solution-intro {
-            font-size: 20px;
-            text-align: center;
-            max-width: 700px;
-            margin: 0 auto 50px;
-        }
-
-        .solution-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-        }
-
-        .solution-card {
-            background: var(--color-bg-card);
-            border: 1px solid var(--color-border);
-            border-left: 4px solid var(--color-success);
-            border-radius: var(--border-radius-card);
-            padding: 24px;
-            transition: all var(--transition-fast);
-        }
-
-        .solution-card:hover {
-            transform: translateY(-2px);
-            border-color: rgba(98, 184, 130, 0.3);
-        }
-
-        .solution-card-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-
-        .solution-check {
-            color: var(--color-success);
-            font-size: 20px;
-        }
-
-        .solution-card h4 {
-            color: var(--color-text-primary);
-            font-size: 17px;
-            font-weight: 600;
-        }
-
-        .solution-card p {
-            color: var(--color-text-secondary);
-            font-size: 15px;
-            line-height: 1.6;
-        }
-
-        /* Features Section */
-        .features-section {
-            background: var(--color-bg-card);
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 30px;
-        }
-
-        .feature {
-            text-align: center;
-            padding: 30px 20px;
-            background: var(--color-bg-dark);
-            border-radius: var(--border-radius-card);
-            border: 1px solid var(--color-border);
-            transition: all var(--transition-fast);
-        }
-
-        .feature:hover {
-            transform: translateY(-4px);
-            border-color: rgba(223, 202, 97, 0.3);
-        }
-
-        .feature-icon {
-            font-size: 48px;
-            margin-bottom: 20px;
-        }
-
-        .feature h4 {
-            color: var(--color-primary);
-            margin-bottom: 10px;
-            font-size: 18px;
-        }
-
-        .feature p {
-            color: var(--color-text-secondary);
-            font-size: 14px;
-        }
-
-        /* How It Works Section */
-        .how-section {
-            background: var(--color-bg-dark);
-        }
-
-        .how-header {
-            text-align: center;
-            margin-bottom: 60px;
-        }
-
-        .steps {
+        /* Content sections */
+        .content-section {
             max-width: 700px;
             margin: 0 auto;
         }
 
-        .step {
-            display: flex;
-            gap: 24px;
-            margin-bottom: 40px;
-            align-items: flex-start;
-        }
-
-        .step-number {
-            background: var(--color-primary);
-            color: var(--color-bg-card);
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
+        .highlight-text {
             font-size: 20px;
-            flex-shrink: 0;
-            box-shadow: var(--shadow-button);
-        }
-
-        .step-content h4 {
-            color: var(--color-primary);
-            font-size: 20px;
-            margin-bottom: 8px;
-        }
-
-        .step-content p {
-            color: var(--color-text-secondary);
-            font-size: 16px;
-        }
-
-        /* Testimonial Section */
-        .testimonial-section {
-            background: var(--color-bg-card);
-        }
-
-        .testimonial {
-            max-width: 700px;
-            margin: 0 auto;
-            text-align: center;
-        }
-
-        .testimonial-quote {
-            font-size: 22px;
+            color: var(--color-text-primary);
+            border-left: 4px solid var(--color-primary);
+            padding-left: 20px;
+            margin: 30px 0;
             font-style: italic;
-            color: var(--color-text-primary);
-            line-height: 1.8;
-            margin-bottom: 30px;
         }
 
-        .testimonial-author {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 16px;
-        }
-
-        .testimonial-avatar {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, var(--color-primary), var(--color-success));
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--color-bg-card);
-        }
-
-        .testimonial-info {
-            text-align: left;
-        }
-
-        .testimonial-name {
-            color: var(--color-primary);
-            font-weight: 600;
-            font-size: 18px;
-        }
-
-        .testimonial-detail {
-            color: var(--color-text-secondary);
-            font-size: 14px;
-        }
-
-        /* FAQ Section */
-        .faq-section {
-            background: var(--color-bg-dark);
-        }
-
-        .faq-header {
-            text-align: center;
-            margin-bottom: 50px;
-        }
-
-        .faq-list {
-            max-width: 700px;
-            margin: 0 auto;
-        }
-
-        .faq-item {
-            background: var(--color-bg-card);
-            border: 1px solid var(--color-border);
+        .emphasis-block {
+            background: rgba(223, 202, 97, 0.1);
+            border: 1px solid rgba(223, 202, 97, 0.2);
             border-radius: var(--border-radius-card);
-            margin-bottom: 16px;
-            overflow: hidden;
-            transition: all var(--transition-fast);
+            padding: 25px 30px;
+            margin: 30px 0;
         }
 
-        .faq-item:hover {
-            border-color: rgba(223, 202, 97, 0.3);
-        }
-
-        .faq-question {
-            padding: 24px;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            user-select: none;
-        }
-
-        .faq-question h4 {
-            color: var(--color-text-primary);
-            font-size: 17px;
-            font-weight: 500;
-        }
-
-        .faq-toggle {
-            color: var(--color-primary);
-            font-size: 24px;
-            transition: transform var(--transition-fast);
-        }
-
-        .faq-item.active .faq-toggle {
-            transform: rotate(45deg);
-        }
-
-        .faq-answer {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-        }
-
-        .faq-item.active .faq-answer {
-            max-height: 300px;
-        }
-
-        .faq-answer-content {
-            padding: 0 24px 24px;
-            color: var(--color-text-secondary);
-            font-size: 15px;
-            line-height: 1.7;
-        }
-
-        /* Pricing Section */
-        .pricing-section {
-            background: linear-gradient(180deg, var(--color-bg-card) 0%, var(--color-bg-dark) 100%);
-        }
-
-        .pricing-card {
-            max-width: 500px;
-            margin: 0 auto;
-            background: var(--color-bg-card);
-            border: 2px solid rgba(223, 202, 97, 0.3);
-            border-radius: var(--border-radius-card);
-            padding: 50px 40px;
-            text-align: center;
-        }
-
-        .pricing-badge {
-            display: inline-block;
-            background: rgba(223, 202, 97, 0.15);
-            color: var(--color-primary);
-            padding: 8px 20px;
-            border-radius: var(--border-radius-full);
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 20px;
-        }
-
-        .pricing-title {
-            color: var(--color-primary);
-            font-size: 28px;
+        .emphasis-block p {
             margin-bottom: 10px;
-        }
-
-        .pricing-subtitle {
-            color: var(--color-text-secondary);
-            margin-bottom: 30px;
-        }
-
-        .price {
-            font-size: 64px;
-            color: var(--color-primary);
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-
-        .price-period {
-            color: var(--color-text-secondary);
-            font-size: 16px;
-            margin-bottom: 30px;
-        }
-
-        .pricing-features {
-            text-align: left;
-            margin-bottom: 30px;
-        }
-
-        .pricing-feature {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 0;
-            border-bottom: 1px solid var(--color-border);
-        }
-
-        .pricing-feature:last-child {
-            border-bottom: none;
-        }
-
-        .pricing-feature-icon {
-            color: var(--color-success);
             font-size: 18px;
         }
 
-        .pricing-feature-text {
-            color: var(--color-text-secondary);
-            font-size: 15px;
+        .emphasis-block p:last-child {
+            margin-bottom: 0;
         }
 
-        .guarantee {
-            background: rgba(98, 184, 130, 0.1);
-            border: 2px dashed var(--color-success);
-            padding: 20px;
-            border-radius: 12px;
-            margin-top: 30px;
-        }
-
-        .guarantee p {
-            color: var(--color-success);
-            font-weight: 600;
-            font-size: 15px;
-        }
-
-        /* CTA Section */
-        .cta-section {
-            background: var(--color-bg-card);
-            text-align: center;
-        }
-
-        .cta-section h2 {
+        .emphasis-block strong {
             color: var(--color-primary);
-            margin-bottom: 20px;
         }
 
-        .cta-section p {
-            font-size: 18px;
-            margin-bottom: 30px;
-        }
-
-        /* Product Preview Section */
-        .preview-section {
-            background: var(--color-bg-card);
-        }
-
-        .preview-header {
-            text-align: center;
-            margin-bottom: 50px;
-        }
-
-        .preview-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 40px;
-            align-items: center;
-        }
-
-        .preview-mockup {
-            background: var(--color-bg-dark);
-            border-radius: var(--border-radius-card);
-            padding: 30px;
-            border: 1px solid var(--color-border);
-        }
-
-        .email-mockup {
-            background: #ffffff;
-            border-radius: 12px;
-            overflow: hidden;
-            color: #333;
-        }
-
-        .email-header {
-            background: linear-gradient(135deg, #2A2A2A, #1C1C1C);
-            padding: 20px;
-            text-align: center;
-        }
-
-        .email-header img {
-            height: 30px;
-        }
-
-        .email-body {
-            padding: 25px;
-        }
-
-        .email-greeting {
-            font-size: 18px;
-            color: #333;
-            margin-bottom: 15px;
-        }
-
-        .email-exercise {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
-            margin: 15px 0;
-            border-left: 4px solid #62B882;
-        }
-
-        .email-exercise h4 {
-            color: #333;
-            margin-bottom: 8px;
-            font-size: 16px;
-        }
-
-        .email-exercise p {
-            color: #666;
-            font-size: 14px;
-            margin: 4px 0;
-        }
-
-        .email-video-btn {
-            display: inline-block;
-            background: #62B882;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 13px;
-            margin-top: 10px;
-            text-decoration: none;
-        }
-
-        .email-feedback {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-            justify-content: center;
-        }
-
-        .feedback-btn {
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 13px;
-            border: none;
-            cursor: pointer;
-        }
-
-        .feedback-btn.easy { background: #d4edda; color: #155724; }
-        .feedback-btn.ok { background: #fff3cd; color: #856404; }
-        .feedback-btn.hard { background: #f8d7da; color: #721c24; }
-
-        .preview-content h3 {
-            color: var(--color-primary);
-            margin-bottom: 25px;
-            font-size: 24px;
-        }
-
-        .preview-list {
+        /* List styles */
+        .check-list {
             list-style: none;
+            margin: 25px 0;
         }
 
-        .preview-list li {
-            padding: 15px 0;
+        .check-list li {
+            padding: 12px 0;
             padding-left: 35px;
             position: relative;
             color: var(--color-text-secondary);
-            border-bottom: 1px solid var(--color-border);
+            font-size: 17px;
         }
 
-        .preview-list li:last-child {
-            border-bottom: none;
-        }
-
-        .preview-list li::before {
+        .check-list li::before {
             content: "✓";
             position: absolute;
             left: 0;
@@ -841,305 +272,232 @@
             font-size: 18px;
         }
 
-        .preview-list li strong {
-            color: var(--color-text-primary);
+        .bullet-list {
+            list-style: none;
+            margin: 25px 0;
         }
 
-        /* Comparison Section */
-        .comparison-section {
-            background: var(--color-bg-dark);
-        }
-
-        .comparison-header {
-            text-align: center;
-            margin-bottom: 50px;
-        }
-
-        .comparison-table {
-            background: var(--color-bg-card);
-            border-radius: var(--border-radius-card);
-            overflow: hidden;
-            border: 1px solid var(--color-border);
-        }
-
-        .comparison-row {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr;
-            border-bottom: 1px solid var(--color-border);
-        }
-
-        .comparison-row:last-child {
-            border-bottom: none;
-        }
-
-        .comparison-row.header {
-            background: var(--color-bg-section);
-        }
-
-        .comparison-cell {
-            padding: 20px;
-            text-align: center;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .comparison-cell:first-child {
-            text-align: left;
-            justify-content: flex-start;
+        .bullet-list li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
             color: var(--color-text-secondary);
+            font-size: 17px;
         }
 
-        .comparison-row.header .comparison-cell {
-            font-weight: 600;
-            color: var(--color-text-primary);
-            font-size: 14px;
-        }
-
-        .comparison-row.header .comparison-cell.highlight {
-            background: rgba(223, 202, 97, 0.1);
+        .bullet-list li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
             color: var(--color-primary);
-        }
-
-        .comparison-cell.highlight {
-            background: rgba(223, 202, 97, 0.05);
-        }
-
-        .check-yes {
-            color: var(--color-success);
             font-size: 20px;
         }
 
-        .check-no {
-            color: var(--color-error);
-            font-size: 20px;
-        }
-
-        .check-maybe {
-            color: var(--color-primary);
-            font-size: 14px;
-        }
-
-        /* Multiple Testimonials */
-        .testimonials-grid {
+        /* Para quien es */
+        .target-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 25px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin: 30px 0;
         }
 
-        .testimonial-card {
-            background: var(--color-bg-dark);
-            border-radius: var(--border-radius-card);
-            padding: 30px;
+        .target-card {
+            background: rgba(255,255,255,0.03);
             border: 1px solid var(--color-border);
-        }
-
-        .testimonial-card-quote {
-            font-style: italic;
-            color: var(--color-text-secondary);
-            line-height: 1.7;
-            margin-bottom: 20px;
-            font-size: 15px;
-        }
-
-        .testimonial-card-author {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .testimonial-card-avatar {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, var(--color-primary), var(--color-success));
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            color: var(--color-bg-card);
-        }
-
-        .testimonial-card-info {
-            flex: 1;
-        }
-
-        .testimonial-card-name {
-            color: var(--color-primary);
-            font-weight: 600;
-        }
-
-        .testimonial-card-detail {
-            color: var(--color-text-secondary);
-            font-size: 13px;
-        }
-
-        .testimonial-card-result {
-            background: rgba(98, 184, 130, 0.1);
-            color: var(--color-success);
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        /* Authority Section */
-        .authority-section {
-            background: var(--color-bg-card);
-        }
-
-        .authority-content {
-            display: grid;
-            grid-template-columns: auto 1fr;
-            gap: 40px;
-            align-items: center;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .authority-logo {
-            width: 120px;
-            height: 120px;
-            background: linear-gradient(135deg, rgba(223, 202, 97, 0.2), rgba(98, 184, 130, 0.2));
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .authority-logo img {
-            max-width: 100%;
-            max-height: 100%;
-        }
-
-        .authority-text h3 {
-            color: var(--color-primary);
-            margin-bottom: 15px;
-        }
-
-        .authority-text p {
-            color: var(--color-text-secondary);
-            line-height: 1.7;
-            margin-bottom: 10px;
-        }
-
-        .authority-stats {
-            display: flex;
-            gap: 30px;
-            margin-top: 20px;
-        }
-
-        .authority-stat {
+            border-radius: var(--border-radius-card);
+            padding: 25px;
             text-align: center;
         }
 
-        .authority-stat-number {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--color-primary);
-        }
-
-        .authority-stat-label {
-            font-size: 13px;
+        .target-card p {
+            margin: 0;
             color: var(--color-text-secondary);
-        }
-
-        /* Urgency Banner */
-        .urgency-banner {
-            background: linear-gradient(135deg, rgba(223, 202, 97, 0.15), rgba(98, 184, 130, 0.1));
-            border: 1px solid rgba(223, 202, 97, 0.3);
-            border-radius: var(--border-radius-card);
-            padding: 25px 30px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 30px;
-        }
-
-        .urgency-text {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .urgency-icon {
-            font-size: 28px;
-        }
-
-        .urgency-message strong {
-            color: var(--color-primary);
-            display: block;
             font-size: 16px;
         }
 
-        .urgency-message span {
-            color: var(--color-text-secondary);
-            font-size: 14px;
+        /* Que trabajas */
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin: 30px 0;
         }
 
-        /* Results Timeline */
-        .timeline-section {
-            background: var(--color-bg-dark);
-        }
-
-        .timeline {
-            max-width: 700px;
-            margin: 0 auto;
-            position: relative;
-        }
-
-        .timeline::before {
-            content: "";
-            position: absolute;
-            left: 24px;
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            background: linear-gradient(180deg, var(--color-success), var(--color-primary));
-        }
-
-        .timeline-item {
-            display: flex;
-            gap: 25px;
-            margin-bottom: 35px;
-            position: relative;
-        }
-
-        .timeline-marker {
-            width: 50px;
-            height: 50px;
+        .benefit-card {
             background: var(--color-bg-card);
-            border: 3px solid var(--color-success);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            color: var(--color-success);
-            font-size: 14px;
-            flex-shrink: 0;
-            z-index: 1;
-        }
-
-        .timeline-content {
-            flex: 1;
-            background: var(--color-bg-card);
-            border-radius: 14px;
-            padding: 25px;
             border: 1px solid var(--color-border);
+            border-left: 4px solid var(--color-success);
+            border-radius: var(--border-radius-card);
+            padding: 25px;
         }
 
-        .timeline-content h4 {
+        .benefit-card h4 {
             color: var(--color-primary);
-            margin-bottom: 10px;
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+
+        .benefit-card p {
+            margin: 0;
+            font-size: 15px;
+            color: var(--color-text-secondary);
+        }
+
+        .results-box {
+            background: rgba(98, 184, 130, 0.1);
+            border: 1px solid rgba(98, 184, 130, 0.3);
+            border-radius: var(--border-radius-card);
+            padding: 30px;
+            margin: 40px 0;
+        }
+
+        .results-box h4 {
+            color: var(--color-success);
+            margin-bottom: 20px;
             font-size: 18px;
         }
 
-        .timeline-content p {
+        .results-box ul {
+            margin: 0;
+        }
+
+        .results-box li::before {
+            color: var(--color-success);
+        }
+
+        /* Como funciona - con imagen */
+        .how-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+            align-items: center;
+            margin: 40px 0;
+        }
+
+        .how-content ul {
+            margin-top: 20px;
+        }
+
+        .how-image {
+            text-align: center;
+        }
+
+        .session-screenshot {
+            width: 100%;
+            max-width: 360px;
+            height: auto;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+
+        .how-notes {
+            margin-top: 30px;
+        }
+
+        .how-notes p {
+            margin-bottom: 8px;
+            font-size: 17px;
+        }
+
+        /* Pricing */
+        .pricing-card {
+            max-width: 500px;
+            margin: 40px auto 0;
+            background: var(--color-bg-card);
+            border: 2px solid rgba(223, 202, 97, 0.3);
+            border-radius: var(--border-radius-card);
+            padding: 50px 40px;
+            text-align: center;
+        }
+
+        .pricing-title {
+            color: var(--color-primary);
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+
+        .pricing-includes {
+            text-align: left;
+            margin: 30px 0;
+        }
+
+        .pricing-includes li {
+            padding: 10px 0;
+        }
+
+        .price-box {
+            margin: 30px 0;
+        }
+
+        .price-original {
+            font-size: 20px;
             color: var(--color-text-secondary);
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+
+        .price-current {
+            font-size: 64px;
+            color: var(--color-primary);
+            font-weight: 700;
+            line-height: 1;
+            margin: 10px 0;
+        }
+
+        .price-note {
+            font-size: 14px;
+            color: var(--color-text-secondary);
+        }
+
+        .start-date {
+            background: rgba(98, 184, 130, 0.1);
+            border: 1px solid rgba(98, 184, 130, 0.3);
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin: 25px 0;
+        }
+
+        .start-date p {
+            margin: 0;
+            color: var(--color-text-secondary);
+            font-size: 14px;
+        }
+
+        .start-date .date {
+            color: var(--color-success);
+            font-size: 20px;
+            font-weight: 700;
+            margin-top: 5px;
+        }
+
+        .guarantee-box {
+            background: rgba(98, 184, 130, 0.1);
+            border: 2px dashed var(--color-success);
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 25px;
+        }
+
+        .guarantee-box p {
+            color: var(--color-success);
+            font-weight: 600;
             font-size: 15px;
-            line-height: 1.6;
+            margin: 0;
+        }
+
+        /* Final CTA */
+        .final-cta {
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .final-cta h2 {
+            color: var(--color-primary);
+        }
+
+        .final-cta .emphasis-block {
+            text-align: left;
         }
 
         /* Footer */
@@ -1150,9 +508,40 @@
             border-top: 1px solid var(--color-border);
         }
 
-        .footer p {
+        .footer-brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .footer-brand img {
+            height: 40px;
+            width: 40px;
+        }
+
+        .footer-brand-text {
+            text-align: left;
+        }
+
+        .footer-brand-text span:first-child {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
             color: var(--color-text-secondary);
-            font-size: 15px;
+            display: block;
+        }
+
+        .footer-brand-text span:last-child {
+            color: var(--color-primary);
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .footer p {
+            font-size: 14px;
+            margin-bottom: 8px;
         }
 
         .footer a {
@@ -1193,7 +582,7 @@
             }
 
             h1 {
-                font-size: 32px;
+                font-size: 36px;
             }
 
             h2 {
@@ -1201,162 +590,49 @@
             }
 
             .hero {
-                padding: 50px 16px 50px;
+                padding: 60px 16px 50px;
             }
 
-            .hero-visual {
-                width: 120px;
-                height: 120px;
+            .hero-logo {
+                width: 80px;
+                height: 80px;
             }
 
             .hero-subtitle {
-                font-size: 18px;
+                font-size: 20px;
             }
 
-            .hero-stats {
+            .btn-primary {
+                padding: 16px 32px;
+                font-size: 16px;
+                width: 100%;
+                text-align: center;
+            }
+
+            .target-grid,
+            .benefits-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .how-grid {
+                grid-template-columns: 1fr;
                 gap: 30px;
             }
 
-            .stat-number {
-                font-size: 28px;
+            .how-image {
+                order: -1;
             }
 
-            .features-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 16px;
-            }
-
-            .feature {
-                padding: 20px 16px;
-            }
-
-            .feature-icon {
-                font-size: 36px;
-            }
-
-            .step {
-                gap: 16px;
-            }
-
-            .step-number {
-                width: 40px;
-                height: 40px;
-                font-size: 16px;
-            }
-
-            .testimonial-quote {
-                font-size: 18px;
-            }
-
-            .price {
-                font-size: 48px;
+            .session-screenshot {
+                max-width: 300px;
             }
 
             .pricing-card {
                 padding: 30px 20px;
             }
 
-            .btn-primary {
-                width: 100%;
-                text-align: center;
-            }
-
-            /* Preview Section Mobile */
-            .preview-grid {
-                grid-template-columns: 1fr;
-                gap: 30px;
-            }
-
-            .preview-mockup {
-                padding: 20px;
-            }
-
-            .email-body {
-                padding: 15px;
-            }
-
-            .email-exercise {
-                padding: 15px;
-            }
-
-            .email-feedback {
-                flex-wrap: wrap;
-            }
-
-            /* Comparison Table Mobile */
-            .comparison-table {
-                font-size: 13px;
-            }
-
-            .comparison-row {
-                grid-template-columns: 1.5fr 1fr 1fr 1fr;
-            }
-
-            .comparison-cell {
-                padding: 12px 8px;
-            }
-
-            .comparison-row.header .comparison-cell {
-                font-size: 12px;
-            }
-
-            /* Testimonials Grid Mobile */
-            .testimonials-grid {
-                grid-template-columns: 1fr;
-            }
-
-            /* Authority Section Mobile */
-            .authority-content {
-                grid-template-columns: 1fr;
-                text-align: center;
-                gap: 25px;
-            }
-
-            .authority-logo {
-                margin: 0 auto;
-                width: 100px;
-                height: 100px;
-            }
-
-            .authority-stats {
-                justify-content: center;
-            }
-
-            /* Timeline Mobile */
-            .timeline::before {
-                left: 20px;
-            }
-
-            .timeline-marker {
-                width: 40px;
-                height: 40px;
-                font-size: 12px;
-            }
-
-            .timeline-content {
-                padding: 20px;
-            }
-
-            .timeline-content h4 {
-                font-size: 16px;
-            }
-
-            /* Urgency Banner Mobile */
-            .urgency-banner {
-                flex-direction: column;
-                text-align: center;
-                gap: 20px;
-            }
-
-            .urgency-text {
-                flex-direction: column;
-                gap: 10px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .features-grid {
-                grid-template-columns: 1fr;
+            .price-current {
+                font-size: 48px;
             }
         }
     </style>
@@ -1367,623 +643,288 @@
         <nav class="navbar">
             <div class="navbar-content">
                 <a href="https://habitos-vitales.com" class="navbar-brand" target="_blank">
-                    <img src="assets/logo_hv.png" alt="Habitos Vitales" class="navbar-logo">
+                    <img src="https://habitos-vitales.com/wp-content/uploads/2026/01/logo_hv.png" alt="Habitos Vitales" class="navbar-logo">
                     <div class="navbar-text">
                         <span class="navbar-company">Habitos Vitales</span>
                         <span class="navbar-product">Camino Vital</span>
                     </div>
                 </a>
-                <a href="#" onclick="startQuiz(); return false;" class="navbar-cta">Empezar</a>
+                <a href="#" onclick="startQuiz(); return false;" class="navbar-cta">Empezar ahora</a>
             </div>
         </nav>
 
-        <!-- Hero Section -->
+        <!-- Hero -->
         <section class="hero">
             <div class="hero-content">
-                <div class="tagline">Programa personalizado de movilidad</div>
-                <div class="hero-visual">
-                    <img src="assets/logo_hv.png" alt="Camino Vital">
+                <div class="hero-logo">
+                    <img src="https://habitos-vitales.com/wp-content/uploads/2026/01/logo_hv.png" alt="Camino Vital">
                 </div>
-                <h1>Recupera tu movilidad en 12 semanas</h1>
-                <p class="hero-subtitle">Sin gimnasio. Sin equipamiento. Con ejercicios adaptados a tu cuerpo y tu momento vital.</p>
+                <h1>Camino Vital</h1>
+                <p class="hero-subtitle">El recorrido de movimiento para cuidar tu autonomia y tu longevidad a cualquier edad</p>
                 <a href="#" onclick="startQuiz(); return false;" class="btn-primary">
-                    Descubre tu programa personalizado
+                    Empezar mi Camino Vital
                 </a>
-                <p class="cta-note">Cuestionario gratuito de 2 minutos</p>
-                <div class="hero-stats">
-                    <div class="stat">
-                        <div class="stat-number">246</div>
-                        <div class="stat-label">Ejercicios adaptados</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-number">12</div>
-                        <div class="stat-label">Semanas de programa</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-number">3x</div>
-                        <div class="stat-label">Sesiones por semana</div>
-                    </div>
+                <p class="cta-note">Cuestionario personalizado de 2 minutos</p>
+            </div>
+        </section>
+
+        <!-- El Camino Vital -->
+        <section class="section">
+            <div class="content-section">
+                <h2>El Camino Vital</h2>
+                <p>Camino Vital es un programa de movimiento disenado para ayudarte a <strong>mantener tu capacidad fisica y tu calidad de vida</strong> con el paso del tiempo, adaptandose a como estas hoy y a como evolucionas con los anos.</p>
+                <p>El recorrido comienza con un <strong>ciclo guiado de 12 semanas</strong>, disenado para construir una base solida, segura y sostenible.</p>
+
+                <div class="emphasis-block">
+                    <p>No es una rutina estandar.</p>
+                    <p>No es un plan cerrado.</p>
+                    <p><strong>Es un sistema flexible que se adapta a tu punto de partida y progresa contigo.</strong></p>
+                </div>
+
+                <p>No se trata de entrenar por entrenar.</p>
+                <p>Se trata de moverte con un proposito claro: <strong>cuidar tu autonomia y tu calidad de vida</strong>.</p>
+            </div>
+        </section>
+
+        <!-- Un programa que se adapta a ti -->
+        <section class="section section-alt">
+            <div class="content-section">
+                <h2>Un programa que se adapta a ti</h2>
+                <p>En Camino Vital no tienes que elegir entre distintos planes.</p>
+                <p>Al entrar al programa, identificamos tu punto de partida y tu objetivo principal, y a partir de ahi te proponemos el tipo de movimiento mas adecuado para ti en este momento.</p>
+                <p>A medida que tu cuerpo responde y gana capacidad, el trabajo evoluciona para seguir estimulando lo que necesitas en cada etapa.</p>
+
+                <div class="emphasis-block">
+                    <p>No empiezas tarde.</p>
+                    <p>No empiezas mal.</p>
+                    <p><strong>Empiezas donde tiene sentido para ti.</strong></p>
                 </div>
             </div>
         </section>
 
-        <!-- Pain Points Section -->
-        <section class="section pain-section">
-            <div class="section-container">
-                <div class="pain-header">
-                    <div class="tagline">El problema</div>
-                    <h2>Te reconoces en alguna de estas situaciones?</h2>
-                </div>
-                <div class="pain-grid">
-                    <div class="pain-card">
-                        <span class="pain-icon">✗</span>
-                        <span class="pain-text">Llevas meses (o anos) sin moverte y cada vez te cuesta mas empezar</span>
+        <!-- Para quien es -->
+        <section class="section">
+            <div class="content-section">
+                <h2>Para quien es Camino Vital?</h2>
+                <p>Camino Vital es para personas que quieren <strong>moverse mejor hoy</strong> y seguir siendo <strong>autonomas con el paso del tiempo</strong>.</p>
+                <p>Da igual si:</p>
+
+                <div class="target-grid">
+                    <div class="target-card">
+                        <p>Llevas tiempo sin hacer ejercicio</p>
                     </div>
-                    <div class="pain-card">
-                        <span class="pain-icon">✗</span>
-                        <span class="pain-text">Has probado rutinas de YouTube que no duran mas de 2 semanas porque no son para ti</span>
+                    <div class="target-card">
+                        <p>Te notas rigido o con poca fuerza</p>
                     </div>
-                    <div class="pain-card">
-                        <span class="pain-icon">✗</span>
-                        <span class="pain-text">Te cuesta agacharte, levantarte del suelo o cargar las bolsas de la compra</span>
+                    <div class="target-card">
+                        <p>Te preocupa lesionarte</p>
                     </div>
-                    <div class="pain-card">
-                        <span class="pain-icon">✗</span>
-                        <span class="pain-text">Sientes rigidez al levantarte por las mananas y torpeza al moverte</span>
-                    </div>
-                    <div class="pain-card">
-                        <span class="pain-icon">✗</span>
-                        <span class="pain-text">Tienes miedo de hacerte dano si empiezas a hacer ejercicio "de golpe"</span>
-                    </div>
-                    <div class="pain-card">
-                        <span class="pain-icon">✗</span>
-                        <span class="pain-text">Sabes que deberias moverte, pero no encuentras algo que tenga sentido para TU situacion</span>
+                    <div class="target-card">
+                        <p>Quieres cuidarte sin exigirte de mas</p>
                     </div>
                 </div>
-                <div class="urgency-box">
-                    <p>Cada semana que pasa sin moverte, tu cuerpo pierde fuerza y movilidad.<br><strong>La buena noticia: nunca es tarde para empezar.</strong></p>
+
+                <p class="highlight-text">Lo importante no es tu punto de partida.<br>Lo importante es <strong>empezar en el lugar adecuado para ti</strong>.</p>
+            </div>
+        </section>
+
+        <!-- La edad y el punto de partida -->
+        <section class="section section-alt">
+            <div class="content-section">
+                <h2>La edad y el punto de partida</h2>
+                <p>No importa si tienes 40, 60, 70 anos o cualquier otra edad.</p>
+                <p>Tampoco importa tu estado fisico actual.</p>
+                <p>Camino Vital no parte de una edad ni de un nivel concreto, parte de <strong>como estas tu ahora</strong>.</p>
+                <p>El programa se adapta a tu punto de partida y evoluciona contigo, para que puedas moverte con seguridad, confianza y continuidad, independientemente del momento vital en el que te encuentres.</p>
+
+                <div class="emphasis-block">
+                    <p>Nunca es demasiado pronto.</p>
+                    <p>Nunca es demasiado tarde.</p>
+                    <p><strong>Es el momento que tiene sentido para ti.</strong></p>
                 </div>
             </div>
         </section>
 
-        <!-- Solution Section -->
-        <section class="section solution-section">
-            <div class="section-container">
-                <div class="solution-header">
-                    <div class="tagline">La solucion</div>
-                    <h2>Camino Vital es diferente</h2>
+        <!-- Que trabajas -->
+        <section class="section">
+            <div class="content-section">
+                <h2>Que trabajas en Camino Vital (y que ganas tu)?</h2>
+                <p>Durante las primeras 12 semanas, el programa trabaja de forma equilibrada todo lo que tu cuerpo necesita para mantenerse capaz con el paso del tiempo:</p>
+
+                <div class="benefits-grid">
+                    <div class="benefit-card">
+                        <h4>Fuerza</h4>
+                        <p>Para levantarte, cargar peso y proteger tus articulaciones</p>
+                    </div>
+                    <div class="benefit-card">
+                        <h4>Resistencia</h4>
+                        <p>Para moverte con mas energia en tu dia a dia</p>
+                    </div>
+                    <div class="benefit-card">
+                        <h4>Movilidad</h4>
+                        <p>Para moverte con libertad y sin rigidez</p>
+                    </div>
+                    <div class="benefit-card">
+                        <h4>Estabilidad y reaccion</h4>
+                        <p>Claves para prevenir caidas</p>
+                    </div>
                 </div>
-                <p class="solution-intro">No es otro programa generico de ejercicios. Es un sistema que aprende de ti y se adapta a tu cuerpo, tu ritmo y tus limitaciones.</p>
-                <div class="solution-grid">
-                    <div class="solution-card">
-                        <div class="solution-card-header">
-                            <span class="solution-check">✓</span>
-                            <h4>100% Personalizado</h4>
-                        </div>
-                        <p>No sigues un plan generico. Sigues TU plan, basado en tu nivel actual, tus limitaciones y tus objetivos.</p>
-                    </div>
-                    <div class="solution-card">
-                        <div class="solution-card-header">
-                            <span class="solution-check">✓</span>
-                            <h4>Progresivo y seguro</h4>
-                        </div>
-                        <p>Empiezas desde donde estas, no desde donde "deberias" estar. Sin riesgo de lesiones.</p>
-                    </div>
-                    <div class="solution-card">
-                        <div class="solution-card-header">
-                            <span class="solution-check">✓</span>
-                            <h4>Se adapta automaticamente</h4>
-                        </div>
-                        <p>Si algo es muy facil o muy dificil, el programa se ajusta en base a tu feedback.</p>
-                    </div>
-                    <div class="solution-card">
-                        <div class="solution-card-header">
-                            <span class="solution-check">✓</span>
-                            <h4>Simple: por email</h4>
-                        </div>
-                        <p>3 emails por semana con ejercicios claros y videos explicativos. Sin apps complicadas.</p>
-                    </div>
-                    <div class="solution-card">
-                        <div class="solution-card-header">
-                            <span class="solution-check">✓</span>
-                            <h4>Todo desde casa</h4>
-                        </div>
-                        <p>Sin gimnasio, sin equipamiento. Solo necesitas tu cuerpo y un espacio pequeno.</p>
-                    </div>
-                    <div class="solution-card">
-                        <div class="solution-card-header">
-                            <span class="solution-check">✓</span>
-                            <h4>Pensado para la longevidad</h4>
-                        </div>
-                        <p>No buscamos resultados rapidos. Buscamos que sigas siendo autonomo dentro de 10, 20, 30 anos.</p>
-                    </div>
+
+                <div class="results-box">
+                    <h4>Con el tiempo notaras:</h4>
+                    <ul class="check-list">
+                        <li>Mas seguridad al moverte</li>
+                        <li>Menos miedo a lesionarte</li>
+                        <li>Mas confianza en tu cuerpo</li>
+                        <li>Mas energia para tu vida diaria</li>
+                        <li>La sensacion clara de estar cuidandote de verdad</li>
+                    </ul>
                 </div>
             </div>
         </section>
 
-        <!-- Product Preview Section - What You Get -->
-        <section class="section preview-section">
+        <!-- Que hace diferente -->
+        <section class="section section-alt">
+            <div class="content-section">
+                <h2>Que hace diferente a Camino Vital?</h2>
+                <p>Muchos programas trabajan partes del movimiento por separado.</p>
+                <p>Camino Vital esta disenado pensando en algo mas importante: <strong>como se mantiene un cuerpo capaz con el paso del tiempo</strong>.</p>
+                <p>Aqui el movimiento no es un fin en si mismo.</p>
+                <p>Es una herramienta para vivir con mas <strong>autonomia, seguridad y calidad de vida</strong>.</p>
+            </div>
+        </section>
+
+        <!-- Como funciona -->
+        <section class="section">
             <div class="section-container">
-                <div class="preview-header">
-                    <div class="tagline">Que recibes exactamente</div>
-                    <h2>Asi es una sesion de Camino Vital</h2>
-                </div>
-                <div class="preview-grid">
-                    <div class="preview-mockup">
-                        <div class="email-mockup">
-                            <div class="email-header" style="display: flex; align-items: center; justify-content: center; gap: 10px;">
-                                <img src="assets/logo_hv.png" alt="Camino Vital" style="height: 28px; width: 28px;">
-                                <span style="color: var(--color-primary); font-weight: 600; font-size: 14px;">Camino Vital</span>
-                            </div>
-                            <div class="email-body">
-                                <p class="email-greeting">Hola <strong style="color: #DFCA61;">Maria</strong>, tu sesion de hoy:</p>
+                <h2 style="text-align: center; margin-bottom: 20px;">Como funciona?</h2>
+                <p style="text-align: center; max-width: 600px; margin: 0 auto 40px;">Camino Vital se entrega por email, de forma sencilla y acompanada.</p>
 
-                                <div class="email-exercise">
-                                    <h4>1. Sentadilla asistida con silla</h4>
-                                    <p><strong>3 series x 8 repeticiones</strong></p>
-                                    <p>Descanso: 60 segundos entre series</p>
-                                    <a href="#" class="email-video-btn">▶ Ver video explicativo</a>
-                                </div>
-
-                                <div class="email-exercise">
-                                    <h4>2. Flexion de pared</h4>
-                                    <p><strong>3 series x 10 repeticiones</strong></p>
-                                    <p>Descanso: 45 segundos entre series</p>
-                                    <a href="#" class="email-video-btn">▶ Ver video explicativo</a>
-                                </div>
-
-                                <div class="email-exercise">
-                                    <h4>3. Estiramiento de cadera</h4>
-                                    <p><strong>2 series x 30 segundos por lado</strong></p>
-                                    <a href="#" class="email-video-btn">▶ Ver video explicativo</a>
-                                </div>
-
-                                <p style="margin-top: 20px; color: #666; font-size: 14px;">Como te ha ido la sesion?</p>
-                                <div class="email-feedback">
-                                    <span class="feedback-btn easy">😊 Facil</span>
-                                    <span class="feedback-btn ok">👍 Bien</span>
-                                    <span class="feedback-btn hard">😅 Dificil</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="preview-content">
-                        <h3>Cada email incluye:</h3>
-                        <ul class="preview-list">
-                            <li><strong>3-5 ejercicios</strong> seleccionados especificamente para tu nivel y objetivos</li>
-                            <li><strong>Videos explicativos</strong> de cada ejercicio para que sepas exactamente como hacerlo</li>
-                            <li><strong>Series, repeticiones y descansos</strong> detallados y adaptados a tu capacidad</li>
-                            <li><strong>Botones de feedback</strong> para que el programa aprenda de ti automaticamente</li>
-                            <li><strong>Consejos personalizados</strong> basados en tu progreso</li>
-                            <li><strong>Tiempo estimado:</strong> 15-30 minutos segun tu nivel</li>
+                <div class="how-grid">
+                    <div class="how-content">
+                        <ul class="check-list">
+                            <li>Recibes propuestas de movimiento claras y faciles de seguir</li>
+                            <li>Sigues una estructura guiada durante 12 semanas</li>
+                            <li>El contenido se adapta a como estas y evoluciona contigo</li>
+                            <li>Videos explicativos de cada ejercicio</li>
+                            <li>Feedback despues de cada sesion para ajustar el programa</li>
                         </ul>
+
+                        <div class="how-notes">
+                            <p>Sin necesidad de gimnasio.</p>
+                            <p>Sin presion.</p>
+                            <p>Sin comparaciones.</p>
+                            <p><strong>Sigues un programa que se adapta a ti.</strong></p>
+                        </div>
+                    </div>
+                    <div class="how-image">
+                        <img src="https://habitos-vitales.com/wp-content/uploads/2026/01/sesion_ejemplo.png" alt="Ejemplo de sesion de Camino Vital" class="session-screenshot">
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Comparison Section -->
-        <section class="section comparison-section">
-            <div class="section-container">
-                <div class="comparison-header">
-                    <div class="tagline">Por que elegirnos</div>
-                    <h2>Camino Vital vs las alternativas</h2>
-                </div>
-                <div class="comparison-table">
-                    <div class="comparison-row header">
-                        <div class="comparison-cell"></div>
-                        <div class="comparison-cell highlight">Camino Vital</div>
-                        <div class="comparison-cell">Videos YouTube</div>
-                        <div class="comparison-cell">Gimnasio</div>
-                    </div>
-                    <div class="comparison-row">
-                        <div class="comparison-cell">Personalizado a tu nivel</div>
-                        <div class="comparison-cell highlight"><span class="check-yes">✓</span></div>
-                        <div class="comparison-cell"><span class="check-no">✗</span></div>
-                        <div class="comparison-cell"><span class="check-maybe">Depende</span></div>
-                    </div>
-                    <div class="comparison-row">
-                        <div class="comparison-cell">Se adapta a tu feedback</div>
-                        <div class="comparison-cell highlight"><span class="check-yes">✓</span></div>
-                        <div class="comparison-cell"><span class="check-no">✗</span></div>
-                        <div class="comparison-cell"><span class="check-no">✗</span></div>
-                    </div>
-                    <div class="comparison-row">
-                        <div class="comparison-cell">Evita ejercicios segun lesiones</div>
-                        <div class="comparison-cell highlight"><span class="check-yes">✓</span></div>
-                        <div class="comparison-cell"><span class="check-no">✗</span></div>
-                        <div class="comparison-cell"><span class="check-maybe">Con PT</span></div>
-                    </div>
-                    <div class="comparison-row">
-                        <div class="comparison-cell">Progresion automatica</div>
-                        <div class="comparison-cell highlight"><span class="check-yes">✓</span></div>
-                        <div class="comparison-cell"><span class="check-no">✗</span></div>
-                        <div class="comparison-cell"><span class="check-no">✗</span></div>
-                    </div>
-                    <div class="comparison-row">
-                        <div class="comparison-cell">Sin desplazamientos</div>
-                        <div class="comparison-cell highlight"><span class="check-yes">✓</span></div>
-                        <div class="comparison-cell"><span class="check-yes">✓</span></div>
-                        <div class="comparison-cell"><span class="check-no">✗</span></div>
-                    </div>
-                    <div class="comparison-row">
-                        <div class="comparison-cell">Estructura y seguimiento</div>
-                        <div class="comparison-cell highlight"><span class="check-yes">✓</span></div>
-                        <div class="comparison-cell"><span class="check-no">✗</span></div>
-                        <div class="comparison-cell"><span class="check-maybe">Depende</span></div>
-                    </div>
-                    <div class="comparison-row">
-                        <div class="comparison-cell">Coste aproximado</div>
-                        <div class="comparison-cell highlight"><strong style="color: var(--color-primary);">39€ unico</strong></div>
-                        <div class="comparison-cell">Gratis*</div>
-                        <div class="comparison-cell">30-60€/mes</div>
-                    </div>
-                </div>
-                <p style="text-align: center; margin-top: 20px; font-size: 13px; color: var(--color-text-secondary);">*Gratis pero sin personalizacion, sin estructura y con alta tasa de abandono</p>
-            </div>
-        </section>
+        <!-- Movimiento pensado para la longevidad -->
+        <section class="section section-alt">
+            <div class="content-section">
+                <h2>Movimiento pensado para la longevidad</h2>
+                <p>Hoy sabemos que vivir mas y mejor no depende de un solo tipo de ejercicio.</p>
+                <p>Depende de mantener el cuerpo:</p>
+                <ul class="bullet-list">
+                    <li><strong>Fuerte</strong></li>
+                    <li><strong>Movil</strong></li>
+                    <li><strong>Resistente</strong></li>
+                    <li><strong>Estable</strong></li>
+                </ul>
+                <p>Camino Vital esta disenado para cubrir estas necesidades, empezando por un ciclo inicial de 12 semanas bien estructurado y preparado para continuar despues.</p>
 
-        <!-- Features Section -->
-        <section class="section features-section">
-            <div class="section-container">
-                <div class="features-grid">
-                    <div class="feature">
-                        <div class="feature-icon">🎯</div>
-                        <h4>Personalizado</h4>
-                        <p>Cuestionario inicial de 2 minutos para conocer tu situacion</p>
-                    </div>
-                    <div class="feature">
-                        <div class="feature-icon">📈</div>
-                        <h4>Adaptativo</h4>
-                        <p>Se ajusta segun tu feedback despues de cada sesion</p>
-                    </div>
-                    <div class="feature">
-                        <div class="feature-icon">⏱️</div>
-                        <h4>15-30 min</h4>
-                        <p>Sesiones cortas que se adaptan a tu disponibilidad</p>
-                    </div>
-                    <div class="feature">
-                        <div class="feature-icon">🏠</div>
-                        <h4>Sin equipo</h4>
-                        <p>Solo tu cuerpo y un espacio pequeno en casa</p>
-                    </div>
+                <div class="emphasis-block">
+                    <p>Estas 12 semanas no son un reto.</p>
+                    <p><strong>Son el inicio del recorrido.</strong></p>
                 </div>
             </div>
         </section>
 
-        <!-- How It Works Section -->
-        <section class="section how-section">
-            <div class="section-container">
-                <div class="how-header">
-                    <div class="tagline">Como funciona</div>
-                    <h2>Tu camino en 4 pasos</h2>
-                </div>
-                <div class="steps">
-                    <div class="step">
-                        <div class="step-number">1</div>
-                        <div class="step-content">
-                            <h4>Cuestionario personalizado</h4>
-                            <p>En 2 minutos nos cuentas tu situacion actual, tus limitaciones y que quieres conseguir.</p>
-                        </div>
-                    </div>
-                    <div class="step">
-                        <div class="step-number">2</div>
-                        <div class="step-content">
-                            <h4>Tu programa a medida</h4>
-                            <p>Te mostramos exactamente que nivel y tipo de ejercicios recibiras, adaptados a ti.</p>
-                        </div>
-                    </div>
-                    <div class="step">
-                        <div class="step-number">3</div>
-                        <div class="step-content">
-                            <h4>Empieza tu programa</h4>
-                            <p>Recibes 3 emails por semana con ejercicios claros, videos explicativos y consejos.</p>
-                        </div>
-                    </div>
-                    <div class="step">
-                        <div class="step-number">4</div>
-                        <div class="step-content">
-                            <h4>El programa aprende de ti</h4>
-                            <p>Despues de cada sesion nos dices como te fue, y el programa se ajusta automaticamente.</p>
-                        </div>
-                    </div>
-                </div>
-                <div style="text-align: center; margin-top: 50px;">
-                    <a href="#" onclick="startQuiz(); return false;" class="btn-primary">
-                        Empezar el cuestionario gratuito
-                    </a>
-                </div>
-            </div>
-        </section>
-
-        <!-- Testimonials Section - Multiple -->
-        <section class="section testimonial-section">
-            <div class="section-container">
-                <div style="text-align: center; margin-bottom: 50px;">
-                    <div class="tagline">Historias reales</div>
-                    <h2>Lo que dicen nuestros usuarios</h2>
-                </div>
-                <div class="testimonials-grid">
-                    <div class="testimonial-card">
-                        <p class="testimonial-card-quote">"Despues de 3 anos sin hacer nada, tenia miedo de hacerme dano. Con Camino Vital empece suave y ahora me siento capaz de hacer cosas que pense que habia perdido. Lo mejor es que no te compara con nadie mas."</p>
-                        <div class="testimonial-card-author">
-                            <div class="testimonial-card-avatar">M</div>
-                            <div class="testimonial-card-info">
-                                <div class="testimonial-card-name">Maria</div>
-                                <div class="testimonial-card-detail">58 anos • Nivel Iniciacion</div>
-                            </div>
-                            <span class="testimonial-card-result">Semana 8</span>
-                        </div>
-                    </div>
-                    <div class="testimonial-card">
-                        <p class="testimonial-card-quote">"Tenia dolor de espalda cronico y pensaba que no podia hacer ejercicio. En el cuestionario indique mis limitaciones y los ejercicios que me llegan nunca me causan molestias. Por fin puedo moverme sin miedo."</p>
-                        <div class="testimonial-card-author">
-                            <div class="testimonial-card-avatar">J</div>
-                            <div class="testimonial-card-info">
-                                <div class="testimonial-card-name">Jorge</div>
-                                <div class="testimonial-card-detail">62 anos • Problemas de espalda</div>
-                            </div>
-                            <span class="testimonial-card-result">Semana 6</span>
-                        </div>
-                    </div>
-                    <div class="testimonial-card">
-                        <p class="testimonial-card-quote">"Lo que mas me gusta es que si un dia estoy muy cansada y digo que la sesion fue dificil, la siguiente es mas suave. Eso hace que nunca abandone. Llevo 10 semanas seguidas, mi record personal."</p>
-                        <div class="testimonial-card-author">
-                            <div class="testimonial-card-avatar">C</div>
-                            <div class="testimonial-card-info">
-                                <div class="testimonial-card-name">Carmen</div>
-                                <div class="testimonial-card-detail">51 anos • Nivel Intermedio</div>
-                            </div>
-                            <span class="testimonial-card-result">Semana 10</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- FAQ Section -->
-        <section class="section faq-section">
-            <div class="section-container">
-                <div class="faq-header">
-                    <div class="tagline">Preguntas frecuentes</div>
-                    <h2>Resolvemos tus dudas</h2>
-                </div>
-                <div class="faq-list">
-                    <div class="faq-item">
-                        <div class="faq-question" onclick="toggleFaq(this)">
-                            <h4>Necesito algun equipamiento?</h4>
-                            <span class="faq-toggle">+</span>
-                        </div>
-                        <div class="faq-answer">
-                            <div class="faq-answer-content">
-                                No. Todos los ejercicios estan disenados para hacerse solo con tu cuerpo y en un espacio pequeno. No necesitas pesas, maquinas ni ningun equipamiento especial.
-                            </div>
-                        </div>
-                    </div>
-                    <div class="faq-item">
-                        <div class="faq-question" onclick="toggleFaq(this)">
-                            <h4>Tengo problemas de rodillas/espalda. Puedo hacerlo?</h4>
-                            <span class="faq-toggle">+</span>
-                        </div>
-                        <div class="faq-answer">
-                            <div class="faq-answer-content">
-                                Si. En el cuestionario inicial nos indicas tus limitaciones y el programa automaticamente excluye ejercicios que podrian causarte molestias. Ademas, el sistema se adapta segun tu feedback.
-                            </div>
-                        </div>
-                    </div>
-                    <div class="faq-item">
-                        <div class="faq-question" onclick="toggleFaq(this)">
-                            <h4>Cuanto tiempo necesito dedicar?</h4>
-                            <span class="faq-toggle">+</span>
-                        </div>
-                        <div class="faq-answer">
-                            <div class="faq-answer-content">
-                                Cada sesion dura entre 15 y 30 minutos, dependiendo de tu nivel. Recibes 3 sesiones por semana (lunes, miercoles y viernes). Si un dia no puedes, simplemente continuas cuando puedas.
-                            </div>
-                        </div>
-                    </div>
-                    <div class="faq-item">
-                        <div class="faq-question" onclick="toggleFaq(this)">
-                            <h4>Que pasa si un ejercicio me resulta muy dificil?</h4>
-                            <span class="faq-toggle">+</span>
-                        </div>
-                        <div class="faq-answer">
-                            <div class="faq-answer-content">
-                                Despues de cada sesion te preguntamos como te fue. Si algo fue muy dificil (o muy facil), el programa se ajusta automaticamente para la siguiente sesion. Siempre recibiras ejercicios apropiados para tu nivel.
-                            </div>
-                        </div>
-                    </div>
-                    <div class="faq-item">
-                        <div class="faq-question" onclick="toggleFaq(this)">
-                            <h4>Y si no me gusta? Puedo recuperar mi dinero?</h4>
-                            <span class="faq-toggle">+</span>
-                        </div>
-                        <div class="faq-answer">
-                            <div class="faq-answer-content">
-                                Si, tienes 7 dias de garantia. Si sientes que Camino Vital no es para ti, escribenos y te devolvemos el dinero. Sin preguntas, sin complicaciones.
-                            </div>
-                        </div>
-                    </div>
-                    <div class="faq-item">
-                        <div class="faq-question" onclick="toggleFaq(this)">
-                            <h4>Como recibo los ejercicios?</h4>
-                            <span class="faq-toggle">+</span>
-                        </div>
-                        <div class="faq-answer">
-                            <div class="faq-answer-content">
-                                Por email, 3 veces por semana. Cada email incluye los ejercicios del dia con instrucciones claras y videos explicativos. No necesitas descargar ninguna app ni acceder a ninguna plataforma.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Authority Section -->
-        <section class="section authority-section">
-            <div class="section-container">
-                <div class="authority-content">
-                    <div class="authority-logo">
-                        <img src="assets/logo_hv.png" alt="Habitos Vitales">
-                    </div>
-                    <div class="authority-text">
-                        <h3>Creado por Habitos Vitales</h3>
-                        <p>Camino Vital es un programa desarrollado por el equipo de <strong style="color: var(--color-primary);">Habitos Vitales</strong>, especializados en ayudar a personas a recuperar su movilidad y autonomia fisica.</p>
-                        <p>Combinamos conocimiento de fisiologia del movimiento con tecnologia de personalizacion para crear programas que realmente se adaptan a cada persona.</p>
-                        <div class="authority-stats">
-                            <div class="authority-stat">
-                                <div class="authority-stat-number">246</div>
-                                <div class="authority-stat-label">Ejercicios en la biblioteca</div>
-                            </div>
-                            <div class="authority-stat">
-                                <div class="authority-stat-number">4</div>
-                                <div class="authority-stat-label">Niveles de dificultad</div>
-                            </div>
-                            <div class="authority-stat">
-                                <div class="authority-stat-number">12</div>
-                                <div class="authority-stat-label">Semanas de programa</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Results Timeline Section -->
-        <section class="section timeline-section">
-            <div class="section-container">
-                <div style="text-align: center; margin-bottom: 50px;">
-                    <div class="tagline">Que esperar</div>
-                    <h2>Tu progreso semana a semana</h2>
-                </div>
-                <div class="timeline">
-                    <div class="timeline-item">
-                        <div class="timeline-marker">S2</div>
-                        <div class="timeline-content">
-                            <h4>Semana 2: El habito se forma</h4>
-                            <p>Los ejercicios ya te resultan familiares. Tu cuerpo empieza a esperar las sesiones. Notas menos rigidez al levantarte por las mananas.</p>
-                        </div>
-                    </div>
-                    <div class="timeline-item">
-                        <div class="timeline-marker">S4</div>
-                        <div class="timeline-content">
-                            <h4>Semana 4: Primeros cambios visibles</h4>
-                            <p>Te sientes mas agil en movimientos cotidianos. Subir escaleras o levantarte del suelo ya no es un problema. El programa empieza a aumentar la intensidad.</p>
-                        </div>
-                    </div>
-                    <div class="timeline-item">
-                        <div class="timeline-marker">S8</div>
-                        <div class="timeline-content">
-                            <h4>Semana 8: Confianza en tu cuerpo</h4>
-                            <p>Tu rango de movimiento ha mejorado notablemente. Haces ejercicios que al principio parecian imposibles. Tu energia general es mayor.</p>
-                        </div>
-                    </div>
-                    <div class="timeline-item">
-                        <div class="timeline-marker" style="border-color: var(--color-primary); color: var(--color-primary);">S12</div>
-                        <div class="timeline-content">
-                            <h4>Semana 12: Un cuerpo transformado</h4>
-                            <p>Has recuperado movilidad que pensabas perdida. El ejercicio ya es parte de tu vida, no una obligacion. Tienes la base para seguir progresando.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Pricing Section -->
-        <section class="section pricing-section">
-            <div class="section-container">
-                <!-- Urgency Banner -->
-                <div class="urgency-banner">
-                    <div class="urgency-text">
-                        <span class="urgency-icon">⏰</span>
-                        <div class="urgency-message">
-                            <strong>Tu cuerpo no espera</strong>
-                            <span>Cada semana sin moverte es movilidad que cuesta mas recuperar.</span>
-                        </div>
-                    </div>
-                    <a href="#" onclick="startQuiz(); return false;" class="btn-primary" style="white-space: nowrap;">Empezar ahora</a>
-                </div>
+        <!-- Acceso al programa -->
+        <section class="section">
+            <div class="content-section">
+                <h2 style="text-align: center;">Acceso al programa</h2>
+                <p style="text-align: center;">En este momento, Camino Vital abre un numero limitado de plazas para poder acompanar de forma cercana a quienes empiezan ahora el recorrido.</p>
 
                 <div class="pricing-card">
-                    <span class="pricing-badge">Programa completo</span>
-                    <h3 class="pricing-title">Base Vital</h3>
-                    <p class="pricing-subtitle">Tu primera etapa del Camino</p>
-                    <div class="price">39€</div>
-                    <p class="price-period">Pago unico • 12 semanas • 36 sesiones</p>
-                    <p style="font-size: 12px; color: var(--color-text-secondary); margin-top: 8px;">Precio en tu moneda local al finalizar la compra</p>
-                    <div class="pricing-features">
-                        <div class="pricing-feature">
-                            <span class="pricing-feature-icon">✓</span>
-                            <span class="pricing-feature-text">Programa 100% personalizado a tu nivel</span>
-                        </div>
-                        <div class="pricing-feature">
-                            <span class="pricing-feature-icon">✓</span>
-                            <span class="pricing-feature-text">3 sesiones semanales con videos</span>
-                        </div>
-                        <div class="pricing-feature">
-                            <span class="pricing-feature-icon">✓</span>
-                            <span class="pricing-feature-text">Sistema adaptativo segun tu feedback</span>
-                        </div>
-                        <div class="pricing-feature">
-                            <span class="pricing-feature-icon">✓</span>
-                            <span class="pricing-feature-text">Soporte por email incluido</span>
-                        </div>
-                        <div class="pricing-feature">
-                            <span class="pricing-feature-icon">✓</span>
-                            <span class="pricing-feature-text">Acceso de por vida al contenido</span>
-                        </div>
+                    <h3 class="pricing-title">Camino Vital</h3>
+
+                    <div class="pricing-includes">
+                        <ul class="check-list">
+                            <li>Acceso completo al programa Camino Vital</li>
+                            <li>Ciclo guiado de 12 semanas</li>
+                            <li>Adaptacion a tu estado y objetivo</li>
+                            <li>Entrega por email</li>
+                            <li>Acompanamiento cercano</li>
+                            <li>Garantia de devolucion</li>
+                        </ul>
                     </div>
+
+                    <div class="price-box">
+                        <div class="price-original">Valor: 89€</div>
+                        <div class="price-current">39€</div>
+                        <p class="price-note">Pago unico</p>
+                    </div>
+
+                    <div class="start-date">
+                        <p>Inicio del recorrido</p>
+                        <div class="date">1 de marzo</div>
+                    </div>
+
                     <a href="#" onclick="startQuiz(); return false;" class="btn-primary" style="width: 100%;">
-                        Empezar ahora
+                        Acceder a Camino Vital
                     </a>
-                    <div class="guarantee">
-                        <p>🔒 Garantia de 7 dias: Si no es para ti, te devolvemos el dinero. Sin preguntas.</p>
+
+                    <div class="guarantee-box">
+                        <p>Si despues de empezar sientes que Camino Vital no es para ti, te devolvemos el dinero. Sin explicaciones.</p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Final CTA Section -->
-        <section class="section cta-section">
-            <div class="section-container" style="text-align: center;">
-                <h2>Empieza hoy tu Camino Vital</h2>
-                <p>Descubre en 2 minutos que programa es el adecuado para ti.</p>
-                <a href="#" onclick="startQuiz(); return false;" class="btn-primary">
-                    Hacer el cuestionario gratuito
+        <!-- Empieza ahora -->
+        <section class="section section-alt">
+            <div class="final-cta">
+                <h2>Empieza ahora</h2>
+
+                <div class="emphasis-block">
+                    <p>Empezar ahora no es una cuestion de urgencia.</p>
+                    <p><strong>Es una decision de cuidado.</strong></p>
+                    <p>El momento perfecto no existe.</p>
+                    <p>El momento adecuado suele ser este.</p>
+                </div>
+
+                <p>Estas 12 semanas son el inicio.<br>El camino es mucho mas largo.</p>
+
+                <a href="#" onclick="startQuiz(); return false;" class="btn-primary" style="margin-top: 30px;">
+                    Empieza tu Camino Vital
                 </a>
-                <p class="cta-note">Sin compromiso. Sin tarjeta de credito.</p>
             </div>
         </section>
 
         <!-- Footer -->
         <footer class="footer">
-            <div style="margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 12px;">
-                <img src="assets/logo_hv.png" alt="Habitos Vitales" style="height: 40px; width: 40px;">
-                <div style="text-align: left;">
-                    <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-text-secondary); display: block;">Habitos Vitales</span>
-                    <span style="color: var(--color-primary); font-weight: 700; font-size: 16px;">Camino Vital</span>
+            <div class="footer-brand">
+                <img src="https://habitos-vitales.com/wp-content/uploads/2026/01/logo_hv.png" alt="Habitos Vitales">
+                <div class="footer-brand-text">
+                    <span>Habitos Vitales</span>
+                    <span>Camino Vital</span>
                 </div>
             </div>
-            <p style="margin-bottom: 8px;">
-                Un programa de <a href="https://habitos-vitales.com" target="_blank" style="color: var(--color-primary); text-decoration: none;">Habitos Vitales</a>
-            </p>
-            <p style="margin-bottom: 20px;">
-                Tienes dudas? Escribenos a <a href="mailto:hola@habitos-vitales.com">hola@habitos-vitales.com</a>
-            </p>
-            <p style="font-size: 12px; opacity: 0.5;">
-                © 2026 Habitos Vitales. Todos los derechos reservados.
-            </p>
+            <p>Un programa de <a href="https://habitos-vitales.com" target="_blank">Habitos Vitales</a></p>
+            <p>Tienes dudas? Escribenos a <a href="mailto:hola@habitos-vitales.com">hola@habitos-vitales.com</a></p>
+            <p style="margin-top: 20px; font-size: 12px; opacity: 0.5;">© 2026 Habitos Vitales. Todos los derechos reservados.</p>
         </footer>
     </div>
 
     <script>
         function startQuiz() {
             window.location.href = 'cuestionario.html';
-        }
-
-        function toggleFaq(element) {
-            const faqItem = element.parentElement;
-            faqItem.classList.toggle('active');
         }
     </script>
 </body>

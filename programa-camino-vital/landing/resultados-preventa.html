@@ -675,7 +675,7 @@
                     <div class="detail-item">
                         <div class="detail-icon">📧</div>
                         <div class="detail-label">Frecuencia</div>
-                        <div class="detail-value">3 emails/semana</div>
+                        <div class="detail-value">2-5 sesiones/semana</div>
                     </div>
                     <div class="detail-item">
                         <div class="detail-icon">🎯</div>
@@ -805,7 +805,7 @@
                 (movilidad === 'normal' || movilidad === 'buena')) {
                 return {
                     nivel: 'Intermedio',
-                    duration: '10 semanas',
+                    duration: '12 semanas',
                     focus: 'Fuerza funcional',
                     reasons: [
                         'Has estado activo recientemente, puedes empezar con mas intensidad',
@@ -833,7 +833,7 @@
                         }
                     ],
                     testimonial: {
-                        text: 'Empece en nivel intermedio y en 10 semanas note una mejora increible. Ahora puedo hacer cosas que antes evitaba por miedo a hacerme dano.',
+                        text: 'Empece en nivel intermedio y en 12 semanas note una mejora increible. Ahora puedo hacer cosas que antes evitaba por miedo a hacerme dano.',
                         name: 'Carlos, 52 anos',
                         avatar: 'C'
                     }
@@ -926,8 +926,8 @@
 
             // URLs de Stripe con webhook de preventa
             const stripeURL = isLocal
-                ? 'https://buy.stripe.com/test_eVqaEW2Lh41Z83h0sbeZ201' // TEST mode LOCAL
-                : 'https://buy.stripe.com/PRODUCTION_LINK'; // PRODUCTION (cuando este listo)
+                ? 'https://buy.stripe.com/test_00w4gyadJdCz4R5b6PeZ202' // TEST mode LOCAL - Preventa 35€
+                : 'https://buy.stripe.com/9B6bJ0foEgv670Z6WZ2Ry00'; // PRODUCTION - Preventa 39€
 
             console.log('Entorno:', isLocal ? 'LOCAL (Stripe TEST)' : 'PRODUCCION');
             console.log('Stripe URL:', stripeURL);

@@ -39,7 +39,7 @@
       "typeVersion": 2.4,
       "position": [
         460,
-        300
+        140
       ],
       "credentials": {
         "postgres": {
@@ -221,13 +221,7 @@
             "node": "Resetear Flag Semanal",
             "type": "main",
             "index": 0
-          }
-        ]
-      ]
-    },
-    "Resetear Flag Semanal": {
-      "main": [
-        [
+          },
           {
             "node": "Obtener Templates",
             "type": "main",
@@ -320,7 +314,7 @@
   },
   "meta": null,
   "pinData": {},
-  "versionId": "v7-mensaje-con-sesiones             ",
+  "versionId": "v8-fix-duplicados-rama-paralela    ",
   "versionCounter": 53,
   "triggerCount": 1,
   "tags": [],

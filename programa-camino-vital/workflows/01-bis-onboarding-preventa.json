@@ -1,5 +1,6 @@
 {
   "name": "Camino Vital - 01-bis Onboarding Preventa",
+  "active": false,
   "nodes": [
     {
       "parameters": {
@@ -40,7 +41,7 @@
       "position": [680, 300],
       "credentials": {
         "postgres": {
-          "id": "postgres-local",
+          "id": "nLcUOvLreXurFbBs",
           "name": "PostgreSQL local"
         }
       }
@@ -76,7 +77,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Formatear datos para enviar email\nconst input = $input.first().json;\n\nconsole.log('🔄 Formateando datos de usuario para email plaza reservada...');\n\nreturn {\n  json: {\n    id: input.id,\n    email: input.email,\n    nombre: input.nombre,\n    nivel_actual: input.nivel_actual,\n    estado: input.estado,\n    fecha_inicio_programa: input.fecha_inicio_programa,\n    monto_pagado: input.monto_pagado\n  }\n};"
+        "jsCode": "// Formatear datos para enviar email\nconst input = $input.first().json;\n\nconsole.log('🔄 Formateando datos de usuario para email plaza reservada...');\n\n// Formatear fecha de inicio para mostrar\nconst fechaInicio = new Date(input.fecha_inicio_programa);\nconst opciones = { day: 'numeric', month: 'long', year: 'numeric' };\nconst fechaFormateada = fechaInicio.toLocaleDateString('es-ES', opciones);\n\nreturn {\n  json: {\n    id: input.id,\n    email: input.email,\n    nombre: input.nombre,\n    nivel_actual: input.nivel_actual,\n    estado: input.estado,\n    fecha_inicio_programa: fechaFormateada,\n    monto_pagado: input.monto_pagado\n  }\n};"
       },
       "id": "formatear-datos-usuario",
       "name": "Formatear Datos Usuario",
@@ -115,7 +116,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"email\": \"{{ $json.email }}\",\n  \"attributes\": {\n    \"NOMBRE\": \"{{ $json.nombre }}\",\n    \"NIVEL\": \"{{ $json.nivel_actual }}\",\n    \"ETAPA\": \"base_vital\",\n    \"ESTADO\": \"pagado_esperando_inicio\",\n    \"FECHA_INICIO_PROGRAMA\": \"2026-03-01\"\n  },\n  \"listIds\": [3],\n  \"unlinkListIds\": [2],\n  \"updateEnabled\": true\n}",
+        "jsonBody": "={\n  \"email\": \"{{ $json.email }}\",\n  \"attributes\": {\n    \"NOMBRE\": \"{{ $json.nombre }}\",\n    \"NIVEL\": \"{{ $json.nivel_actual }}\",\n    \"ETAPA\": \"base_vital\",\n    \"ESTADO\": \"pagado_esperando_inicio\",\n    \"FECHA_INICIO_PROGRAMA\": \"2026-03-01\"\n  },\n  \"listIds\": [17],\n  \"unlinkListIds\": [15],\n  \"updateEnabled\": true\n}",
         "options": {}
       },
       "id": "actualizar-brevo",
@@ -123,17 +124,35 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [1340, 200],
-      "notes": "Lista 3 = Pagados esperando inicio, Lista 2 = Leads"
+      "notes": "Lista 17 = Pagados esperando inicio, Lista 15 = Leads"
     },
     {
       "parameters": {
-        "jsCode": "// Recuperar datos del usuario para enviar email\nconst datosUsuario = $node[\"Formatear Datos Usuario\"].json;\n\nconsole.log('🔄 Recuperando datos para email plaza reservada...');\n\nreturn {\n  json: datosUsuario\n};"
+        "operation": "executeQuery",
+        "query": "SELECT html_template FROM email_templates WHERE nombre = 'email_plaza_reservada' AND activo = true;",
+        "options": {}
       },
-      "id": "recuperar-datos-usuario",
-      "name": "Recuperar Datos Usuario",
+      "id": "obtener-template-plaza-reservada",
+      "name": "Obtener Template Plaza Reservada",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1560, 200],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Renderizar template con variables del usuario\nconst template = $json.html_template;\nconst usuario = $('Formatear Datos Usuario').first().json;\n\nconsole.log('🔄 Renderizando template plaza reservada para:', usuario.email);\n\n// Reemplazar variables\nconst html = template\n  .replace(/\\{\\{nombre\\}\\}/g, usuario.nombre || '')\n  .replace(/\\{\\{fecha_inicio_programa\\}\\}/g, usuario.fecha_inicio_programa || '1 de marzo de 2026');\n\nreturn {\n  json: {\n    html_renderizado: html,\n    email: usuario.email,\n    nombre: usuario.nombre\n  }\n};"
+      },
+      "id": "renderizar-template",
+      "name": "Renderizar Template",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1560, 200]
+      "position": [1780, 200]
     },
     {
       "parameters": {
@@ -154,14 +173,14 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"sender\": {\n    \"name\": \"Camino Vital - Hábitos Vitales\",\n    \"email\": \"hola@habitos-vitales.com\"\n  },\n  \"to\": [\n    {\n      \"email\": \"{{ $json.email }}\",\n      \"name\": \"{{ $json.nombre }}\"\n    }\n  ],\n  \"subject\": \"🎉 ¡Tu plaza está reservada! - Camino Vital\",\n  \"htmlContent\": \"<!DOCTYPE html><html><head><meta charset='UTF-8'></head><body style='font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #232323; color: #E8E8E8;'><div style='background: #1C1C1C; border-radius: 18px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08);'><div style='text-align: center; padding: 30px 20px 20px;'><img src='https://habitos-vitales.com/img/logo-habitos-vitales.png' alt='Hábitos Vitales' style='max-width: 150px; height: auto;'></div><div style='background: linear-gradient(180deg, #2A2A2A 0%, #1C1C1C 100%); padding: 40px; text-align: center;'><div style='font-size: 60px; margin-bottom: 20px;'>🎉</div><h1 style='margin: 0; font-size: 28px; color: #DFCA61;'>¡Tu plaza está reservada!</h1><p style='margin: 10px 0 0; color: #B5B5B5;'>Gracias por confiar en Camino Vital</p></div><div style='padding: 40px;'><p style='font-size: 18px; line-height: 1.6; color: #E8E8E8;'>Hola <strong style=\\\"color: #DFCA61;\\\">{{ $json.nombre }}</strong>,</p><p style='font-size: 16px; line-height: 1.6; color: #B5B5B5;'>Tu plaza para el programa <strong style=\\\"color: #62B882;\\\">Camino Vital</strong> está confirmada.</p><div style='background: rgba(98, 184, 130, 0.1); border: 2px solid rgba(98, 184, 130, 0.3); padding: 25px; margin: 30px 0; border-radius: 12px; text-align: center;'><p style='color: #B5B5B5; margin: 0 0 10px 0; font-size: 14px;'>INICIO DEL PROGRAMA</p><p style='color: #62B882; margin: 0; font-size: 28px; font-weight: bold;'>📅 1 de marzo de 2026</p></div><div style='background: rgba(223, 202, 97, 0.1); border-left: 4px solid #DFCA61; padding: 20px; margin: 30px 0; border-radius: 4px;'><h3 style='color: #DFCA61; margin: 0 0 15px 0;'>Tu reserva incluye:</h3><ul style='margin: 0; padding-left: 20px; line-height: 1.8; color: #B5B5B5;'><li>Acceso completo al programa Camino Vital</li><li>Ciclo guiado de 12 semanas</li><li>Adaptación a tu estado y objetivo</li><li>Entrega por email</li><li>Acompañamiento cercano</li><li>Garantía de devolución</li></ul></div><div style='background: rgba(223, 202, 97, 0.08); border: 1px solid rgba(223, 202, 97, 0.2); padding: 20px; border-radius: 12px; text-align: center; margin: 30px 0;'><p style='color: #DFCA61; margin: 0; font-size: 15px;'>💰 <strong>Precio pagado:</strong> 35€ (precio de reserva)</p></div><p style='font-size: 16px; line-height: 1.6; color: #B5B5B5;'>El día <strong style=\\\"color: #E8E8E8;\\\">1 de marzo</strong> recibirás un email para configurar tu programa y elegir cuántas sesiones quieres hacer por semana.</p><p style='font-size: 16px; line-height: 1.6; color: #B5B5B5;'>Mientras tanto, si tienes cualquier duda puedes escribirnos a <a href='mailto:hola@habitos-vitales.com' style='color: #DFCA61; text-decoration: none;'>hola@habitos-vitales.com</a></p><div style='text-align: center; margin: 40px 0;'><p style='font-size: 18px; color: #62B882; font-weight: bold;'>¡Nos vemos pronto!</p></div><p style='font-size: 16px; line-height: 1.6; color: #B5B5B5;'>Un saludo,<br><strong style=\\\"color: #E8E8E8;\\\">El equipo de Camino Vital</strong></p></div></div><div style='text-align: center; margin-top: 30px; padding: 20px; color: #666; font-size: 12px;'><strong style=\\\"color: #DFCA61;\\\">Camino Vital</strong> | Hábitos Vitales<br>Este email confirma tu reserva en el programa</div></body></html>\"\n}",
+        "jsonBody": "={\n  \"sender\": {\n    \"name\": \"Camino Vital - Hábitos Vitales\",\n    \"email\": \"hola@habitos-vitales.com\"\n  },\n  \"to\": [\n    {\n      \"email\": \"{{ $json.email }}\",\n      \"name\": \"{{ $json.nombre }}\"\n    }\n  ],\n  \"subject\": \"🎉 ¡Tu plaza está reservada! - Camino Vital\",\n  \"htmlContent\": {{ JSON.stringify($json.html_renderizado) }}\n}",
         "options": {}
       },
       "id": "enviar-email-plaza-reservada",
       "name": "Enviar Email Plaza Reservada",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1780, 200]
+      "position": [2000, 200]
     },
     {
       "parameters": {
@@ -173,7 +192,7 @@
       "name": "Responder Webhook",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [2000, 200]
+      "position": [2220, 200]
     }
   ],
   "connections": {
@@ -243,14 +262,25 @@
       "main": [
         [
           {
-            "node": "Recuperar Datos Usuario",
+            "node": "Obtener Template Plaza Reservada",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Recuperar Datos Usuario": {
+    "Obtener Template Plaza Reservada": {
+      "main": [
+        [
+          {
+            "node": "Renderizar Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Renderizar Template": {
       "main": [
         [
           {
@@ -291,5 +321,5 @@
     "instanceId": "local"
   },
   "pinData": {},
-  "versionId": "1"
+  "versionId": "2"
 }

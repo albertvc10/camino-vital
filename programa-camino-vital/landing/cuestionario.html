@@ -724,6 +724,11 @@
         let currentStep = 1;
         const totalSteps = 5;
 
+        // Detectar si viene de preventa
+        const urlParams = new URLSearchParams(window.location.search);
+        const source = urlParams.get('source') || 'normal';
+        const isPreventa = source === 'preventa';
+
         // Actualizar clases de radio options cuando se selecciona
         document.querySelectorAll('.radio-option').forEach(option => {
             option.addEventListener('click', function() {
@@ -852,6 +857,9 @@
             const formData = new FormData(document.getElementById('quizForm'));
             const data = Object.fromEntries(formData.entries());
 
+            // Añadir source a los datos
+            data.source = source;
+
             // Guardar en localStorage para usar en la pagina de resultados
             localStorage.setItem('quizData', JSON.stringify(data));
 
@@ -863,7 +871,7 @@
             if ((tiempo === 'menos_3meses' || tiempo === '3-6meses') &&
                 (movilidad === 'normal' || movilidad === 'buena')) {
                 nivelAsignado = 'Intermedio';
-                duracionPrograma = '10 semanas';
+                duracionPrograma = '12 semanas';
             } else {
                 nivelAsignado = 'Iniciacion';
                 duracionPrograma = '12 semanas';
@@ -893,6 +901,7 @@
                         ...data,
                         nivel_asignado: nivelAsignado,
                         duracion_programa: duracionPrograma,
+                        source: source,
                         timestamp: new Date().toISOString()
                     })
                 });
@@ -905,8 +914,9 @@
                 // Continuamos aunque falle el guardado para no bloquear al usuario
             }
 
-            // Redirigir a pagina de resultados
-            window.location.href = 'resultados.html';
+            // Redirigir a pagina de resultados segun el origen
+            const resultsPage = isPreventa ? 'resultados-preventa.html' : 'resultados.html';
+            window.location.href = resultsPage;
         }
 
         // Inicializar
