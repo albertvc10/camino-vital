@@ -79,41 +79,33 @@ docs/              → Documentación interna
 | Stripe link preventa (TEST) | https://buy.stripe.com/test_3cIcN471xdCzcjx4IreZ203 |
 | Stripe link normal (TEST) | https://buy.stripe.com/test_fZubJ00D941Zabpej1eZ204 |
 
-## Credenciales PostgreSQL en Workflows n8n (IMPORTANTE)
+## Diferencias Local vs Producción en Workflows (IMPORTANTE)
 
-Los workflows n8n referencian credenciales por ID. Cada entorno tiene su propio ID:
+### Limitación n8n 2.x: $env bloqueado
+La producción usa n8n 2.x donde los task runners **bloquean acceso a `$env` y `process.env`**.
+El local usa n8n 1.x donde `$env` funciona sin problemas.
 
-| Entorno | Credential ID | Nombre |
-|---------|--------------|--------|
-| Local | `nLcUOvLreXurFbBs` | PostgreSQL Camino Vital Local |
-| Producción | `mb8piXWj8Fpb7MSV` | Postgres account |
+**Solución:** Los JSON locales usan `$env.*` y `process.env.*`. El script de deploy
+reemplaza automáticamente estas referencias por los valores reales de producción.
 
 ### Regla para JSON de workflows
-- Los JSON de workflows en el repositorio SIEMPRE usan el ID local: `nLcUOvLreXurFbBs`
-- Al desplegar workflows a producción, SIEMPRE ejecutar este SQL para reemplazar credenciales:
+- En local: usar `$env.BREVO_API_KEY`, `$env.WEBHOOK_URL`, etc. (funciona en n8n 1.x)
+- En local: usar credential ID `nLcUOvLreXurFbBs`
+- NUNCA hardcodear valores de producción en los JSON del repositorio
+- Al desplegar: el script `deploy-production.sh` se encarga de todo automáticamente
 
-```sql
--- Ejecutar en producción después de importar/actualizar workflows
-UPDATE workflow_entity
-SET nodes = REPLACE(nodes::text, 'nLcUOvLreXurFbBs', 'mb8piXWj8Fpb7MSV')::jsonb
-WHERE nodes::text LIKE '%nLcUOvLreXurFbBs%';
-
--- También reemplazar si algún JSON usaba el ID antiguo 'postgres-local'
-UPDATE workflow_entity
-SET nodes = REPLACE(nodes::text, 'postgres-local', 'mb8piXWj8Fpb7MSV')::jsonb
-WHERE nodes::text LIKE '%postgres-local%';
-```
-
-### Regla para API keys de Brevo
-- Los workflows SIEMPRE deben usar `={{$env.BREVO_API_KEY}}`, NUNCA la key hardcodeada
-- Después de importar workflows, verificar:
-
-```sql
--- No debe devolver resultados
-SELECT name FROM workflow_entity
-WHERE nodes::text LIKE '%xkeysib-%'
-  AND nodes::text NOT LIKE '%env.BREVO_API_KEY%';
-```
+### Qué reemplaza el script de deploy
+| Local (en JSON) | Producción (inyectado por script) |
+|---|---|
+| `nLcUOvLreXurFbBs` | `mb8piXWj8Fpb7MSV` (credential ID) |
+| `$env.BREVO_API_KEY` | Valor real desde `/root/n8n/.env` |
+| `$env.BREVO_LIST_LEADS` | `14` |
+| `$env.BREVO_LIST_ACTIVO` | `13` |
+| `$env.WEBHOOK_URL` | `https://n8n.habitos-vitales.com` |
+| `$env.SENDER_EMAIL` | `hola@habitos-vitales.com` |
+| `$env.SENDER_NAME` | `Camino Vital` |
+| `$env.N8N_HOST` | `n8n.habitos-vitales.com` |
+| `process.env.*` | Valores equivalentes |
 
 ## Detección de Entorno
 
