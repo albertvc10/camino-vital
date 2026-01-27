@@ -116,7 +116,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"email\": \"{{ $json.email }}\",\n  \"attributes\": {\n    \"NOMBRE\": \"{{ $json.nombre }}\",\n    \"NIVEL\": \"{{ $json.nivel_actual }}\",\n    \"ETAPA\": \"base_vital\",\n    \"ESTADO\": \"pagado_esperando_inicio\",\n    \"FECHA_INICIO_PROGRAMA\": \"2026-03-01\"\n  },\n  \"listIds\": [17],\n  \"unlinkListIds\": [15],\n  \"updateEnabled\": true\n}",
+        "jsonBody": "={\n  \"email\": \"{{ $json.email }}\",\n  \"attributes\": {\n    \"NOMBRE\": \"{{ $json.nombre }}\",\n    \"NIVEL\": \"{{ $json.nivel_actual }}\",\n    \"ETAPA\": \"base_vital\",\n    \"ESTADO\": \"pagado_esperando_inicio\",\n    \"FECHA_INICIO_PROGRAMA\": \"2026-03-01\"\n  },\n  \"listIds\": [{{ $env.BREVO_LIST_ACTIVO }}],\n  \"unlinkListIds\": [{{ $env.BREVO_LIST_LEADS }}],\n  \"updateEnabled\": true\n}",
         "options": {}
       },
       "id": "actualizar-brevo",
@@ -124,7 +124,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [1340, 200],
-      "notes": "Lista 17 = Pagados esperando inicio, Lista 15 = Leads"
+      "notes": "Usa $env.BREVO_LIST_ACTIVO y $env.BREVO_LIST_LEADS"
     },
     {
       "parameters": {
