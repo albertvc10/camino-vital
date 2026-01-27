@@ -43,7 +43,7 @@ LOCAL (editar) → GitHub (push) → Servidor (git pull)
 | Tipo de cambio | Flujo |
 |---|---|
 | HTML/CSS/JS (landings) | local → git push → servidor git pull (se ve al instante) |
-| Workflows n8n | Editar en JSON local → reimportar en n8n del servidor |
+| Workflows n8n | Editar JSON local → git push → servidor git pull → reimportar en n8n → **ejecutar SQL de credenciales** (ver sección "Credenciales PostgreSQL") |
 | Templates email (BD) | SQL directo en BD del servidor |
 | Variables de entorno | Editar `.env` en servidor → `docker compose restart n8n` |
 
@@ -72,6 +72,42 @@ docs/              → Documentación interna
 | Stripe link normal (PROD) | https://buy.stripe.com/8x2eVc90gfr2clj3KN2Ry01 |
 | Stripe link preventa (TEST) | https://buy.stripe.com/test_3cIcN471xdCzcjx4IreZ203 |
 | Stripe link normal (TEST) | https://buy.stripe.com/test_fZubJ00D941Zabpej1eZ204 |
+
+## Credenciales PostgreSQL en Workflows n8n (IMPORTANTE)
+
+Los workflows n8n referencian credenciales por ID. Cada entorno tiene su propio ID:
+
+| Entorno | Credential ID | Nombre |
+|---------|--------------|--------|
+| Local | `nLcUOvLreXurFbBs` | PostgreSQL Camino Vital Local |
+| Producción | `mb8piXWj8Fpb7MSV` | Postgres account |
+
+### Regla para JSON de workflows
+- Los JSON de workflows en el repositorio SIEMPRE usan el ID local: `nLcUOvLreXurFbBs`
+- Al desplegar workflows a producción, SIEMPRE ejecutar este SQL para reemplazar credenciales:
+
+```sql
+-- Ejecutar en producción después de importar/actualizar workflows
+UPDATE workflow_entity
+SET nodes = REPLACE(nodes::text, 'nLcUOvLreXurFbBs', 'mb8piXWj8Fpb7MSV')::jsonb
+WHERE nodes::text LIKE '%nLcUOvLreXurFbBs%';
+
+-- También reemplazar si algún JSON usaba el ID antiguo 'postgres-local'
+UPDATE workflow_entity
+SET nodes = REPLACE(nodes::text, 'postgres-local', 'mb8piXWj8Fpb7MSV')::jsonb
+WHERE nodes::text LIKE '%postgres-local%';
+```
+
+### Regla para API keys de Brevo
+- Los workflows SIEMPRE deben usar `={{$env.BREVO_API_KEY}}`, NUNCA la key hardcodeada
+- Después de importar workflows, verificar:
+
+```sql
+-- No debe devolver resultados
+SELECT name FROM workflow_entity
+WHERE nodes::text LIKE '%xkeysib-%'
+  AND nodes::text NOT LIKE '%env.BREVO_API_KEY%';
+```
 
 ## Detección de Entorno
 
