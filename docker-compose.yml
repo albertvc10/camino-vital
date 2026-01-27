@@ -85,6 +85,8 @@ services:
       - BREVO_API_KEY=${BREVO_API_KEY}
       - SENDER_EMAIL=${SENDER_EMAIL}
       - SENDER_NAME=${SENDER_NAME}
+      - BREVO_LIST_LEADS=${BREVO_LIST_LEADS}
+      - BREVO_LIST_ACTIVO=${BREVO_LIST_ACTIVO}
 
       # API de n8n (para importar workflows programáticamente)
       - N8N_API_KEY_ENABLED=${N8N_API_KEY_ENABLED}

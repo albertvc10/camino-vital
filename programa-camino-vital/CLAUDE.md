@@ -18,7 +18,10 @@ LOCAL (editar) → GitHub (push) → Servidor (git pull)
 ### Reglas
 - NUNCA editar archivos directamente en producción
 - NUNCA hacer push sin antes verificar que los cambios son correctos en local
-- Siempre seguir el flujo: local → git → servidor
+- NUNCA subir a servidor sin haber probado primero que los cambios funcionan bien en local (probar workflows en n8n local, verificar landing pages en localhost, etc.)
+- Siempre seguir el flujo: local → probar en local → git → servidor
+- Si un cambio afecta workflows: probar ejecución en n8n local antes de desplegar
+- Si un cambio afecta landing pages: verificar en http://localhost visualmente antes de desplegar
 
 ## Servidor de Producción
 
@@ -65,8 +68,10 @@ docs/              → Documentación interna
 |----------|--------|
 | Programa normal (a partir del 1 marzo) | 89€ |
 | Preventa (hasta 1 marzo) | 39€ |
-| Stripe link preventa | https://buy.stripe.com/9B6bJ0foEgv670Z6WZ2Ry00 |
-| Stripe link normal | https://buy.stripe.com/8x2eVc90gfr2clj3KN2Ry01 |
+| Stripe link preventa (PROD) | https://buy.stripe.com/9B6bJ0foEgv670Z6WZ2Ry00 |
+| Stripe link normal (PROD) | https://buy.stripe.com/8x2eVc90gfr2clj3KN2Ry01 |
+| Stripe link preventa (TEST) | https://buy.stripe.com/test_3cIcN471xdCzcjx4IreZ203 |
+| Stripe link normal (TEST) | https://buy.stripe.com/test_fZubJ00D941Zabpej1eZ204 |
 
 ## Detección de Entorno
 
