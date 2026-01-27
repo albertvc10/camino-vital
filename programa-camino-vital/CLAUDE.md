@@ -10,10 +10,16 @@ LOCAL (editar) → GitHub (push) → Servidor (git pull)
 
 ### Paso a paso:
 1. **Editar en LOCAL** - Esta máquina, en este directorio
-2. **Commit + push** - `git add . && git commit -m "..." && git push`
-3. **SSH al servidor** - `ssh root@164.90.222.166`
-4. **Pull en servidor** - `cd /root/camino-vital/programa-camino-vital && git pull`
-5. **Verificar** - Las landing pages se actualizan al instante tras `git pull`
+2. **Probar en LOCAL** - Verificar que funciona en n8n local / localhost
+3. **Commit + push** - `git add . && git commit -m "..." && git push`
+4. **SSH al servidor** - `ssh root@164.90.222.166`
+5. **Ejecutar script de deploy** - `bash /root/camino-vital/programa-camino-vital/scripts/deploy-production.sh`
+
+El script de deploy automáticamente:
+- Hace `git pull`
+- Reemplaza credential IDs locales por los de producción
+- Verifica que no haya API keys hardcodeadas
+- Muestra resultado de verificación
 
 ### Reglas
 - NUNCA editar archivos directamente en producción
@@ -42,10 +48,10 @@ LOCAL (editar) → GitHub (push) → Servidor (git pull)
 
 | Tipo de cambio | Flujo |
 |---|---|
-| HTML/CSS/JS (landings) | local → git push → servidor git pull (se ve al instante) |
-| Workflows n8n | Editar JSON local → git push → servidor git pull → reimportar en n8n → **ejecutar SQL de credenciales** (ver sección "Credenciales PostgreSQL") |
+| HTML/CSS/JS (landings) | local → git push → servidor: `deploy-production.sh` (se ve al instante) |
+| Workflows n8n | Editar JSON local → git push → servidor: `deploy-production.sh` (reemplaza credentials automáticamente) |
 | Templates email (BD) | SQL directo en BD del servidor |
-| Variables de entorno | Editar `.env` en servidor → `docker compose restart n8n` |
+| Variables de entorno | Editar `.env` en servidor → `docker compose down n8n && docker compose up -d n8n` |
 
 ## Estructura del Proyecto
 
