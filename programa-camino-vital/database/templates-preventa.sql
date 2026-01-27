@@ -75,7 +75,7 @@ VALUES (
 
       <!-- Precio pagado -->
       <div style="background: rgba(223, 202, 97, 0.08); border: 1px solid rgba(223, 202, 97, 0.2); padding: 20px; border-radius: 12px; text-align: center; margin: 30px 0;">
-        <p style="color: #DFCA61; margin: 0; font-size: 15px;">💰 <strong>Precio pagado:</strong> 35€ (precio de reserva)</p>
+        <p style="color: #DFCA61; margin: 0; font-size: 15px;">💰 <strong>Precio pagado:</strong> 39€ (precio de reserva)</p>
       </div>
 
       <p style="font-size: 16px; line-height: 1.6; color: #B5B5B5;">El dia del inicio recibiras un email para configurar tu programa y elegir cuantas sesiones quieres hacer por semana.</p>
