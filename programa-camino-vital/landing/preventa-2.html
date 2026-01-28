@@ -504,19 +504,18 @@
         /* ── Check list ── */
         .check-list { list-style: none; margin: 25px 0; }
         .check-list li {
-            padding: 12px 0;
-            padding-left: 35px;
-            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
             color: var(--color-text-secondary);
             font-size: 17px;
         }
-        .check-list li::before {
-            content: "\2713";
-            position: absolute;
-            left: 0;
-            color: var(--color-success);
-            font-weight: bold;
-            font-size: 18px;
+        .check-list li .icon-svg {
+            width: 20px;
+            height: 20px;
+            stroke: var(--color-success);
+            flex-shrink: 0;
         }
 
         /* ── FAQ ── */
@@ -1183,11 +1182,11 @@
 
                     <div class="pricing-includes">
                         <ul class="check-list">
-                            <li>Acceso completo al programa</li>
-                            <li>Ciclo guiado de 12 semanas</li>
-                            <li>Adaptación a tu estado y objetivo</li>
-                            <li>Entrega por email</li>
-                            <li>Acompañamiento cercano</li>
+                            <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Acceso completo al programa</li>
+                            <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Ciclo guiado de 12 semanas</li>
+                            <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Adaptación a tu estado y objetivo</li>
+                            <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Entrega por email</li>
+                            <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Acompañamiento cercano</li>
                         </ul>
                     </div>
 
