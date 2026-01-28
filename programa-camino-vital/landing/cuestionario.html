@@ -436,6 +436,8 @@
             }
         }
     </style>
+    <!-- Cloudflare Turnstile -->
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
     <div class="quiz-container">
@@ -735,6 +737,13 @@
                     </div>
                 </div>
             </form>
+
+            <!-- Turnstile widget (fuera de los steps para que renderice correctamente) -->
+            <div id="turnstile-container" class="cf-turnstile" style="display: flex; justify-content: center; margin-top: 20px;"
+                 data-sitekey="0x4AAAAAACVE48wWJj8bwC3o"
+                 data-callback="onTurnstileSuccess"
+                 data-theme="dark"
+                 data-size="compact"></div>
         </div>
     </div>
 
@@ -848,6 +857,11 @@
                 document.querySelector(`.step[data-step="${currentStep}"]`).classList.add('active');
                 updateProgress();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                // Ejecutar Turnstile al llegar al último paso
+                if (currentStep === totalSteps && window.turnstile) {
+                    turnstile.execute('#turnstile-container');
+                }
             }
         }
 
@@ -861,10 +875,35 @@
             }
         }
 
+        // Variable para almacenar el token de Turnstile
+        let turnstileToken = null;
+
+        function onTurnstileSuccess(token) {
+            turnstileToken = token;
+        }
+
         async function submitQuiz() {
             if (!validateStep(currentStep)) {
                 alert('Por favor, selecciona una opcion para continuar');
                 return;
+            }
+
+            // Verificar token de Turnstile (en local, si no hay token, continuar igual)
+            const isLocal = window.location.hostname === 'localhost' ||
+                           window.location.hostname === '127.0.0.1' ||
+                           window.location.protocol === 'file:';
+
+            if (!turnstileToken && !isLocal) {
+                alert('Por favor, espera un momento mientras verificamos que no eres un robot.');
+                if (window.turnstile) {
+                    turnstile.execute('#turnstile-container');
+                }
+                return;
+            }
+
+            // En local, usar token de prueba si no hay token real
+            if (!turnstileToken && isLocal) {
+                turnstileToken = 'local-test-token';
             }
 
             // Mostrar estado de carga
@@ -875,8 +914,9 @@
             const formData = new FormData(document.getElementById('quizForm'));
             const data = Object.fromEntries(formData.entries());
 
-            // Añadir source a los datos
+            // Añadir source y token de Turnstile
             data.source = source;
+            data.turnstile_token = turnstileToken;
 
             // Guardar en localStorage para usar en la pagina de resultados
             localStorage.setItem('quizData', JSON.stringify(data));
@@ -895,18 +935,10 @@
                 duracionPrograma = '12 semanas';
             }
 
-            // Detectar entorno (local vs produccion)
-            const isLocal = window.location.hostname === 'localhost' ||
-                           window.location.hostname === '127.0.0.1' ||
-                           window.location.protocol === 'file:';
-
+            // Determinar URL del webhook
             const webhookURL = isLocal
-                ? 'http://localhost:5678/webhook/guardar-lead-test'
+                ? 'http://localhost:5678/webhook/guardar-lead'
                 : 'https://n8n.habitos-vitales.com/webhook/guardar-lead';
-
-            console.log('Entorno:', isLocal ? 'LOCAL' : 'PRODUCCION');
-            console.log('Webhook URL:', webhookURL);
-            console.log('Datos:', data);
 
             // Crear lead con info completa del cuestionario
             try {
@@ -920,6 +952,7 @@
                         nivel_asignado: nivelAsignado,
                         duracion_programa: duracionPrograma,
                         source: source,
+                        turnstile_token: turnstileToken,
                         timestamp: new Date().toISOString()
                     })
                 });
@@ -929,7 +962,6 @@
                 }
             } catch (error) {
                 console.error('Error al crear lead:', error);
-                // Continuamos aunque falle el guardado para no bloquear al usuario
             }
 
             // Redirigir a pagina de resultados segun el origen

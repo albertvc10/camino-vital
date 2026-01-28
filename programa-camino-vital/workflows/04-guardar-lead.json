@@ -1,5 +1,7 @@
 {
+  "id": "4ec1HJCYzwIeFWAr",
   "name": "Camino Vital - 04 Guardar Lead (Cuestionario)",
+  "active": true,
   "nodes": [
     {
       "parameters": {
@@ -19,13 +21,75 @@
     },
     {
       "parameters": {
-        "jsCode": "// Extraer datos del cuestionario\nconst body = $input.first().json.body;\n\n// Parsear si viene como string\nconst data = typeof body === 'string' ? JSON.parse(body) : body;\n\nreturn {\n  json: {\n    email: data.email,\n    nombre: data.nombre,\n    tiempo_sin_ejercicio: data.tiempo_sin_ejercicio,\n    nivel_movilidad: data.nivel_movilidad,\n    limitaciones: data.limitaciones,\n    limitaciones_detalle: data.limitaciones_detalle || '',\n    objetivo_principal: data.objetivo_principal,\n    nivel_asignado: data.nivel_asignado,\n    duracion_programa: data.duracion_programa,\n    timestamp: data.timestamp\n  }\n};"
+        "jsCode": "// Extraer datos del body\nconst body = $input.first().json.body;\nconst data = typeof body === 'string' ? JSON.parse(body) : body;\n\nreturn {\n  json: {\n    turnstile_token: data.turnstile_token,\n    email: data.email,\n    nombre: data.nombre,\n    tiempo_sin_ejercicio: data.tiempo_sin_ejercicio,\n    nivel_movilidad: data.nivel_movilidad,\n    limitaciones: data.limitaciones,\n    limitaciones_detalle: data.limitaciones_detalle || '',\n    objetivo_principal: data.objetivo_principal,\n    nivel_asignado: data.nivel_asignado,\n    duracion_programa: data.duracion_programa,\n    timestamp: data.timestamp\n  }\n};"
       },
-      "id": "extraer-datos-lead",
-      "name": "Extraer Datos Lead",
+      "id": "extraer-datos-inicial",
+      "name": "Extraer Datos Inicial",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"secret\": \"0x4AAAAAACVE4wbVwEf9amRFouALPLdx9FI\",\n  \"response\": \"{{ $json.turnstile_token }}\"\n}",
+        "options": {}
+      },
+      "id": "validar-turnstile",
+      "name": "Validar Turnstile",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300],
+      "notes": "Cloudflare Turnstile - Validacion de bot protection"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{ $json.success }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      },
+      "id": "if-turnstile-valido",
+      "name": "Turnstile Válido?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Recuperar datos del lead desde el nodo anterior\nconst prevData = $('Extraer Datos Inicial').first().json;\n\nreturn {\n  json: {\n    email: prevData.email,\n    nombre: prevData.nombre,\n    tiempo_sin_ejercicio: prevData.tiempo_sin_ejercicio,\n    nivel_movilidad: prevData.nivel_movilidad,\n    limitaciones: prevData.limitaciones,\n    limitaciones_detalle: prevData.limitaciones_detalle,\n    objetivo_principal: prevData.objetivo_principal,\n    nivel_asignado: prevData.nivel_asignado,\n    duracion_programa: prevData.duracion_programa,\n    timestamp: prevData.timestamp\n  }\n};"
+      },
+      "id": "preparar-datos-lead",
+      "name": "Preparar Datos Lead",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 200]
     },
     {
       "parameters": {
@@ -37,7 +101,7 @@
       "name": "Guardar Lead en DB",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [680, 300],
+      "position": [1340, 200],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -71,7 +135,7 @@
       "name": "Agregar a Brevo (Leads)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [900, 300],
+      "position": [1560, 200],
       "notes": "Lista ID 2 = Leads sin pagar"
     },
     {
@@ -84,7 +148,21 @@
       "name": "Responder OK",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1120, 300]
+      "position": [1780, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"success\": false,\n  \"message\": \"Verificación de seguridad fallida\",\n  \"error\": \"invalid_turnstile_token\"\n}",
+        "options": {
+          "responseCode": 403
+        }
+      },
+      "id": "responder-error-bot",
+      "name": "Responder Error (Bot)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 400]
     }
   ],
   "connections": {
@@ -92,14 +170,54 @@
       "main": [
         [
           {
-            "node": "Extraer Datos Lead",
+            "node": "Extraer Datos Inicial",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Extraer Datos Lead": {
+    "Extraer Datos Inicial": {
+      "main": [
+        [
+          {
+            "node": "Validar Turnstile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar Turnstile": {
+      "main": [
+        [
+          {
+            "node": "Turnstile Válido?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Turnstile Válido?": {
+      "main": [
+        [
+          {
+            "node": "Preparar Datos Lead",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder Error (Bot)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Datos Lead": {
       "main": [
         [
           {
@@ -147,5 +265,5 @@
     "instanceId": "local"
   },
   "pinData": {},
-  "versionId": "1"
+  "versionId": "2"
 }
