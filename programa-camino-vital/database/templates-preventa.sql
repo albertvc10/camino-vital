@@ -38,7 +38,7 @@ VALUES (
 
     <!-- Logo -->
     <div style="text-align: center; padding: 30px 20px 20px;">
-      <img src="https://habitos-vitales.com/img/logo-habitos-vitales.png" alt="Habitos Vitales" style="max-width: 150px; height: auto;">
+      <img src="https://habitos-vitales.com/wp-content/uploads/2023/09/1-e1769547181637.png" alt="Habitos Vitales" style="max-width: 150px; height: auto;">
     </div>
 
     <!-- Header -->
