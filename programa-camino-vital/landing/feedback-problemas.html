@@ -58,8 +58,25 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 32px;
             margin: 0 auto 25px;
+        }
+
+        /* ── SVG icon base ── */
+        .icon-svg {
+            width: 28px;
+            height: 28px;
+            flex-shrink: 0;
+            stroke: var(--color-primary);
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .icon-svg-success {
+            stroke: var(--color-success);
+        }
+        .icon-svg-error {
+            stroke: var(--color-error);
         }
 
         h1 {
@@ -112,7 +129,6 @@
         }
 
         .button .emoji {
-            font-size: 28px;
             margin-bottom: 10px;
             display: block;
         }
@@ -223,7 +239,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 45px;
             margin: 0 auto 25px;
         }
 
@@ -266,7 +281,7 @@
 <body>
     <div class="container">
         <div id="form-content">
-            <div class="header-icon">💬</div>
+            <div class="header-icon"><svg class="icon-svg" style="width:32px;height:32px" viewBox="0 0 24 24"><use href="#icon-message"></use></svg></div>
             <h1>Que paso con la sesion?</h1>
             <p class="subtitle">Tu feedback nos ayuda a ajustar tu programa</p>
 
@@ -275,19 +290,19 @@
             </div>
 
             <button class="button tiempo" onclick="enviarFeedback('incompleta_tiempo')">
-                <span class="emoji">⏰</span>
+                <span class="emoji"><svg class="icon-svg" style="width:28px;height:28px" viewBox="0 0 24 24"><use href="#icon-clock"></use></svg></span>
                 <strong>No tuve tiempo</strong>
                 <small>Tuve que parar por otro compromiso. No pude completar la sesion.</small>
             </button>
 
             <button class="button dificil" onclick="enviarFeedback('incompleta_dificil')">
-                <span class="emoji">😓</span>
+                <span class="emoji"><svg class="icon-svg icon-svg-error" style="width:28px;height:28px" viewBox="0 0 24 24"><use href="#icon-frown"></use></svg></span>
                 <strong>Fue muy dificil</strong>
                 <small>Los ejercicios o las repeticiones me resultaron demasiado exigentes.</small>
             </button>
 
             <button class="button dolor" onclick="enviarFeedback('dolor')">
-                <span class="emoji">🤕</span>
+                <span class="emoji"><svg class="icon-svg icon-svg-error" style="width:28px;height:28px" viewBox="0 0 24 24"><use href="#icon-injury"></use></svg></span>
                 <strong>Senti molestia fisica</strong>
                 <small>Me dolio algo al hacer un ejercicio. Prefiero evitarlo.</small>
             </button>
@@ -299,7 +314,7 @@
         </div>
 
         <div id="success" class="success">
-            <div class="success-icon">✅</div>
+            <div class="success-icon"><svg class="icon-svg icon-svg-success" style="width:45px;height:45px" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg></div>
             <h2>Gracias por contarnos</h2>
             <p>Vamos a ajustar tu programa teniendo en cuenta lo que nos has dicho.</p>
             <p>Tu proxima sesion estara mejor adaptada a tu situacion.</p>
@@ -360,5 +375,6 @@
             }
         });
     </script>
+    <script src="assets/icons.js"></script>
 </body>
 </html>

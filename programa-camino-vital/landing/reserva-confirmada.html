@@ -8,6 +8,7 @@
         :root {
             --color-primary: #DFCA61;
             --color-success: #62B882;
+            --color-error: #E74C3C;
             --color-bg-dark: #232323;
             --color-bg-card: #1C1C1C;
             --color-text-primary: #E8E8E8;
@@ -55,8 +56,28 @@
         }
 
         .icon {
-            font-size: 80px;
             margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ── SVG icon base ── */
+        .icon-svg {
+            width: 28px;
+            height: 28px;
+            flex-shrink: 0;
+            stroke: var(--color-primary);
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .icon-svg-success {
+            stroke: var(--color-success);
+        }
+        .icon-svg-error {
+            stroke: var(--color-error);
         }
 
         h1 {
@@ -142,8 +163,9 @@
                 font-size: 26px;
             }
 
-            .icon {
-                font-size: 60px;
+            .icon svg {
+                width: 50px;
+                height: 50px;
             }
 
             .date {
@@ -157,7 +179,7 @@
         <div class="card">
             <img src="https://habitos-vitales.com/wp-content/uploads/2023/09/1-e1769547181637.png" alt="Habitos Vitales" class="logo">
 
-            <div class="icon">🎉</div>
+            <div class="icon"><svg class="icon-svg icon-svg-success" style="width:64px;height:64px" viewBox="0 0 24 24"><use href="#icon-celebration"></use></svg></div>
 
             <h1>Tu plaza esta reservada</h1>
             <p class="subtitle">Gracias por confiar en Camino Vital</p>
@@ -170,7 +192,7 @@
             </div>
 
             <div class="info-box">
-                <p>📧 Recibiras un email de confirmacion con todos los detalles. El dia del inicio te enviaremos las instrucciones para configurar tu programa.</p>
+                <p><svg class="icon-svg" style="width:18px;height:18px;display:inline;vertical-align:middle" viewBox="0 0 24 24"><use href="#icon-email"></use></svg> Recibiras un email de confirmacion con todos los detalles. El dia del inicio te enviaremos las instrucciones para configurar tu programa.</p>
             </div>
 
             <p>Mientras tanto, si tienes cualquier duda estamos aqui para ayudarte.</p>
@@ -180,5 +202,6 @@
             </div>
         </div>
     </div>
+    <script src="assets/icons.js"></script>
 </body>
 </html>

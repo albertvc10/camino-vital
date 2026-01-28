@@ -64,9 +64,26 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 50px;
             margin: 0 auto 25px;
             animation: celebratePulse 2s ease-in-out infinite;
+        }
+
+        /* ── SVG icon base ── */
+        .icon-svg {
+            width: 28px;
+            height: 28px;
+            flex-shrink: 0;
+            stroke: var(--color-primary);
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .icon-svg-success {
+            stroke: var(--color-success);
+        }
+        .icon-svg-error {
+            stroke: var(--color-error);
         }
 
         @keyframes celebratePulse {
@@ -154,8 +171,10 @@
         }
 
         .detail-icon {
-            font-size: 28px;
             margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .detail-label {
@@ -281,7 +300,6 @@
         }
 
         .benefit-item .icon {
-            font-size: 32px;
             margin-bottom: 12px;
         }
 
@@ -525,7 +543,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="success-icon">✅</div>
+            <div class="success-icon"><svg class="icon-svg icon-svg-success" style="width:50px;height:50px" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg></div>
             <div class="tagline">Programa personalizado</div>
             <h1>Hemos analizado tu perfil!</h1>
             <p>Este es el programa perfecto para ti, <span class="user-name" id="userName"></span></p>
@@ -540,22 +558,22 @@
 
                 <div class="program-details">
                     <div class="detail-item">
-                        <div class="detail-icon">📊</div>
+                        <div class="detail-icon"><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-bar-chart"></use></svg></div>
                         <div class="detail-label">Nivel</div>
                         <div class="detail-value" id="userLevel"></div>
                     </div>
                     <div class="detail-item">
-                        <div class="detail-icon">⏱️</div>
+                        <div class="detail-icon"><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-clock"></use></svg></div>
                         <div class="detail-label">Duracion</div>
                         <div class="detail-value" id="userDuration"></div>
                     </div>
                     <div class="detail-item">
-                        <div class="detail-icon">📧</div>
+                        <div class="detail-icon"><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-email"></use></svg></div>
                         <div class="detail-label">Frecuencia</div>
                         <div class="detail-value">2-5 sesiones/semana</div>
                     </div>
                     <div class="detail-item">
-                        <div class="detail-icon">🎯</div>
+                        <div class="detail-icon"><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-target"></use></svg></div>
                         <div class="detail-label">Enfoque</div>
                         <div class="detail-value" id="userFocus"></div>
                     </div>
@@ -574,22 +592,22 @@
 
             <div class="benefits-grid">
                 <div class="benefit-item">
-                    <div class="icon">🔄</div>
+                    <div class="icon"><svg class="icon-svg" style="width:32px;height:32px" viewBox="0 0 24 24"><use href="#icon-refresh"></use></svg></div>
                     <h4>Se adapta a ti</h4>
                     <p>Si algo es muy facil o dificil, el programa se ajusta automaticamente segun tu feedback</p>
                 </div>
                 <div class="benefit-item">
-                    <div class="icon">🏠</div>
+                    <div class="icon"><svg class="icon-svg" style="width:32px;height:32px" viewBox="0 0 24 24"><use href="#icon-home"></use></svg></div>
                     <h4>Sin equipo necesario</h4>
                     <p>Todo desde casa con tu propio peso corporal. Sin gimnasio ni material</p>
                 </div>
                 <div class="benefit-item">
-                    <div class="icon">📹</div>
+                    <div class="icon"><svg class="icon-svg" style="width:32px;height:32px" viewBox="0 0 24 24"><use href="#icon-video"></use></svg></div>
                     <h4>Videos explicativos</h4>
                     <p>Cada ejercicio tiene su video demostrativo para que lo hagas correctamente</p>
                 </div>
                 <div class="benefit-item">
-                    <div class="icon">💬</div>
+                    <div class="icon"><svg class="icon-svg" style="width:32px;height:32px" viewBox="0 0 24 24"><use href="#icon-message"></use></svg></div>
                     <h4>Soporte personalizado</h4>
                     <p>Dudas o problemas? Responde cualquier email y te ayudamos</p>
                 </div>
@@ -613,7 +631,7 @@
                 </button>
 
                 <div class="guarantee">
-                    <p>🔒 Garantia de 7 dias: Si sientes que no es para ti, te devolvemos el dinero. Sin preguntas.</p>
+                    <p><svg class="icon-svg icon-svg-success" style="width:18px;height:18px;display:inline;vertical-align:middle" viewBox="0 0 24 24"><use href="#icon-lock"></use></svg> Garantia de 7 dias: Si sientes que no es para ti, te devolvemos el dinero. Sin preguntas.</p>
                 </div>
 
                 <p class="stripe-note">
@@ -781,5 +799,6 @@
             }
         }
     </script>
+    <script src="assets/icons.js"></script>
 </body>
 </html>
