@@ -107,6 +107,45 @@ reemplaza automáticamente estas referencias por los valores reales de producci�
 | `$env.N8N_HOST` | `n8n.habitos-vitales.com` |
 | `process.env.*` | Valores equivalentes |
 
+## Troubleshooting: Error "access to env vars denied" en n8n
+
+### Causa
+n8n 2.x bloquea el acceso a `$env` y `process.env` en los task runners. Este error aparece cuando un workflow tiene referencias como `={{$env.BREVO_API_KEY}}` o `{{ $env.BREVO_LIST_LEADS }}`.
+
+### Cuándo ocurre
+- Al importar/actualizar un workflow directamente en la BD (bypaseando el script de deploy)
+- Si el script de deploy no reemplazó correctamente alguna referencia
+
+### Solución rápida (SSH al servidor)
+```bash
+# 1. Ver qué workflows tienen referencias $env
+docker exec n8n_postgres psql -U n8n_admin -d n8n -t -c "
+SELECT name FROM workflow_entity
+WHERE nodes::text LIKE '%\$env.%' OR nodes::text LIKE '%process.env.%';"
+
+# 2. Obtener valores de producción y reemplazar
+BREVO_API_KEY=$(grep '^BREVO_API_KEY=' /root/n8n/.env | cut -d'=' -f2)
+BREVO_LIST_LEADS=$(grep '^BREVO_LIST_LEADS=' /root/n8n/.env | cut -d'=' -f2)
+
+# 3. Reemplazar en el workflow específico (ej: workflow 04)
+docker exec n8n_postgres psql -U n8n_admin -d n8n -c "
+UPDATE workflow_entity
+SET nodes = REPLACE(
+    REPLACE(nodes::text,
+        '={{\$env.BREVO_API_KEY}}', '$BREVO_API_KEY'),
+    '{{ \$env.BREVO_LIST_LEADS }}', '$BREVO_LIST_LEADS')::jsonb
+WHERE name LIKE '%04%Guardar Lead%';"
+
+# 4. Reiniciar n8n
+docker restart n8n
+```
+
+### Prevención
+- Siempre usar el script `deploy-production.sh` para desplegar workflows
+- Si actualizas un workflow directamente en BD, ejecutar después las queries de reemplazo del script
+
+---
+
 ## Detección de Entorno
 
 Las landing pages detectan automáticamente si están en local o producción:
