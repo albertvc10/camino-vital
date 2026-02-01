@@ -184,6 +184,13 @@ será, serás, podrá, tendrá            (futuros)
 - `email_templates` en BD - Contenido de emails
 - Cualquier texto que vea el usuario final
 
+### Qué NO revisar (excluir del checklist)
+- URLs y enlaces (`https://...`)
+- Código JavaScript/CSS
+- Atributos HTML (`class`, `id`, `data-*`)
+- Variables y placeholders (`{{nombre}}`, `$json.email`)
+- Nombres de archivo (`config.js`, `index.html`)
+
 ### Audiencia objetivo
 El público es **60-70 años**. Los errores ortográficos generan desconfianza.
 Revisar siempre antes de commitear.
