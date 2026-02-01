@@ -289,55 +289,6 @@
             font-size: 16px;
         }
 
-        /* Exercise Examples */
-        .examples-section {
-            margin-bottom: 40px;
-        }
-
-        .examples-section h3 {
-            color: var(--color-text-primary);
-            margin-bottom: 20px;
-            font-size: 20px;
-        }
-
-        .exercise-cards {
-            display: grid;
-            gap: 16px;
-        }
-
-        .exercise-card {
-            background: var(--color-bg-dark);
-            border-radius: 14px;
-            padding: 22px;
-            border: 1px solid var(--color-border);
-            border-left: 4px solid var(--color-success);
-            transition: all var(--transition-fast);
-        }
-
-        .exercise-card:hover {
-            transform: translateY(-2px);
-            border-color: rgba(98, 184, 130, 0.3);
-        }
-
-        .exercise-card h4 {
-            color: var(--color-text-primary);
-            margin-bottom: 12px;
-            font-size: 17px;
-        }
-
-        .exercise-card p {
-            color: var(--color-text-secondary);
-            margin: 6px 0;
-            font-size: 14px;
-        }
-
-        .exercise-meta {
-            font-size: 13px;
-            color: var(--color-primary);
-            margin-top: 12px;
-            font-weight: 500;
-        }
-
         /* Benefits Grid */
         .benefits-grid {
             display: grid;
@@ -375,63 +326,6 @@
             line-height: 1.5;
         }
 
-        /* Testimonial */
-        .testimonial {
-            background: var(--color-bg-dark);
-            padding: 30px;
-            border-radius: 14px;
-            margin-bottom: 40px;
-            border: 1px solid var(--color-border);
-            position: relative;
-        }
-
-        .testimonial::before {
-            content: '"';
-            font-size: 60px;
-            color: var(--color-primary);
-            opacity: 0.3;
-            position: absolute;
-            top: 10px;
-            left: 20px;
-            line-height: 1;
-        }
-
-        .testimonial-text {
-            font-style: italic;
-            color: var(--color-text-secondary);
-            font-size: 16px;
-            line-height: 1.7;
-            padding-left: 30px;
-        }
-
-        .testimonial-author {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-top: 20px;
-            padding-left: 30px;
-        }
-
-        .testimonial-avatar {
-            width: 45px;
-            height: 45px;
-            background: linear-gradient(135deg, var(--color-primary), var(--color-success));
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--color-bg-card);
-        }
-
-        .testimonial-name {
-            font-style: normal;
-            font-weight: 600;
-            color: var(--color-primary);
-            font-size: 15px;
-        }
-
         /* Pricing Section */
         .pricing-section {
             background: linear-gradient(135deg, rgba(223, 202, 97, 0.1) 0%, rgba(98, 184, 130, 0.05) 100%);
@@ -460,13 +354,6 @@
             color: var(--color-primary);
             font-weight: 700;
             margin: 10px 0;
-        }
-
-        .price-note {
-            color: var(--color-success);
-            font-size: 18px;
-            margin-bottom: 10px;
-            font-weight: 600;
         }
 
         .price-detail {
@@ -648,35 +535,13 @@
             <h1>Hemos analizado tu perfil!</h1>
             <p>Este es el programa perfecto para ti, <span class="user-name" id="userName"></span></p>
 
-            <!-- Mini Countdown -->
-            <div class="countdown-mini">
-                <span class="countdown-mini-label">Reservas hasta:</span>
-                <div class="countdown-mini-time">
-                    <div class="countdown-mini-item">
-                        <span class="countdown-mini-num" id="days">0</span>
-                        <span class="countdown-mini-unit">d</span>
-                    </div>
-                    <div class="countdown-mini-item">
-                        <span class="countdown-mini-num" id="hours">0</span>
-                        <span class="countdown-mini-unit">h</span>
-                    </div>
-                    <div class="countdown-mini-item">
-                        <span class="countdown-mini-num" id="minutes">0</span>
-                        <span class="countdown-mini-unit">m</span>
-                    </div>
-                    <div class="countdown-mini-item">
-                        <span class="countdown-mini-num" id="seconds">0</span>
-                        <span class="countdown-mini-unit">s</span>
-                    </div>
-                </div>
             </div>
-        </div>
 
         <div class="content">
             <div class="program-card">
                 <div class="program-card-header">
                     <span class="program-badge">Tu programa recomendado</span>
-                    <h2>Base Vital</h2>
+                    <h2>Camino Vital</h2>
                 </div>
 
                 <div class="program-details">
@@ -708,11 +573,6 @@
                 <ul id="whyPerfect"></ul>
             </div>
 
-            <div class="examples-section">
-                <h3>Ejemplos de ejercicios que recibiras:</h3>
-                <div class="exercise-cards" id="exerciseExamples"></div>
-            </div>
-
             <div class="benefits-grid">
                 <div class="benefit-item">
                     <div class="icon"><svg class="icon-svg" style="width:32px;height:32px" viewBox="0 0 24 24"><use href="#icon-refresh"></use></svg></div>
@@ -736,19 +596,9 @@
                 </div>
             </div>
 
-            <div class="testimonial">
-                <p class="testimonial-text" id="testimonialText"></p>
-                <div class="testimonial-author">
-                    <div class="testimonial-avatar" id="testimonialAvatar"></div>
-                    <span class="testimonial-name" id="testimonialName"></span>
-                </div>
-            </div>
-
             <div class="pricing-section">
-                <h3 class="pricing-title">Acceso completo a Base Vital</h3>
-                <div class="price-detail" style="margin-bottom: 5px;">Valor del programa: 89€</div>
+                <h3 class="pricing-title">Acceso completo a Camino Vital</h3>
                 <div class="price">39€</div>
-                <div class="price-note">Precio de reserva</div>
                 <div class="price-subtext">El 1 de marzo sube a 89€</div>
                 <div class="price-detail" style="margin-top: 10px;">Pago unico • <span id="priceDuration"></span></div>
 
@@ -756,12 +606,35 @@
                     <p>Inicio del programa: <strong>1 de marzo de 2026</strong></p>
                 </div>
 
+                <!-- Countdown -->
+                <div class="countdown-mini" style="margin-bottom: 25px;">
+                    <span class="countdown-mini-label">Reservas hasta:</span>
+                    <div class="countdown-mini-time">
+                        <div class="countdown-mini-item">
+                            <span class="countdown-mini-num" id="days">0</span>
+                            <span class="countdown-mini-unit">d</span>
+                        </div>
+                        <div class="countdown-mini-item">
+                            <span class="countdown-mini-num" id="hours">0</span>
+                            <span class="countdown-mini-unit">h</span>
+                        </div>
+                        <div class="countdown-mini-item">
+                            <span class="countdown-mini-num" id="minutes">0</span>
+                            <span class="countdown-mini-unit">m</span>
+                        </div>
+                        <div class="countdown-mini-item">
+                            <span class="countdown-mini-num" id="seconds">0</span>
+                            <span class="countdown-mini-unit">s</span>
+                        </div>
+                    </div>
+                </div>
+
                 <button class="cta-button" id="ctaButton" onclick="redirectToCheckout()">
                     <span>Reservar mi plaza ahora</span>
                 </button>
 
                 <div class="guarantee">
-                    <p><svg class="icon-svg icon-svg-success" style="width:18px;height:18px;display:inline;vertical-align:middle" viewBox="0 0 24 24"><use href="#icon-lock"></use></svg> Garantia de 7 dias: Si sientes que no es para ti, te devolvemos el dinero. Sin preguntas.</p>
+                    <p><svg class="icon-svg icon-svg-success" style="width:18px;height:18px;display:inline;vertical-align:middle" viewBox="0 0 24 24"><use href="#icon-lock"></use></svg> Garantia de 14 dias: Si sientes que no es para ti, te devolvemos el dinero. Sin preguntas.</p>
                 </div>
 
                 <p class="stripe-note">
@@ -771,7 +644,7 @@
 
             <div class="support-section">
                 <p><strong>Aun tienes dudas?</strong></p>
-                <p>Escribenos a <a href="mailto:hola@habitos-vitales.com">hola@habitos-vitales.com</a></p>
+                <p>Escribenos a <span class="contact-info"></span></p>
             </div>
         </div>
     </div>
@@ -912,25 +785,6 @@
             whyPerfect.appendChild(li);
         });
 
-        // Ejemplos de ejercicios
-        const exerciseExamples = document.getElementById('exerciseExamples');
-        programData.exercises.forEach(exercise => {
-            const card = document.createElement('div');
-            card.className = 'exercise-card';
-            card.innerHTML = `
-                <h4>${exercise.name}</h4>
-                <p><strong>Descripcion:</strong> ${exercise.description}</p>
-                <p><strong>Repeticiones:</strong> ${exercise.reps}</p>
-                <p class="exercise-meta">${exercise.note}</p>
-            `;
-            exerciseExamples.appendChild(card);
-        });
-
-        // Testimonial
-        document.getElementById('testimonialText').textContent = programData.testimonial.text;
-        document.getElementById('testimonialName').textContent = programData.testimonial.name;
-        document.getElementById('testimonialAvatar').textContent = programData.testimonial.avatar;
-
         // Funcion para redirigir a checkout de Stripe
         async function redirectToCheckout() {
             // Mostrar estado de carga
@@ -960,6 +814,7 @@
             }
         }
     </script>
+    <script src="assets/config.js"></script>
     <script src="assets/icons.js"></script>
 </body>
 </html>

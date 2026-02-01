@@ -104,34 +104,29 @@
             padding: 80px 20px 70px;
         }
         .hero-content { max-width: 750px; margin: 0 auto; }
-        .hero h1 { margin-bottom: 25px; }
+                .hero h1 { margin-bottom: 25px; }
         .hero-subtitle {
-            font-size: 24px;
+            font-size: 22px;
             color: var(--color-text-primary);
             margin-bottom: 40px;
             font-weight: 500;
             line-height: 1.4;
         }
-
-        .hero-pills {
+        .hero-info {
             display: flex;
-            justify-content: center;
-            gap: 16px;
-            margin-bottom: 40px;
-            flex-wrap: wrap;
-        }
-        .hero-pill {
-            background: rgba(255,255,255,0.04);
-            border: 1px solid var(--color-border);
-            border-radius: var(--border-radius-full);
-            padding: 10px 20px;
-            font-size: 15px;
-            color: var(--color-text-secondary);
-            display: flex;
+            flex-direction: column;
             align-items: center;
             gap: 10px;
+            margin-bottom: 35px;
+            font-size: 15px;
+            color: var(--color-text-secondary);
         }
-        .hero-pill .icon-svg { width: 20px; height: 20px; }
+        .hero-info span {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .hero-info .icon-svg { width: 20px; height: 20px; }
 
         .btn-primary {
             display: inline-block;
@@ -202,31 +197,6 @@
             color: var(--color-text-secondary);
             margin: 0;
             line-height: 1.5;
-        }
-
-        /* Connector line between steps */
-        .steps-connector {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 0;
-            margin: 25px auto;
-            max-width: 600px;
-        }
-        .connector-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--color-primary);
-            flex-shrink: 0;
-        }
-        .connector-line {
-            flex: 1;
-            height: 2px;
-            background: linear-gradient(90deg, var(--color-primary) 0%, rgba(223,202,97,0.2) 100%);
-        }
-        .connector-line-rev {
-            background: linear-gradient(90deg, rgba(223,202,97,0.2) 0%, var(--color-primary) 100%);
         }
 
         /* ── Session preview ── */
@@ -325,45 +295,6 @@
             margin-top: 20px;
         }
 
-        /* ── Feedback cycle ── */
-        .cycle-flow {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0;
-            margin: 45px 0 0;
-        }
-        .cycle-step {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            min-width: 100px;
-        }
-        .cycle-icon-wrap {
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            background: rgba(223, 202, 97, 0.1);
-            border: 2px solid rgba(223, 202, 97, 0.25);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .cycle-icon-wrap .icon-svg { width: 26px; height: 26px; }
-        .cycle-step p {
-            font-size: 13px;
-            color: var(--color-text-secondary);
-            margin: 0;
-            text-align: center;
-        }
-        .cycle-arrow {
-            flex-shrink: 0;
-            margin: 0 8px;
-            margin-bottom: 26px;
-        }
-        .cycle-arrow .icon-svg { width: 22px; height: 22px; }
-
         /* ── Emphasis & highlight ── */
         .emphasis-block {
             background: rgba(223, 202, 97, 0.08);
@@ -424,45 +355,10 @@
         .target-card .icon-svg { width: 28px; height: 28px; }
         .target-card p { margin: 0; color: var(--color-text-secondary); font-size: 16px; }
 
-        /* ── Pain points ── */
-        .pain-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-            margin: 30px 0;
-        }
-        .pain-card {
-            background: rgba(231, 76, 60, 0.06);
-            border: 1px solid rgba(231, 76, 60, 0.12);
-            border-left: 3px solid rgba(231, 76, 60, 0.35);
-            border-radius: 12px;
-            padding: 20px;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-        .pain-card .icon-svg { width: 24px; height: 24px; stroke: #E74C3C; }
-        .pain-card p { margin: 0; font-size: 15px; color: var(--color-text-secondary); }
-
-        .solution-block {
-            background: rgba(98, 184, 130, 0.08);
-            border: 1px solid rgba(98, 184, 130, 0.25);
-            border-radius: var(--border-radius-card);
-            padding: 25px 30px;
-            margin-top: 30px;
-            text-align: center;
-        }
-        .solution-block p {
-            margin: 0;
-            font-size: 18px;
-            color: var(--color-success);
-            font-weight: 600;
-        }
-
         /* ── Benefits ── */
         .benefits-grid {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 14px;
             margin: 35px 0;
         }
@@ -475,6 +371,7 @@
             text-align: center;
         }
         .benefit-card .icon-svg { width: 32px; height: 32px; margin: 0 auto 12px; display: block; stroke: var(--color-success); }
+        .benefit-card .figure-svg { width: 56px; height: 56px; margin: 0 auto 12px; display: block; stroke: var(--color-success); }
         .benefit-card h4 { color: var(--color-primary); font-size: 14px; margin-bottom: 6px; }
         .benefit-card p { margin: 0; font-size: 13px; color: var(--color-text-secondary); line-height: 1.5; }
 
@@ -551,17 +448,6 @@
         .faq-answer p { margin: 16px 0 0; font-size: 16px; color: var(--color-text-secondary); line-height: 1.6; }
 
         /* ── Pricing ── */
-        .urgency-banner {
-            background: linear-gradient(135deg, rgba(223,202,97,0.12), rgba(98,184,130,0.08));
-            border: 1px solid rgba(223,202,97,0.25);
-            border-radius: var(--border-radius-card);
-            padding: 20px 25px;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .urgency-banner p { margin: 0; font-size: 16px; }
-        .urgency-banner strong { color: var(--color-primary); }
-
         .pricing-card {
             max-width: 500px;
             margin: 40px auto 0;
@@ -590,7 +476,6 @@
         .price-original { font-size: 20px; color: var(--color-text-secondary); text-decoration: line-through; opacity: 0.7; }
         .price-current { font-size: 64px; color: var(--color-primary); font-weight: 700; line-height: 1; margin: 10px 0; }
         .price-note { font-size: 14px; color: var(--color-text-secondary); }
-        .price-after { color: var(--color-success); font-size: 14px; font-weight: 600; margin-top: 8px; }
 
         .start-date {
             background: rgba(98,184,130,0.08);
@@ -610,43 +495,6 @@
             margin-top: 25px;
         }
         .guarantee-box p { color: var(--color-success); font-weight: 600; font-size: 15px; margin: 0; }
-
-        /* ── Countdown ── */
-        .countdown-container {
-            background: linear-gradient(135deg, rgba(223,202,97,0.12) 0%, rgba(223,202,97,0.04) 100%);
-            border: 2px solid rgba(223,202,97,0.25);
-            border-radius: var(--border-radius-card);
-            padding: 25px;
-            margin: 40px auto 0;
-            max-width: 500px;
-        }
-        .countdown-label {
-            font-size: 14px;
-            color: var(--color-text-secondary);
-            margin-bottom: 15px;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-        }
-        .countdown {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-        .countdown-item { text-align: center; }
-        .countdown-num {
-            display: block;
-            font-size: 36px;
-            font-weight: 700;
-            color: var(--color-primary);
-            line-height: 1;
-        }
-        .countdown-unit {
-            font-size: 12px;
-            color: var(--color-text-secondary);
-            text-transform: uppercase;
-            margin-top: 5px;
-        }
 
         /* ── Final CTA ── */
         .final-cta {
@@ -684,28 +532,18 @@
             h1 { font-size: 36px; }
             h2 { font-size: 26px; }
             .hero { padding: 60px 16px 50px; }
-            .hero-subtitle { font-size: 20px; }
-            .hero-pills { gap: 10px; }
-            .hero-pill { padding: 8px 14px; font-size: 13px; }
+            .hero-subtitle { font-size: 18px; }
+            .hero-info { gap: 15px; font-size: 14px; }
             .btn-primary { padding: 16px 32px; font-size: 16px; width: 100%; text-align: center; }
             .steps-grid { grid-template-columns: 1fr 1fr; gap: 16px; }
-            .steps-connector { display: none; }
             .session-preview { grid-template-columns: 1fr; gap: 30px; }
             .session-image { order: -1; }
             .session-screenshot { max-width: 300px; }
-            .cycle-flow { gap: 0; }
-            .cycle-step { min-width: 70px; }
-            .cycle-step p { font-size: 11px; }
-            .cycle-icon-wrap { width: 44px; height: 44px; }
-            .cycle-icon-wrap .icon-svg { width: 20px; height: 20px; }
-            .cycle-arrow { margin: 0 4px; }
-            .cycle-arrow .icon-svg { width: 16px; height: 16px; }
-            .icon-cards, .target-grid, .pain-grid { grid-template-columns: 1fr; }
+            .icon-cards, .target-grid { grid-template-columns: 1fr; }
             .benefits-grid { grid-template-columns: repeat(2, 1fr); }
             .results-items { gap: 15px; }
             .pricing-card { padding: 30px 20px; }
             .price-current { font-size: 48px; }
-            .countdown-num { font-size: 28px; }
             .feedback-mockup { margin-top: 40px; }
             .feedback-mockup-card { padding: 24px 20px; }
             .feedback-btn { padding: 12px 18px; font-size: 14px; }
@@ -713,71 +551,90 @@
 
         @media (max-width: 480px) {
             .steps-grid { grid-template-columns: 1fr; gap: 14px; max-width: 300px; margin: 40px auto 0; }
-            .benefits-grid { grid-template-columns: 1fr; }
-            .hero-pills { flex-direction: column; align-items: center; }
-            .cycle-flow { flex-wrap: wrap; gap: 8px; }
-            .cycle-arrow { display: none; }
+            .benefits-grid { grid-template-columns: 1fr 1fr; }
+            .hero-info { flex-direction: column; gap: 10px; }
         }
     </style>
 </head>
 <body>
-    <div class="page-container">
-        <!-- Navbar -->
-        <nav class="navbar">
-            <div class="navbar-content">
-                <a href="https://habitos-vitales.com" class="navbar-brand" target="_blank">
-                    <img src="https://habitos-vitales.com/wp-content/uploads/2023/09/1-e1769547181637.png" alt="Habitos Vitales" class="navbar-logo">
-                </a>
-                <a href="#" onclick="startQuiz(); return false;" class="navbar-cta">Reservar plaza</a>
-            </div>
-        </nav>
+    <!-- Navbar (fuera de page-container para que sticky funcione) -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="https://habitos-vitales.com" class="navbar-brand" target="_blank">
+                <img src="https://habitos-vitales.com/wp-content/uploads/2023/09/1-e1769547181637.png" alt="Habitos Vitales" class="navbar-logo">
+            </a>
+            <a href="#" onclick="startQuiz(); return false;" class="navbar-cta">Reservar plaza</a>
+        </div>
+    </nav>
 
+    <div class="page-container">
         <!-- Hero -->
         <section class="hero">
             <div class="hero-content">
                 <h1>Camino Vital</h1>
-                <p class="hero-subtitle">El recorrido de movimiento para cuidar tu autonomía y tu longevidad a cualquier edad</p>
+                <p class="hero-subtitle">El recorrido de movimiento para cuidar tu autonomía y tu calidad de vida con los años</p>
 
-                <div class="hero-pills">
-                    <div class="hero-pill">
-                        <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-clock"></use></svg>
-                        15-30 min por sesión
-                    </div>
-                    <div class="hero-pill">
-                        <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-home"></use></svg>
-                        Sin gimnasio
-                    </div>
-                    <div class="hero-pill">
-                        <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-shield"></use></svg>
-                        Adaptado a ti
-                    </div>
+                <div class="hero-info">
+                    <span>
+                        <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-calendar"></use></svg>
+                        Inicio del recorrido: 1 de marzo
+                    </span>
+                    <span>
+                        <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-document"></use></svg>
+                        Cuestionario personalizado de 2 minutos
+                    </span>
                 </div>
 
                 <a href="#" onclick="startQuiz(); return false;" class="btn-primary">
-                    Reservar mi plaza por 39&euro;
+                    Reservar mi plaza
                 </a>
-                <p class="cta-note">Cuestionario personalizado de 2 minutos &middot; Inicio 1 de marzo</p>
+            </div>
+        </section>
+
+        <!-- El recorrido que se adapta a ti -->
+        <section class="section section-alt">
+            <div class="content-section">
+                <h2>El recorrido que se adapta a ti</h2>
+                <p>Este programa de movimiento está diseñado para ayudarte a mantener tu capacidad física y tu calidad de vida con el paso del tiempo, adaptándose a cómo estás hoy y a cómo evolucionas.</p>
+                <p>El recorrido comienza con un <strong>ciclo guiado de 12 semanas</strong>, pensado para construir una base sólida, segura y sostenible.</p>
+
+                <div class="emphasis-block">
+                    <p>No es una rutina estándar.</p>
+                    <p>No es un plan cerrado.</p>
+                    <p><strong>Es un sistema flexible que progresa contigo.</strong></p>
+                </div>
+
+                <p>Desde el primer día:</p>
+                <ul class="check-list">
+                    <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Identificamos tu punto de partida</li>
+                    <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Tenemos en cuenta tu objetivo</li>
+                    <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Te proponemos el movimiento que tiene sentido para ti ahora</li>
+                </ul>
+
+                <p>A medida que mejoras, el trabajo evoluciona.</p>
+
+                <p class="highlight-text">Moverte no es el objetivo.<br><strong>Cuidarte a largo plazo, sí.</strong></p>
             </div>
         </section>
 
         <!-- Como funciona -->
-        <section class="section section-alt">
+        <section id="como-funciona" class="section">
             <div class="section-container">
                 <h2 style="text-align: center; margin-bottom: 10px;">¿Cómo funciona?</h2>
-                <p style="text-align: center; max-width: 600px; margin: 0 auto 10px; font-size: 18px;">Un recorrido sencillo y guiado, pensado para encajar en tu vida real.</p>
+                <p style="text-align: center; max-width: 600px; margin: 0 auto 10px; font-size: 18px;">Un recorrido sencillo y guiado, pensado para encajar en el día a día.</p>
 
                 <div class="steps-grid">
                     <div class="step-card">
                         <div class="step-number">1</div>
                         <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-document"></use></svg>
                         <h4>Cuestionario inicial</h4>
-                        <p>Respondemos unas preguntas para conocer tu punto de partida y tu objetivo</p>
+                        <p>Respondes unas preguntas para conocer tu punto de partida</p>
                     </div>
                     <div class="step-card">
                         <div class="step-number">2</div>
                         <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-email"></use></svg>
-                        <h4>Recibes sesiónes por email</h4>
-                        <p>3-5 ejercicios adaptados con videos claros e indicaciones sencillas</p>
+                        <h4>Recibes sesiones por email</h4>
+                        <p>3-5 ejercicios adaptados, con vídeos claros e indicaciones sencillas</p>
                     </div>
                     <div class="step-card">
                         <div class="step-number">3</div>
@@ -788,84 +645,43 @@
                     <div class="step-card">
                         <div class="step-number">4</div>
                         <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-wave"></use></svg>
-                        <h4>El programa se adapta</h4>
-                        <p>Cada sesión siguiente se ajusta según como evolucionas</p>
-                    </div>
-                </div>
-
-                <!-- Visual cycle -->
-                <div class="cycle-flow">
-                    <div class="cycle-step">
-                        <div class="cycle-icon-wrap">
-                            <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-email"></use></svg>
-                        </div>
-                        <p>Recibes<br>sesión</p>
-                    </div>
-                    <div class="cycle-arrow">
-                        <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-arrow-right"></use></svg>
-                    </div>
-                    <div class="cycle-step">
-                        <div class="cycle-icon-wrap">
-                            <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-exercise"></use></svg>
-                        </div>
-                        <p>Haces<br>ejercicios</p>
-                    </div>
-                    <div class="cycle-arrow">
-                        <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-arrow-right"></use></svg>
-                    </div>
-                    <div class="cycle-step">
-                        <div class="cycle-icon-wrap">
-                            <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-message"></use></svg>
-                        </div>
-                        <p>Das<br>feedback</p>
-                    </div>
-                    <div class="cycle-arrow">
-                        <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-arrow-right"></use></svg>
-                    </div>
-                    <div class="cycle-step">
-                        <div class="cycle-icon-wrap">
-                            <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-wave"></use></svg>
-                        </div>
-                        <p>Se ajusta<br>para ti</p>
+                        <h4>El programa evoluciona</h4>
+                        <p>Las siguientes sesiones se ajustan según cómo progresas</p>
                     </div>
                 </div>
             </div>
         </section>
 
         <!-- Como es una sesión -->
-        <section class="section">
+        <section class="section section-alt">
             <div class="section-container">
                 <h2 style="text-align: center; margin-bottom: 40px;">¿Cómo es una sesión?</h2>
+                <p style="text-align: center; max-width: 600px; margin: 0 auto 40px;">Cada sesión está pensada para ser clara y fácil de seguir. Recibes un email con:</p>
+
                 <div class="session-preview">
                     <div class="session-info">
-                        <p style="font-size: 18px; margin-bottom: 25px;">Cada sesión está pensada para encajar en la vida real. Recibes un email con todo lo que necesitas:</p>
-
                         <div class="session-feature">
                             <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-shield"></use></svg>
                             <div class="session-feature-text">
                                 <h4>3-5 ejercicios adaptados</h4>
-                                <p>Seleccionados para tu nivel actual</p>
                             </div>
                         </div>
                         <div class="session-feature">
                             <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-video"></use></svg>
                             <div class="session-feature-text">
-                                <h4>Videos explicativos</h4>
-                                <p>Claros y fáciles de seguir</p>
+                                <h4>Vídeos claros y fáciles de seguir</h4>
                             </div>
                         </div>
                         <div class="session-feature">
                             <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-clock"></use></svg>
                             <div class="session-feature-text">
-                                <h4>15-30 minutos</h4>
-                                <p>Pensado para el día a día</p>
+                                <h4>15-30 minutos por sesión</h4>
                             </div>
                         </div>
                         <div class="session-feature">
                             <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-message"></use></svg>
                             <div class="session-feature-text">
-                                <h4>Feedback rápido</h4>
-                                <p>Un clic para decirnos cómo te ha ido</p>
+                                <h4>Feedback rápido con un solo clic</h4>
                             </div>
                         </div>
                     </div>
@@ -876,144 +692,46 @@
 
                 <!-- Feedback mockup -->
                 <div class="feedback-mockup">
-                    <p class="feedback-mockup-label">Y al terminar la sesión...</p>
+                    <p class="feedback-mockup-label">Al terminar, solo tienes que responder:</p>
                     <div class="feedback-mockup-card">
-                        <p class="feedback-mockup-question">¿Cómo te ha ido?</p>
                         <div class="feedback-buttons">
                             <span class="feedback-btn easy">Fácil</span>
                             <span class="feedback-btn ok">Adecuado</span>
                             <span class="feedback-btn hard">Difícil</span>
                         </div>
-                        <p class="feedback-mockup-note">Un clic y listo. Con tu respuesta ajustamos las siguientes sesiónes.</p>
-                        <p class="feedback-mockup-note" style="margin-top: 12px;">Si tienes alguna molestia o limitación, escríbenos y lo tendremos en cuenta.</p>
+                        <p class="feedback-mockup-note">Si tienes alguna molestia o limitación, puedes escribirnos y lo tendremos en cuenta.</p>
                     </div>
                 </div>
-
-                <div class="emphasis-block" style="margin-top: 40px; text-align: center;">
-                    <p>No tienes que pensar.</p>
-                    <p><strong>Solo seguir el recorrido.</strong></p>
-                </div>
-            </div>
-        </section>
-
-        <!-- El Recorrido -->
-        <section class="section section-alt">
-            <div class="content-section">
-                <h2>El recorrido</h2>
-                <p>Este programa de movimiento esta diseñado para ayudarte a <strong>mantener tu capacidad fisica y tu calidad de vida</strong> con el paso del tiempo, adaptandose a cómo estás hoy y a como evolucionas.</p>
-                <p>El recorrido comienza con un <strong>ciclo guiado de 12 semanas</strong>, pensado para construir una base solida, segura y sostenible.</p>
-                <div class="emphasis-block">
-                    <p>No es una rutina estandar.</p>
-                    <p>No es un plan cerrado.</p>
-                    <p><strong>Es un sistema flexible que progresa contigo.</strong></p>
-                </div>
-                <p>Moverte no es el objetivo.</p>
-                <p><strong>Cuidarte a largo plazo, si.</strong></p>
-            </div>
-        </section>
-
-        <!-- Un programa que se adapta a ti -->
-        <section class="section">
-            <div class="content-section">
-                <h2>Un programa que se adapta a ti</h2>
-                <p>Aquí no tienes que elegir entre planes ni saber por dónde empezar.</p>
-
-                <div class="icon-cards">
-                    <div class="icon-card">
-                        <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-search"></use></svg>
-                        <div class="icon-card-text">
-                            <h4>Identificamos tu punto de partida</h4>
-                            <p>Con un cuestionario inicial evaluamos cómo estás hoy</p>
-                        </div>
-                    </div>
-                    <div class="icon-card">
-                        <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-shield"></use></svg>
-                        <div class="icon-card-text">
-                            <h4>Tenemos en cuenta tu objetivo</h4>
-                            <p>Cada persona busca algo diferente y lo respetamos</p>
-                        </div>
-                    </div>
-                    <div class="icon-card">
-                        <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-settings"></use></svg>
-                        <div class="icon-card-text">
-                            <h4>Te proponemos lo adecuado</h4>
-                            <p>El movimiento que tiene sentido para ti ahora</p>
-                        </div>
-                    </div>
-                    <div class="icon-card">
-                        <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-trend-up"></use></svg>
-                        <div class="icon-card-text">
-                            <h4>Evoluciona contigo</h4>
-                            <p>A medida que mejoras, el trabajo se adapta</p>
-                        </div>
-                    </div>
-                </div>
-
-                <p class="highlight-text">No empiezas tarde.<br><strong>Empiezas donde tiene sentido para ti.</strong></p>
             </div>
         </section>
 
         <!-- Para quien es -->
-        <section class="section section-alt">
+        <section class="section">
             <div class="content-section">
                 <h2>¿Para quién es este recorrido?</h2>
-                <p>Para personas que quieren <strong>moverse mejor hoy</strong> y seguir siendo <strong>autonomas con el paso del tiempo</strong>.</p>
-                <p>Suele encajar especialmente bien si:</p>
+                <p>Este recorrido es para personas que quieren <strong>moverse mejor hoy</strong> y seguir siendo <strong>autónomas con el paso del tiempo</strong>.</p>
+                <p>Quizá te reconoces aquí:</p>
 
                 <div class="target-grid">
                     <div class="target-card">
-                        <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-info"></use></svg>
-                        <p>Llevas tiempo sin hacer ejercicio</p>
-                    </div>
-                    <div class="target-card">
-                        <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-wrench"></use></svg>
-                        <p>Te notas rigido o con poca fuerza</p>
-                    </div>
-                    <div class="target-card">
-                        <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-warning"></use></svg>
-                        <p>Te preocupa lesionarte</p>
-                    </div>
-                    <div class="target-card">
-                        <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-refresh"></use></svg>
-                        <p>Has probado rutinas que no duran</p>
-                    </div>
-                </div>
-
-                <div class="emphasis-block">
-                    <p>Quienes empiezan este recorrido suelen coincidir en algo:</p>
-                    <p><strong>por primera vez sienten que el movimiento encaja con su vida real, sin presion ni exigencias.</strong></p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Problemas reales -->
-        <section class="section">
-            <div class="content-section">
-                <h2>Problemas reales, soluciones reales</h2>
-                <p>Quizá te reconoces aquí:</p>
-
-                <div class="pain-grid">
-                    <div class="pain-card">
                         <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-crouch"></use></svg>
                         <p>Te cuesta agacharte o levantarte del suelo</p>
                     </div>
-                    <div class="pain-card">
+                    <div class="target-card">
                         <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-bell"></use></svg>
                         <p>Sientes rigidez al levantarte por la mañana</p>
                     </div>
-                    <div class="pain-card">
+                    <div class="target-card">
                         <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-footprint"></use></svg>
                         <p>Te cansas antes en tareas cotidianas</p>
                     </div>
-                    <div class="pain-card">
+                    <div class="target-card">
                         <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-warning"></use></svg>
                         <p>Tienes miedo de hacerte daño si empiezas &ldquo;de golpe&rdquo;</p>
                     </div>
                 </div>
 
-                <div class="solution-block">
-                    <p>Este programa parte de esa realidad.</p>
-                </div>
+                <p style="text-align: center; font-size: 18px; margin-top: 30px;"><strong>Este programa parte de esa realidad.</strong></p>
             </div>
         </section>
 
@@ -1042,21 +760,16 @@
                     <div class="benefit-card">
                         <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-shield"></use></svg>
                         <h4>Estabilidad</h4>
-                        <p>Evitar caidas</p>
-                    </div>
-                    <div class="benefit-card">
-                        <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-trend-up"></use></svg>
-                        <h4>Impacto</h4>
-                        <p>Huesos y tejidos</p>
+                        <p>Evitar caídas</p>
                     </div>
                 </div>
 
                 <div class="results-box">
-                    <h4>Con el tiempo notaras:</h4>
+                    <h4>Con el tiempo notarás:</h4>
                     <div class="results-items">
                         <div class="result-item">
                             <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>
-                            Más seguridad
+                            Más seguridad al moverte
                         </div>
                         <div class="result-item">
                             <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>
@@ -1064,19 +777,29 @@
                         </div>
                         <div class="result-item">
                             <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>
-                            Más confianza
+                            Más confianza en tu cuerpo
                         </div>
                         <div class="result-item">
                             <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>
-                            Más energía
+                            Más energía para tu vida diaria
                         </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Preguntas frecuentes -->
+        <!-- Un enfoque con criterio -->
         <section class="section">
+            <div class="content-section">
+                <h2 style="text-align: center;">Un enfoque con criterio</h2>
+                <p style="text-align: center; max-width: 650px; margin: 0 auto 30px;">Este recorrido parte de una idea sencilla: cuidar el cuerpo no va de hacer más, va de <strong>hacer lo adecuado</strong> y poder sostenerlo en el tiempo.</p>
+
+                <p>Por eso el programa integra fuerza, movilidad, resistencia y estabilidad, y prioriza la <strong>seguridad</strong>, la <strong>progresión</strong> y la <strong>continuidad</strong>.</p>
+            </div>
+        </section>
+
+        <!-- Preguntas frecuentes -->
+        <section class="section section-alt">
             <div class="content-section">
                 <h2 style="text-align: center;">Preguntas frecuentes</h2>
 
@@ -1086,49 +809,42 @@
                             <h4>¿Necesito estar en forma para empezar?</h4>
                             <div class="faq-toggle"><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-plus"></use></svg></div>
                         </div>
-                        <div class="faq-answer"><p>No. El programa está pensado precisamente para personas que llevan tiempo sin hacer ejercicio. Se adapta a tu punto de partida.</p></div>
+                        <div class="faq-answer"><p>No. El programa está pensado para personas que llevan tiempo sin hacer ejercicio. Se adapta a tu punto de partida.</p></div>
                     </div>
                     <div class="faq-item">
                         <div class="faq-question" onclick="toggleFaq(this)">
                             <h4>¿Importa la edad que tenga?</h4>
                             <div class="faq-toggle"><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-plus"></use></svg></div>
                         </div>
-                        <div class="faq-answer"><p>No. No parte de una edad concreta, sino de como estas tu ahora. Da igual si tienes 40, 60, 70 o mas.</p></div>
+                        <div class="faq-answer"><p>No. No parte de una edad concreta, sino de cómo estás tú ahora.</p></div>
                     </div>
                     <div class="faq-item">
                         <div class="faq-question" onclick="toggleFaq(this)">
                             <h4>¿Cuánto tiempo tengo que dedicarle?</h4>
                             <div class="faq-toggle"><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-plus"></use></svg></div>
                         </div>
-                        <div class="faq-answer"><p>Entre 15 y 30 minutos por sesión, pensado para encajar en la vida real.</p></div>
+                        <div class="faq-answer"><p>Entre 15 y 30 minutos por sesión.</p></div>
                     </div>
                     <div class="faq-item">
                         <div class="faq-question" onclick="toggleFaq(this)">
                             <h4>¿Necesito gimnasio o material?</h4>
                             <div class="faq-toggle"><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-plus"></use></svg></div>
                         </div>
-                        <div class="faq-answer"><p>No. Esta diseñado para hacerse sin gimnasio y con material mínimo o inexistente.</p></div>
-                    </div>
-                    <div class="faq-item">
-                        <div class="faq-question" onclick="toggleFaq(this)">
-                            <h4>¿Qué tipo de ejercicios se hacen?</h4>
-                            <div class="faq-toggle"><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-plus"></use></svg></div>
-                        </div>
-                        <div class="faq-answer"><p>Se trabaja fuerza, movilidad, resistencia, estabilidad e impacto progresivo, siempre de forma adaptada y segura.</p></div>
+                        <div class="faq-answer"><p>No. Está diseñado para hacerse sin gimnasio y con material mínimo.</p></div>
                     </div>
                     <div class="faq-item">
                         <div class="faq-question" onclick="toggleFaq(this)">
                             <h4>¿Cómo se entrega el programa?</h4>
                             <div class="faq-toggle"><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-plus"></use></svg></div>
                         </div>
-                        <div class="faq-answer"><p>Por email, con propuestas claras y explicadas paso a paso.</p></div>
+                        <div class="faq-answer"><p>Por email, con propuestas claras y guiadas.</p></div>
                     </div>
                     <div class="faq-item">
                         <div class="faq-question" onclick="toggleFaq(this)">
                             <h4>¿Durante cuánto tiempo tengo acceso?</h4>
                             <div class="faq-toggle"><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-plus"></use></svg></div>
                         </div>
-                        <div class="faq-answer"><p>El acceso incluye un ciclo guiado de 12 semanas, pensado como el inicio del recorrido.</p></div>
+                        <div class="faq-answer"><p>Incluye un ciclo guiado de 12 semanas, pensado como el inicio del recorrido.</p></div>
                     </div>
                     <div class="faq-item">
                         <div class="faq-question" onclick="toggleFaq(this)">
@@ -1137,46 +853,32 @@
                         </div>
                         <div class="faq-answer"><p>Durante los primeros 14 días puedes solicitar la devolución. Sin explicaciones.</p></div>
                     </div>
-                    <div class="faq-item">
-                        <div class="faq-question" onclick="toggleFaq(this)">
-                            <h4>¿Es un reto o un programa exigente?</h4>
-                            <div class="faq-toggle"><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-plus"></use></svg></div>
-                        </div>
-                        <div class="faq-answer"><p>No. El objetivo no es hacerlo perfecto, sino mantenerlo en el tiempo sin abandonar.</p></div>
-                    </div>
                 </div>
             </div>
         </section>
 
         <!-- Acceso al programa -->
-        <section class="section section-alt">
+        <section class="section">
             <div class="content-section">
                 <h2 style="text-align: center;">Acceso al programa</h2>
                 <p style="text-align: center;">En este momento se abre un número limitado de plazas para poder acompañar de forma cercana a quienes empiezan ahora.</p>
 
-                <div class="urgency-banner">
-                    <p><strong>Precio de reserva:</strong> 39&euro; hasta el 1 de marzo. Después sube a 89&euro;.</p>
-                </div>
-
                 <div class="pricing-card">
-                    <span class="pricing-badge">Oferta de Lanzamiento</span>
                     <h3 class="pricing-title">Camino Vital</h3>
 
                     <div class="pricing-includes">
                         <ul class="check-list">
                             <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Acceso completo al programa</li>
                             <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Ciclo guiado de 12 semanas</li>
-                            <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Adaptación a tu estado y objetivo</li>
+                            <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Adaptación al estado y objetivo</li>
                             <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Entrega por email</li>
                             <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Acompañamiento cercano</li>
                         </ul>
                     </div>
 
                     <div class="price-box">
-                        <div class="price-original">Valor: 89&euro;</div>
                         <div class="price-current">39&euro;</div>
-                        <p class="price-note">Pago único</p>
-                        <p class="price-after">El 1 de marzo sube a 89&euro;</p>
+                        <p class="price-note">El 1 de marzo el precio sube a 89&euro;</p>
                     </div>
 
                     <div class="start-date">
@@ -1185,53 +887,25 @@
                     </div>
 
                     <a href="#" onclick="startQuiz(); return false;" class="btn-primary" style="width: 100%;">
-                        Reservar mi plaza por 39&euro;
+                        Reservar mi plaza
                     </a>
-
-                    <div class="guarantee-box">
-                        <p>Si durante los primeros 14 días sientes que no encaja contigo, te devolvemos el dinero. Sin explicaciones.</p>
-                    </div>
-                </div>
-
-                <!-- Countdown al final -->
-                <div class="countdown-container">
-                    <div class="countdown-label">El 1 de marzo el precio sube a 89&euro;. Reserva ahora por 39&euro;:</div>
-                    <div class="countdown" id="countdown">
-                        <div class="countdown-item">
-                            <span class="countdown-num" id="days">0</span>
-                            <span class="countdown-unit">días</span>
-                        </div>
-                        <div class="countdown-item">
-                            <span class="countdown-num" id="hours">0</span>
-                            <span class="countdown-unit">horas</span>
-                        </div>
-                        <div class="countdown-item">
-                            <span class="countdown-num" id="minutes">0</span>
-                            <span class="countdown-unit">min</span>
-                        </div>
-                        <div class="countdown-item">
-                            <span class="countdown-num" id="seconds">0</span>
-                            <span class="countdown-unit">seg</span>
-                        </div>
-                    </div>
                 </div>
             </div>
         </section>
 
         <!-- Empieza ahora -->
-        <section class="section">
+        <section class="section section-alt">
             <div class="final-cta">
                 <h2>Empieza ahora</h2>
                 <div class="emphasis-block">
-                    <p>Empezar ahora no es una cuestión de urgencia.</p>
-                    <p><strong>Es una decisión de cuidado.</strong></p>
-                    <p>Dentro de unas semanas no serás otra persona, pero probablemente te moverás con más confianza y sentirás que has recuperado algo importante.</p>
+                    <p><strong>Empezar ahora no es una cuestión de urgencia.</strong></p>
+                    <p>Es una decisión de cuidado.</p>
                 </div>
-                <p>Estas 12 semanas son el inicio.<br>El camino es mucho más largo.</p>
+                <p>Dentro de unas semanas no serás otra persona, pero probablemente te moverás con más confianza y con mayor seguridad en tu día a día.</p>
+                <p>Estas 12 semanas son el inicio.<br><strong>El camino es mucho más largo.</strong></p>
                 <a href="#" onclick="startQuiz(); return false;" class="btn-primary" style="margin-top: 30px;">
-                    Reservar por 39&euro;
+                    Empieza tu Camino Vital
                 </a>
-                <p class="cta-note">El 1 de marzo el precio sube a 89&euro;</p>
             </div>
         </section>
 
@@ -1241,33 +915,12 @@
                 <img src="https://habitos-vitales.com/wp-content/uploads/2023/09/1-e1769547181637.png" alt="Habitos Vitales">
             </div>
             <p>Un programa de <a href="https://habitos-vitales.com" target="_blank">Habitos Vitales</a></p>
-            <p>Tienes dudas? Escribenos a <span class="contact-info"></span></p>
+            <p>¿Tienes dudas? Escríbenos a <span class="contact-info"></span></p>
             <p style="margin-top: 20px; font-size: 12px; opacity: 0.5;">&copy; 2026 Habitos Vitales. Todos los derechos reservados.</p>
         </footer>
     </div>
 
     <script>
-        // Countdown
-        const fechaLimite = new Date('2026-03-01T00:00:00').getTime();
-        function actualizarCountdown() {
-            const ahora = new Date().getTime();
-            const diferencia = fechaLimite - ahora;
-            if (diferencia < 0) {
-                document.getElementById('days').textContent = '0';
-                document.getElementById('hours').textContent = '0';
-                document.getElementById('minutes').textContent = '0';
-                document.getElementById('seconds').textContent = '0';
-                document.querySelector('.countdown-label').textContent = 'El precio de reserva ha finalizado';
-                return;
-            }
-            document.getElementById('days').textContent = Math.floor(diferencia / (1000 * 60 * 60 * 24));
-            document.getElementById('hours').textContent = Math.floor((diferencia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            document.getElementById('minutes').textContent = Math.floor((diferencia % (1000 * 60 * 60)) / (1000 * 60));
-            document.getElementById('seconds').textContent = Math.floor((diferencia % (1000 * 60)) / 1000);
-        }
-        setInterval(actualizarCountdown, 1000);
-        actualizarCountdown();
-
         // FAQ
         function toggleFaq(el) {
             const answer = el.nextElementSibling;

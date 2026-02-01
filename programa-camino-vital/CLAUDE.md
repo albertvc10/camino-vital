@@ -154,3 +154,123 @@ const isLocal = window.location.hostname === 'localhost' || ...
 ```
 - Local → usa webhooks y Stripe en modo test
 - Producción → usa webhooks y Stripe reales
+
+---
+
+## Sistema de Validación de Cambios en Workflows (OBLIGATORIO)
+
+### Antes de modificar CUALQUIER workflow o tabla de BD:
+
+**PASO 1: Leer el mapa de dependencias**
+```
+Leer: docs/WORKFLOW-DEPENDENCIES.md
+```
+
+**PASO 2: Identificar recursos afectados**
+
+Preguntarse:
+- ¿Qué tablas de BD voy a modificar?
+- ¿Qué campos estoy añadiendo/cambiando/eliminando?
+- ¿Qué webhooks/endpoints estoy tocando?
+- ¿Qué funciones PostgreSQL uso?
+
+**PASO 3: Listar workflows impactados**
+
+Consultar las secciones relevantes del mapa de dependencias:
+- Si toco `programa_users` → revisar workflows 00, 01, 03, 04, 05, 06, 07, 09, Generador
+- Si toco `programa_sesiones` → revisar workflows 03, 07, 09, Generador
+- Si toco `email_templates` → revisar workflows 06, 07, 09
+- Si toco funciones PostgreSQL → revisar workflows que las llaman
+
+**PASO 4: Verificar compatibilidad**
+
+Para cada workflow impactado:
+- [ ] ¿Los campos que uso siguen existiendo?
+- [ ] ¿Los tipos de datos son compatibles?
+- [ ] ¿Las queries SQL siguen funcionando?
+- [ ] ¿Los webhooks mantienen el mismo contrato de entrada/salida?
+
+**PASO 5: Probar flujos críticos**
+
+Después de cualquier cambio, probar SIEMPRE estos flujos en local:
+
+1. **Flujo Onboarding**:
+   - Landing → 04-guardar-lead → 01-bis-onboarding → Generador → email
+
+2. **Flujo Feedback**:
+   - 03-bis-feedback → ajuste intensidad → siguiente sesión
+
+3. **Flujo Checkpoint**:
+   - 06-checkpoint → 07-procesar → nueva semana
+
+### Checklist Rápido de Impacto
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  CAMBIO EN                    │  REVISAR WORKFLOWS              │
+├─────────────────────────────────────────────────────────────────┤
+│  programa_users               │  TODOS (00-09, Generador, UTIL) │
+│  programa_users.estado        │  00, 01, 05, 06, 07             │
+│  programa_users.nivel_actual  │  01, 03, 06, 07, 09, Generador  │
+│  programa_users.intensidad    │  03, 06, 07, Generador          │
+│  programa_users.semana_actual │  06, 07, Generador              │
+│  programa_sesiones            │  03, 07, 09, Generador          │
+│  programa_feedback            │  03, 06, 07                     │
+│  ejercicios_biblioteca        │  08, 09, Generador              │
+│  email_templates              │  06, 07, 09                     │
+│  Función analizar_semana_*    │  06, 07                         │
+│  Función procesar_checkpoint* │  07                             │
+│  Función procesar_feedback*   │  03                             │
+│  Webhook /generar-sesion-ia   │  01, 03, 07 (todos lo llaman)   │
+│  Webhook /util/enviar-email   │  03, 06, 07 (todos lo llaman)   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Cambios de Alto Riesgo (requieren revisión exhaustiva)
+
+⚠️ **ALTO RIESGO - Probar TODO antes de deploy:**
+- Cambios en `programa_users` (tabla central)
+- Cambios en funciones PostgreSQL `analizar_semana_*` o `procesar_checkpoint_*`
+- Cambios en el Generador Sesion IA (afecta 3 workflows)
+- Cambios en UTIL-enviar-email (afecta 3 workflows)
+- Cambios en estructura de `email_templates`
+
+⚠️ **NUNCA hacer estos cambios sin backup:**
+- Eliminar columnas de `programa_users`
+- Cambiar nombres de campos usados en queries
+- Modificar el contrato de webhooks (parámetros entrada/salida)
+- Eliminar templates de email activos
+
+### Ejemplo de Análisis de Impacto
+
+```
+TAREA: Añadir campo "telefono" a programa_users
+
+1. LEER docs/WORKFLOW-DEPENDENCIES.md ✓
+
+2. RECURSOS AFECTADOS:
+   - Tabla: programa_users
+   - Campo nuevo: telefono (nullable)
+
+3. WORKFLOWS IMPACTADOS:
+   - Ninguno actualmente usa "telefono"
+   - Si quiero guardarlo: modificar 04-guardar-lead
+
+4. VERIFICACIÓN:
+   - ALTER TABLE es compatible (campo nullable)
+   - No rompe queries existentes
+   - Webhooks no cambian
+
+5. PLAN:
+   a) ALTER TABLE programa_users ADD COLUMN telefono VARCHAR(20);
+   b) Modificar 04-guardar-lead para capturar telefono
+   c) Probar flujo de cuestionario completo
+   d) Deploy
+```
+
+### Regla de Oro
+
+> **Antes de tocar un workflow, SIEMPRE preguntarse:**
+> "¿Qué otros workflows dependen de esto que voy a cambiar?"
+>
+> Si no lo sabes, consulta `docs/WORKFLOW-DEPENDENCIES.md`
