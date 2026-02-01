@@ -157,6 +157,39 @@ const isLocal = window.location.hostname === 'localhost' || ...
 
 ---
 
+## Verificación de Texto en Español (OBLIGATORIO)
+
+Antes de commitear cambios en archivos con texto visible al usuario, verificar:
+
+### Checklist ortográfico
+- [ ] **Tildes correctas** - á, é, í, ó, ú (especialmente en: qué, cómo, cuándo, más, después, también, día, información)
+- [ ] **Eñes** - ñ en palabras como: año, español, diseño, pequeño, señal, niño, compañía
+- [ ] **Signos de apertura** - ¿pregunta? y ¡exclamación! (no solo al final)
+- [ ] **Sin anglicismos innecesarios** - usar términos en español cuando existan
+
+### Palabras frecuentes con tilde (referencia rápida)
+```
+qué, cómo, cuándo, dónde, por qué    (interrogativos)
+más, además, después, también         (adverbios)
+día, días, todavía, energía           (palabras con -ía)
+información, sesión, acción           (palabras con -ión)
+fácil, difícil, útil                  (palabras con -il)
+está, estás, están                    (verbo estar)
+será, serás, podrá, tendrá            (futuros)
+```
+
+### Archivos que requieren esta verificación
+- `landing/*.html` - Páginas web
+- `templates/*.html` - Templates de email
+- `email_templates` en BD - Contenido de emails
+- Cualquier texto que vea el usuario final
+
+### Audiencia objetivo
+El público es **60-70 años**. Los errores ortográficos generan desconfianza.
+Revisar siempre antes de commitear.
+
+---
+
 ## Sistema de Validación de Cambios en Workflows (OBLIGATORIO)
 
 ### Antes de modificar CUALQUIER workflow o tabla de BD:
