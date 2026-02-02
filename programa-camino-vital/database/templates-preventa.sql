@@ -73,14 +73,9 @@ VALUES (
         </ul>
       </div>
 
-      <!-- Precio pagado -->
-      <div style="background: rgba(223, 202, 97, 0.08); border: 1px solid rgba(223, 202, 97, 0.2); padding: 20px; border-radius: 12px; text-align: center; margin: 30px 0;">
-        <p style="color: #DFCA61; margin: 0; font-size: 15px;">💰 <strong>Precio pagado:</strong> 39€ (precio especial antes del lanzamiento)</p>
-      </div>
-
       <p style="font-size: 16px; line-height: 1.6; color: #B5B5B5;">El día del inicio recibirás un email para configurar tu programa y elegir cuántas sesiones quieres hacer por semana.</p>
 
-      <p style="font-size: 16px; line-height: 1.6; color: #B5B5B5;">Mientras tanto, si tienes cualquier duda puedes escribirnos a <a href="mailto:hola@habitos-vitales.com" style="color: #DFCA61; text-decoration: none;">hola@habitos-vitales.com</a></p>
+      <p style="font-size: 16px; line-height: 1.6; color: #B5B5B5;">Mientras tanto, si tienes cualquier duda puedes escribirnos a <a href="mailto:hola@habitos-vitales.com" style="color: #DFCA61; text-decoration: none;">hola@habitos-vitales.com</a> o por <a href="https://wa.me/34623920880?text=Hola%2C%20tengo%20una%20duda%20sobre%20Camino%20Vital" style="color: #25D366; text-decoration: none;">WhatsApp</a>.</p>
 
       <!-- Mensaje final -->
       <div style="text-align: center; margin: 40px 0;">
@@ -93,7 +88,7 @@ VALUES (
 
   <!-- Footer -->
   <div style="text-align: center; margin-top: 30px; padding: 20px; color: #666; font-size: 12px;">
-    <strong style="color: #DFCA61;">Camino Vital</strong> | Habitos Vitales<br>
+    <strong style="color: #DFCA61;">Camino Vital</strong> | Hábitos Vitales<br>
     Este email confirma tu reserva en el programa
   </div>
 </body>
@@ -107,7 +102,7 @@ VALUES (
   updated_at = NOW();
 
 -- ============================================
--- 3. Verificacion
+-- 3. Verificación
 -- ============================================
 SELECT
   nombre,
@@ -126,7 +121,7 @@ WHERE nombre = 'email_plaza_reservada';
 -- Estados de usuario para preventa:
 -- - 'lead': Usuario que completó cuestionario
 -- - 'early_bird_lead': Lead de preventa (opcional, se puede usar 'lead' + source='preventa')
--- - 'pagado_esperando_inicio': Usuario que pago pero espera fecha de inicio
+-- - 'pagado_esperando_inicio': Usuario que pagó pero espera fecha de inicio
 -- - 'activo': Usuario con programa activo
 --
 -- El workflow 00-activar-usuarios-programados.json se encarga de:

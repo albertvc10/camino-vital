@@ -344,3 +344,50 @@ TAREA: Añadir campo "telefono" a programa_users
 > "¿Qué otros workflows dependen de esto que voy a cambiar?"
 >
 > Si no lo sabes, consulta `docs/WORKFLOW-DEPENDENCIES.md`
+
+---
+
+## Borrar Usuario de la Base de Datos
+
+Cuando necesites borrar un usuario para hacer pruebas, hay que borrar de **3 tablas** debido a claves foráneas y tracking de idempotencia:
+
+### Comando completo (LOCAL)
+```bash
+psql -U albert -d n8n -c "
+DELETE FROM programa_sesiones WHERE user_id IN (SELECT id FROM programa_users WHERE email = 'EMAIL_AQUI');
+DELETE FROM stripe_events_processed WHERE email = 'EMAIL_AQUI';
+DELETE FROM programa_users WHERE email = 'EMAIL_AQUI';
+"
+```
+
+### Comando completo (PRODUCCIÓN)
+```bash
+docker exec n8n_postgres psql -U n8n_admin -d n8n -c "
+DELETE FROM programa_sesiones WHERE user_id IN (SELECT id FROM programa_users WHERE email = 'EMAIL_AQUI');
+DELETE FROM stripe_events_processed WHERE email = 'EMAIL_AQUI';
+DELETE FROM programa_users WHERE email = 'EMAIL_AQUI';
+"
+```
+
+### Por qué 3 tablas
+
+| Tabla | Razón |
+|-------|-------|
+| `programa_sesiones` | Foreign key a `programa_users.id`. Si no borras primero las sesiones, el DELETE del usuario falla |
+| `stripe_events_processed` | Guarda los `checkout_session_id` ya procesados para evitar duplicados. Si no la borras, al rehacer el pago con el mismo usuario Stripe piensa que ya procesó el evento y no activa el workflow de onboarding |
+| `programa_users` | Tabla principal del usuario |
+
+### Orden importante
+1. Primero `programa_sesiones` (tiene FK a users)
+2. Luego `stripe_events_processed` (referencia email)
+3. Finalmente `programa_users`
+
+### Ejemplo práctico
+```bash
+# LOCAL - borrar usuario de prueba
+psql -U albert -d n8n -c "
+DELETE FROM programa_sesiones WHERE user_id IN (SELECT id FROM programa_users WHERE email = 'albertvc10@gmail.com');
+DELETE FROM stripe_events_processed WHERE email = 'albertvc10@gmail.com';
+DELETE FROM programa_users WHERE email = 'albertvc10@gmail.com';
+"
+```
