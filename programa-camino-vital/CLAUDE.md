@@ -53,11 +53,41 @@ El script de deploy automáticamente:
 | Templates email (BD) | SQL directo en BD del servidor |
 | Variables de entorno | Editar `.env` en servidor → `docker compose down n8n && docker compose up -d n8n` |
 
+## Configuración de Redirección Landing (Preventa → Programa)
+
+### Estado actual (hasta 1 de marzo 2026)
+- `index.html` redirige automáticamente a `preventa.html`
+- Para probar index.html sin redirección: añadir `?test=1` a la URL
+
+### URLs
+| URL | Comportamiento |
+|-----|----------------|
+| `camino-vital.habitos-vitales.com` | Redirige a preventa.html |
+| `camino-vital.habitos-vitales.com?test=1` | Muestra index.html (testing) |
+| `camino-vital.habitos-vitales.com/preventa.html` | Muestra preventa.html |
+
+### Cómo funciona
+En `index.html` hay un script al inicio del `<body>`:
+```javascript
+// REDIRECT TEMPORAL: Hasta 1 de marzo 2026
+// Para probar index.html: añadir ?test=1 a la URL
+if (!window.location.search.includes('test=1')) {
+    window.location.href = 'preventa.html';
+}
+```
+
+### Acción el 1 de marzo 2026
+1. Eliminar el bloque de script de redirección de `index.html`
+2. Commit + push + deploy
+3. La landing principal pasa a ser index.html (programa a 89€)
+
+---
+
 ## Estructura del Proyecto
 
 ```
 landing/           → Páginas web (servidas por Caddy)
-  index.html       → Landing principal (programa a 89€)
+  index.html       → Landing principal (programa a 89€) - REDIRIGE a preventa hasta 1 marzo
   preventa.html    → Landing preventa (39€, sube a 89€ el 1 marzo)
   cuestionario.html → Cuestionario de evaluación
   resultados.html  → Resultados + pago programa normal
