@@ -347,6 +347,39 @@ TAREA: Añadir campo "telefono" a programa_users
 
 ---
 
+## Contenido HTML en Templates de BD (OBLIGATORIO)
+
+**Todo contenido HTML (emails, páginas intermedias) DEBE estar en la tabla `email_templates` de la base de datos.**
+
+### Razones
+- **Mantenibilidad**: Cambiar un email no requiere modificar el workflow
+- **Consistencia**: Un solo lugar para todo el contenido visual
+- **Reutilización**: El mismo template puede usarse en varios workflows
+- **Separación**: Lógica (workflow) separada de presentación (template)
+
+### Regla
+- ❌ **NUNCA** hardcodear HTML en nodos de workflows (ni en `htmlContent`, ni en `jsCode`)
+- ✅ **SIEMPRE** usar templates de `email_templates` con variables `{{nombre}}`, `{{user_id}}`, etc.
+
+### Patrón correcto en workflows
+```
+1. Obtener template de BD → SELECT html_template FROM email_templates WHERE nombre = '...'
+2. Renderizar variables   → Nodo Code que reemplaza {{variable}} por valores reales
+3. Enviar email          → Usar el HTML renderizado
+```
+
+### Templates existentes (referencia)
+| Nombre | Uso |
+|--------|-----|
+| `email_bienvenida` | Email cuando se activa el programa (pago 89€ o activación preventa) |
+| `email_plaza_reservada` | Email confirmación preventa (39€) |
+| `email_primera_sesion` | Primera sesión después de seleccionar cantidad |
+| `email_sesion_siguiente` | Sesiones posteriores a la primera |
+| `email_checkpoint_nueva_semana` | Primera sesión de nueva semana tras checkpoint |
+| `pagina_*` | Páginas intermedias (feedback, confirmaciones, etc.) |
+
+---
+
 ## Borrar Usuario de la Base de Datos
 
 Cuando necesites borrar un usuario para hacer pruebas, hay que borrar de **3 tablas** debido a claves foráneas y tracking de idempotencia:

@@ -1,0 +1,287 @@
+{
+  "name": "Camino Vital - 01b Onboarding Preventa (39€)",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "trigger-ejecutar",
+      "name": "Ejecutar desde Router",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extraer datos del pago desde el Router\nconst input = $input.first().json;\nconst body = input.body;\n\nconsole.log('📦 [PREVENTA 39€] Procesando pago...');\n\nconst session = body.data?.object;\nconst customerDetails = session?.customer_details;\n\nlet customerEmail = customerDetails?.email;\nlet customerName = customerDetails?.name || '';\nlet amountPaid = (session?.amount_total || 0) / 100;\nlet stripeCustomerId = session?.customer;\n\nconsole.log('📧 Email:', customerEmail);\nconsole.log('💰 Monto:', amountPaid);\n\nif (!customerEmail) {\n  console.log('⚠️ No se pudo extraer email, ignorando evento');\n  return [];\n}\n\n// Fecha inicio programa: 1 de marzo 2026\nconst fechaInicio = '2026-03-01 09:00:00';\n\nreturn {\n  json: {\n    email: customerEmail,\n    nombre: customerName,\n    monto_pagado: amountPaid,\n    stripe_customer_id: stripeCustomerId,\n    fecha_pago: new Date().toISOString(),\n    fecha_inicio_programa: fechaInicio\n  }\n};"
+      },
+      "id": "extraer-datos-pago",
+      "name": "Extraer Datos del Pago",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Actualizar usuario a estado 'pagado_esperando_inicio'\n-- Solo actualizar si NO está ya en ese estado (idempotencia)\nUPDATE programa_users\nSET \n  estado = 'pagado_esperando_inicio',\n  fecha_pago = '{{ $json.fecha_pago }}',\n  monto_pagado = {{ $json.monto_pagado }},\n  stripe_customer_id = '{{ $json.stripe_customer_id }}',\n  fecha_inicio_programa = '{{ $json.fecha_inicio_programa }}',\n  updated_at = CURRENT_TIMESTAMP\nWHERE email = '{{ $json.email }}'\n  AND estado NOT IN ('pagado_esperando_inicio', 'activo')\nRETURNING *, TRUE as recien_pagado;",
+        "options": {}
+      },
+      "id": "actualizar-usuario-preventa",
+      "name": "Actualizar Usuario (Preventa)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [680, 300],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "idempotencia-check",
+              "leftValue": "={{ $json.recien_pagado }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-recien-pagado",
+      "name": "IF ¿Recién pagado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Formatear datos para enviar email\nconst input = $input.first().json;\n\nconsole.log('🔄 Formateando datos de usuario para email plaza reservada...');\n\n// Formatear fecha de inicio para mostrar\nconst fechaInicio = new Date(input.fecha_inicio_programa);\nconst opciones = { day: 'numeric', month: 'long', year: 'numeric' };\nconst fechaFormateada = fechaInicio.toLocaleDateString('es-ES', opciones);\n\nreturn {\n  json: {\n    id: input.id,\n    email: input.email,\n    nombre: input.nombre,\n    nivel_actual: input.nivel_actual,\n    estado: input.estado,\n    fecha_inicio_programa: fechaFormateada,\n    monto_pagado: input.monto_pagado\n  }\n};"
+      },
+      "id": "formatear-datos-usuario",
+      "name": "Formatear Datos Usuario",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Usuario ya estaba pagado - ignorar\nconsole.log('⏭️ Usuario ya tenía pago registrado, ignorando evento duplicado');\nreturn { json: { status: 'already_paid' } };"
+      },
+      "id": "log-ya-pagado",
+      "name": "Log Ya Pagado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brevo.com/v3/contacts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api-key",
+              "value": "={{$env.BREVO_API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"email\": \"{{ $json.email }}\",\n  \"attributes\": {\n    \"NOMBRE\": \"{{ $json.nombre }}\",\n    \"NIVEL\": \"{{ $json.nivel_actual }}\",\n    \"ETAPA\": \"base_vital\",\n    \"ESTADO\": \"pagado_esperando_inicio\",\n    \"FECHA_INICIO_PROGRAMA\": \"2026-03-01\"\n  },\n  \"listIds\": [{{ $env.BREVO_LIST_ACTIVO }}],\n  \"unlinkListIds\": [{{ $env.BREVO_LIST_LEADS }}],\n  \"updateEnabled\": true\n}",
+        "options": {}
+      },
+      "id": "actualizar-brevo",
+      "name": "Actualizar Brevo (Pagados Preventa)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 200]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT html_template FROM email_templates WHERE nombre = 'email_plaza_reservada' AND activo = true;",
+        "options": {}
+      },
+      "id": "obtener-template-plaza-reservada",
+      "name": "Obtener Template Plaza Reservada",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1560, 200],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Renderizar template con variables del usuario\nconst template = $json.html_template;\nconst usuario = $('Formatear Datos Usuario').first().json;\n\nconsole.log('🔄 Renderizando template plaza reservada para:', usuario.email);\n\n// Reemplazar variables\nconst html = template\n  .replace(/\\{\\{nombre\\}\\}/g, usuario.nombre || '')\n  .replace(/\\{\\{fecha_inicio_programa\\}\\}/g, usuario.fecha_inicio_programa || '1 de marzo de 2026');\n\nreturn {\n  json: {\n    html_renderizado: html,\n    email: usuario.email,\n    nombre: usuario.nombre\n  }\n};"
+      },
+      "id": "renderizar-template",
+      "name": "Renderizar Template",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1780, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brevo.com/v3/smtp/email",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api-key",
+              "value": "={{$env.BREVO_API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"sender\": {\n    \"name\": \"Camino Vital - Hábitos Vitales\",\n    \"email\": \"hola@habitos-vitales.com\"\n  },\n  \"to\": [\n    {\n      \"email\": \"{{ $json.email }}\",\n      \"name\": \"{{ $json.nombre }}\"\n    }\n  ],\n  \"subject\": \"🎉 ¡Tu plaza está reservada! - Camino Vital\",\n  \"htmlContent\": {{ JSON.stringify($json.html_renderizado) }}\n}",
+        "options": {}
+      },
+      "id": "enviar-email-plaza-reservada",
+      "name": "Enviar Email Plaza Reservada",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2000, 200]
+    }
+  ],
+  "connections": {
+    "Ejecutar desde Router": {
+      "main": [
+        [
+          {
+            "node": "Extraer Datos del Pago",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Datos del Pago": {
+      "main": [
+        [
+          {
+            "node": "Actualizar Usuario (Preventa)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actualizar Usuario (Preventa)": {
+      "main": [
+        [
+          {
+            "node": "IF ¿Recién pagado?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF ¿Recién pagado?": {
+      "main": [
+        [
+          {
+            "node": "Formatear Datos Usuario",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Ya Pagado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Datos Usuario": {
+      "main": [
+        [
+          {
+            "node": "Actualizar Brevo (Pagados Preventa)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actualizar Brevo (Pagados Preventa)": {
+      "main": [
+        [
+          {
+            "node": "Obtener Template Plaza Reservada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Template Plaza Reservada": {
+      "main": [
+        [
+          {
+            "node": "Renderizar Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Renderizar Template": {
+      "main": [
+        [
+          {
+            "node": "Enviar Email Plaza Reservada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "Camino Vital"
+    },
+    {
+      "name": "Preventa"
+    }
+  ],
+  "pinData": {},
+  "versionId": "1"
+}

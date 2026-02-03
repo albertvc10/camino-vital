@@ -1,0 +1,305 @@
+{
+  "name": "Camino Vital - 01a Onboarding Programa (89€)",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "trigger-ejecutar",
+      "name": "Ejecutar desde Router",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [-448, -416]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extraer datos del pago desde el Router\nconst input = $input.first().json;\nconst body = input.body;\n\nconsole.log('🎯 [ONBOARDING 89€] Procesando pago...');\n\nconst session = body.data?.object;\nconst customerDetails = session?.customer_details;\n\nlet customerEmail = customerDetails?.email;\nlet customerName = customerDetails?.name || '';\nlet amountPaid = (session?.amount_total || 0) / 100;\nlet stripeCustomerId = session?.customer;\n\nconsole.log('📧 Email:', customerEmail);\nconsole.log('💰 Monto:', amountPaid);\n\nif (!customerEmail) {\n  console.log('⚠️ No se pudo extraer email, ignorando evento');\n  return [];\n}\n\nreturn {\n  json: {\n    email: customerEmail,\n    nombre: customerName,\n    monto_pagado: amountPaid,\n    stripe_customer_id: stripeCustomerId,\n    fecha_pago: new Date().toISOString()\n  }\n};"
+      },
+      "id": "7a6c55bc-1ed0-40a9-bd5b-a44a28a62a2c",
+      "name": "Extraer Datos del Pago",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-224, -416]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Solo actualizar si NO está ya activo (idempotencia)\nUPDATE programa_users\nSET \n  estado = 'activo',\n  fecha_pago = '{{ $json.fecha_pago }}',\n  monto_pagado = {{ $json.monto_pagado }},\n  stripe_customer_id = '{{ $json.stripe_customer_id }}',\n  fecha_inicio = CURRENT_TIMESTAMP\nWHERE email = '{{ $json.email }}'\n  AND estado != 'activo'\nRETURNING *, TRUE as recien_activado;",
+        "options": {}
+      },
+      "id": "e15181d9-22dc-4d9e-94d8-4e9a6cf3dd81",
+      "name": "Activar Usuario (lead → activo)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [0, -416],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "idempotencia-check",
+              "leftValue": "={{ $json.recien_activado }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-recien-activado",
+      "name": "IF ¿Recién activado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [224, -416]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Formatear datos para asegurar propagación correcta\nconst input = $input.first().json;\n\nconsole.log('🔄 Formateando datos de usuario para propagación...');\n\nreturn {\n  json: {\n    id: input.id,\n    email: input.email,\n    nombre: input.nombre,\n    nivel_actual: input.nivel_actual,\n    etapa: input.etapa,\n    semana_actual: input.semana_actual,\n    fecha_inicio: input.fecha_inicio,\n    estado: input.estado\n  }\n};"
+      },
+      "id": "43d8d6b7-a2d0-46b7-aae2-c3679c480987",
+      "name": "Formatear Datos Usuario",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [448, -516]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Usuario ya estaba activo - ignorar\nconsole.log('⏭️ Usuario ya estaba activo, ignorando evento duplicado');\nreturn { json: { status: 'already_active' } };"
+      },
+      "id": "log-ya-activo",
+      "name": "Log Ya Activo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [448, -316]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brevo.com/v3/contacts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api-key",
+              "value": "={{$env.BREVO_API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"email\": \"{{ $json.email }}\",\n  \"attributes\": {\n    \"NOMBRE\": \"{{ $json.nombre }}\",\n    \"NIVEL\": \"{{ $json.nivel_actual }}\",\n    \"ETAPA\": \"base_vital\",\n    \"ESTADO\": \"activo\",\n    \"FECHA_INICIO\": \"{{ $json.fecha_inicio }}\"\n  },\n  \"listIds\": [{{ $env.BREVO_LIST_ACTIVO }}],\n  \"unlinkListIds\": [{{ $env.BREVO_LIST_LEADS }}],\n  \"updateEnabled\": true\n}",
+        "options": {}
+      },
+      "id": "9ea43276-1323-406f-922e-4c24e681ab24",
+      "name": "Actualizar Brevo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [720, -516]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Recuperar datos del usuario después de actualizar Brevo\nconst datosUsuario = $node[\"Formatear Datos Usuario\"].json;\n\nconsole.log('🔄 Recuperando datos de usuario para enviar email...');\n\nreturn {\n  json: datosUsuario\n};"
+      },
+      "id": "6f0e527b-a198-49be-a80c-23092af0eb47",
+      "name": "Recuperar Datos Usuario",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1008, -516]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT html_template FROM email_templates WHERE nombre = 'email_bienvenida' AND activo = true;",
+        "options": {}
+      },
+      "id": "obtener-template-bienvenida",
+      "name": "Obtener Template Bienvenida",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1230, -516],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Renderizar template con variables del usuario\nconst template = $json.html_template;\nconst usuario = $('Recuperar Datos Usuario').first().json;\n\nconsole.log('🔄 Renderizando template bienvenida para:', usuario.email);\n\n// Determinar base_url según entorno\nconst baseUrl = 'http://localhost:5678';\n\n// Formatear nivel para mostrar\nconst nivelDisplay = usuario.nivel_actual === 'iniciacion' ? 'Iniciación' : 'Intermedio';\n\n// Reemplazar variables\nconst html = template\n  .replace(/\\{\\{nombre\\}\\}/g, usuario.nombre || '')\n  .replace(/\\{\\{user_id\\}\\}/g, usuario.id || '')\n  .replace(/\\{\\{nivel\\}\\}/g, nivelDisplay)\n  .replace(/\\{\\{base_url\\}\\}/g, baseUrl);\n\nreturn {\n  json: {\n    html_renderizado: html,\n    email: usuario.email,\n    nombre: usuario.nombre\n  }\n};"
+      },
+      "id": "renderizar-template",
+      "name": "Renderizar Template",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1450, -516]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brevo.com/v3/smtp/email",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api-key",
+              "value": "={{$env.BREVO_API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"sender\": {\n    \"name\": \"Camino Vital - Hábitos Vitales\",\n    \"email\": \"hola@habitos-vitales.com\"\n  },\n  \"to\": [\n    {\n      \"email\": \"{{ $json.email }}\",\n      \"name\": \"{{ $json.nombre }}\"\n    }\n  ],\n  \"subject\": \"✨ ¡Bienvenido a Camino Vital! Tu recorrido empieza aquí\",\n  \"htmlContent\": {{ JSON.stringify($json.html_renderizado) }}\n}",
+        "options": {}
+      },
+      "id": "ded95ab6-af76-4882-a809-2318ecd5ed5a",
+      "name": "Enviar Email Bienvenida",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1670, -516]
+    }
+  ],
+  "connections": {
+    "Ejecutar desde Router": {
+      "main": [
+        [
+          {
+            "node": "Extraer Datos del Pago",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer Datos del Pago": {
+      "main": [
+        [
+          {
+            "node": "Activar Usuario (lead → activo)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Activar Usuario (lead → activo)": {
+      "main": [
+        [
+          {
+            "node": "IF ¿Recién activado?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF ¿Recién activado?": {
+      "main": [
+        [
+          {
+            "node": "Formatear Datos Usuario",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Ya Activo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Datos Usuario": {
+      "main": [
+        [
+          {
+            "node": "Actualizar Brevo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actualizar Brevo": {
+      "main": [
+        [
+          {
+            "node": "Recuperar Datos Usuario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recuperar Datos Usuario": {
+      "main": [
+        [
+          {
+            "node": "Obtener Template Bienvenida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Template Bienvenida": {
+      "main": [
+        [
+          {
+            "node": "Renderizar Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Renderizar Template": {
+      "main": [
+        [
+          {
+            "node": "Enviar Email Bienvenida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "Camino Vital"
+    }
+  ],
+  "pinData": {},
+  "versionId": "2"
+}

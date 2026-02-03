@@ -1,0 +1,236 @@
+{
+  "name": "Camino Vital - 01 Router Pago Stripe",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "camino-vital-pago",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "webhook-pago",
+      "name": "Webhook Stripe Pago",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "camino-vital-pago"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Router: Identificar qué Payment Link se usó\nconst body = $input.first().json.body;\n\nconsole.log('🔀 [ROUTER] Event type:', body.type);\n\n// FILTRO: Solo procesar checkout.session.completed\nif (body.type !== 'checkout.session.completed') {\n  console.log('⏭️ Evento ignorado:', body.type);\n  return [{ json: { route: 'ignore' } }];\n}\n\nconst session = body.data?.object;\nconst paymentLinkId = session?.payment_link;\n\nconsole.log('🔗 Payment Link recibido:', paymentLinkId);\n\n// Payment Links del programa (89€)\nconst PAYMENT_LINKS_PROGRAMA = [\n  'plink_1StoSJAd3veurtpx1bwMWaS6', // Producción\n  'plink_1SuBsMAY3mlcRJjrv52l2e6O'  // Test\n];\n\n// Payment Links de preventa (39€)\nconst PAYMENT_LINKS_PREVENTA = [\n  'plink_1StoNSAd3veurtpxTUlA35R8', // Producción\n  'plink_1SuBrGAY3mlcRJjr2HCqrrzE'  // Test\n];\n\nlet route = 'unknown';\nif (PAYMENT_LINKS_PROGRAMA.includes(paymentLinkId)) {\n  route = 'programa';\n  console.log('✅ [ROUTER] Ruta: PROGRAMA (89€)');\n} else if (PAYMENT_LINKS_PREVENTA.includes(paymentLinkId)) {\n  route = 'preventa';\n  console.log('✅ [ROUTER] Ruta: PREVENTA (39€)');\n} else {\n  console.log('⚠️ [ROUTER] Payment Link desconocido:', paymentLinkId);\n}\n\n// Pasar el body completo al sub-workflow\nreturn [{\n  json: {\n    route: route,\n    body: body\n  }\n}];"
+      },
+      "id": "identificar-ruta",
+      "name": "Identificar Ruta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-programa",
+              "leftValue": "={{ $json.route }}",
+              "rightValue": "programa",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-programa",
+      "name": "IF Programa (89€)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-preventa",
+              "leftValue": "={{ $json.route }}",
+              "rightValue": "preventa",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-preventa",
+      "name": "IF Preventa (39€)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [900, 400]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "31H5VMLKfoYByLFO"
+        },
+        "options": {}
+      },
+      "id": "ejecutar-onboarding",
+      "name": "Ejecutar Onboarding",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "Th5x7f7UuS7vb4i6"
+        },
+        "options": {}
+      },
+      "id": "ejecutar-preventa",
+      "name": "Ejecutar Preventa",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"received\": true,\n  \"message\": \"Pago procesado correctamente\"\n}",
+        "options": {}
+      },
+      "id": "responder-ok",
+      "name": "Responder OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1340, 250]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"received\": true,\n  \"message\": \"Evento ignorado o Payment Link desconocido\"\n}",
+        "options": {}
+      },
+      "id": "responder-ignorado",
+      "name": "Responder Ignorado",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 500]
+    }
+  ],
+  "connections": {
+    "Webhook Stripe Pago": {
+      "main": [
+        [
+          {
+            "node": "Identificar Ruta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Identificar Ruta": {
+      "main": [
+        [
+          {
+            "node": "IF Programa (89€)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Programa (89€)": {
+      "main": [
+        [
+          {
+            "node": "Ejecutar Onboarding",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "IF Preventa (39€)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Preventa (39€)": {
+      "main": [
+        [
+          {
+            "node": "Ejecutar Preventa",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder Ignorado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ejecutar Onboarding": {
+      "main": [
+        [
+          {
+            "node": "Responder OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ejecutar Preventa": {
+      "main": [
+        [
+          {
+            "node": "Responder OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "Camino Vital"
+    }
+  ],
+  "pinData": {},
+  "versionId": "1"
+}
