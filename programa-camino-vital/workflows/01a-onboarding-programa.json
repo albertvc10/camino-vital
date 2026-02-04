@@ -41,6 +41,16 @@
     },
     {
       "parameters": {
+        "jsCode": "// Manejar caso donde UPDATE no devuelve filas (usuario ya activo)\nconst items = $input.all();\n\nif (items.length === 0) {\n  // No hay filas = usuario ya estaba activo\n  console.log('⏭️ UPDATE no devolvió filas - usuario ya estaba activo');\n  return [{ json: { recien_activado: false, status: 'already_active' } }];\n}\n\n// Si hay filas, pasar los datos\nreturn items;"
+      },
+      "id": "manejar-resultado-vacio",
+      "name": "Manejar Resultado Vacío",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [112, -416]
+    },
+    {
+      "parameters": {
         "conditions": {
           "options": {
             "caseSensitive": true,
@@ -66,7 +76,7 @@
       "name": "IF ¿Recién activado?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [224, -416]
+      "position": [336, -416]
     },
     {
       "parameters": {
@@ -207,6 +217,17 @@
       ]
     },
     "Activar Usuario (lead → activo)": {
+      "main": [
+        [
+          {
+            "node": "Manejar Resultado Vacío",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manejar Resultado Vacío": {
       "main": [
         [
           {

@@ -41,6 +41,16 @@
     },
     {
       "parameters": {
+        "jsCode": "// Manejar caso donde UPDATE no devuelve filas (usuario ya pagado)\nconst items = $input.all();\n\nif (items.length === 0) {\n  // No hay filas = usuario ya tenía pago registrado\n  console.log('⏭️ UPDATE no devolvió filas - usuario ya tenía pago');\n  return [{ json: { recien_pagado: false, status: 'already_paid' } }];\n}\n\n// Si hay filas, pasar los datos\nreturn items;"
+      },
+      "id": "manejar-resultado-vacio",
+      "name": "Manejar Resultado Vacío",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [790, 300]
+    },
+    {
+      "parameters": {
         "conditions": {
           "options": {
             "caseSensitive": true,
@@ -66,7 +76,7 @@
       "name": "IF ¿Recién pagado?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [900, 300]
+      "position": [1010, 300]
     },
     {
       "parameters": {
@@ -197,6 +207,17 @@
       ]
     },
     "Actualizar Usuario (Preventa)": {
+      "main": [
+        [
+          {
+            "node": "Manejar Resultado Vacío",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manejar Resultado Vacío": {
       "main": [
         [
           {
