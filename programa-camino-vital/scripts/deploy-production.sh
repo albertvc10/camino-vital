@@ -83,8 +83,9 @@ replace_in_db '={{ \$env.BREVO_API_KEY }}' "$BREVO_API_KEY" "BREVO_API_KEY (con 
 replace_in_db '{{ \$env.BREVO_LIST_LEADS }}' "$BREVO_LIST_LEADS" "BREVO_LIST_LEADS"
 replace_in_db '{{ \$env.BREVO_LIST_ACTIVO }}' "$BREVO_LIST_ACTIVO" "BREVO_LIST_ACTIVO"
 
-# $env.WEBHOOK_URL
+# $env.WEBHOOK_URL (varios formatos)
 replace_in_db '={{ \$env.WEBHOOK_URL }}' "$WEBHOOK_URL" "WEBHOOK_URL (expresión)"
+replace_in_db '\$env.WEBHOOK_URL' "'$WEBHOOK_URL'" "WEBHOOK_URL (en Code node)"
 
 # $env.SENDER_EMAIL y SENDER_NAME
 replace_in_db '={{\$env.SENDER_EMAIL}}' "$SENDER_EMAIL" "SENDER_EMAIL"
