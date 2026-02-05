@@ -554,3 +554,54 @@ DELETE FROM stripe_events_processed WHERE email = 'albertvc10@gmail.com';
 DELETE FROM programa_users WHERE email = 'albertvc10@gmail.com';
 "
 ```
+
+---
+
+## Troubleshooting: Error "Connection lost" en n8n UI
+
+### Síntomas
+- Al abrir un workflow en la UI de n8n aparece "Connection lost to server"
+- No se puede ejecutar manualmente ningún workflow
+- Los webhooks funcionan pero la UI no responde
+
+### Causa
+Caddy no está configurado correctamente para pasar conexiones WebSocket a n8n. La UI de n8n usa WebSockets para comunicación en tiempo real.
+
+### Solución
+Configurar Caddy con un matcher explícito para WebSockets. El Caddyfile debe tener esta estructura:
+
+```
+n8n.habitos-vitales.com {
+    @websockets {
+        header Connection *Upgrade*
+        header Upgrade websocket
+    }
+
+    reverse_proxy @websockets n8n:5678 {
+        header_up Connection {http.request.header.Connection}
+        header_up Upgrade {http.request.header.Upgrade}
+    }
+
+    reverse_proxy n8n:5678
+}
+```
+
+### Cómo aplicar
+```bash
+# SSH al servidor
+ssh root@164.90.222.166
+
+# Editar Caddyfile
+nano /root/n8n/Caddyfile
+
+# Reiniciar Caddy
+docker restart caddy
+```
+
+### Por qué funciona
+- El matcher `@websockets` detecta requests con headers de WebSocket
+- Las conexiones WebSocket se pasan con los headers `Connection` y `Upgrade` intactos
+- Las conexiones HTTP normales van por el segundo `reverse_proxy` sin modificación
+
+### Nota adicional
+El error `ValidationError: The 'X-Forwarded-For' header is set but the Express 'trust proxy' setting is false` que aparece en los logs de n8n es un warning, **no causa el problema de Connection lost**. Puedes ignorarlo si los WebSockets funcionan.
