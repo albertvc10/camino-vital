@@ -3,7 +3,7 @@
   "active": true,
   "nodes": [
     {
-      "id": "webhook-enviar-email",
+      "id": "aM0wo8qfdVOF4FDZ",
       "name": "Webhook Enviar Email",
       "type": "n8n-nodes-base.webhook",
       "position": [240, 300],
@@ -17,7 +17,7 @@
       "typeVersion": 2
     },
     {
-      "id": "preparar-body-brevo",
+      "id": "aM0wo8qfdVOF4FDZ",
       "name": "Preparar Body Brevo",
       "type": "n8n-nodes-base.code",
       "position": [460, 300],
@@ -27,7 +27,7 @@
       "typeVersion": 2
     },
     {
-      "id": "enviar-email-brevo",
+      "id": "aM0wo8qfdVOF4FDZ",
       "name": "Enviar Email vía Brevo",
       "type": "n8n-nodes-base.httpRequest",
       "position": [680, 300],
@@ -55,7 +55,7 @@
       "typeVersion": 4.2
     },
     {
-      "id": "if-registrar-envio",
+      "id": "aM0wo8qfdVOF4FDZ",
       "name": "IF: ¿Registrar Envío?",
       "type": "n8n-nodes-base.if",
       "position": [900, 300],
@@ -70,7 +70,7 @@
           "combinator": "and",
           "conditions": [
             {
-              "id": "tiene-user-id",
+              "id": "aM0wo8qfdVOF4FDZ",
               "operator": {
                 "type": "number",
                 "operation": "gt"
@@ -84,7 +84,7 @@
       "typeVersion": 2
     },
     {
-      "id": "registrar-envio-db",
+      "id": "aM0wo8qfdVOF4FDZ",
       "name": "Registrar Envío en BD",
       "type": "n8n-nodes-base.postgres",
       "position": [1120, 250],
@@ -95,14 +95,14 @@
       },
       "credentials": {
         "postgres": {
-          "id": "nLcUOvLreXurFbBs",
+          "id": "aM0wo8qfdVOF4FDZ",
           "name": "PostgreSQL Camino Vital Local"
         }
       },
       "typeVersion": 2.4
     },
     {
-      "id": "respuesta-con-registro",
+      "id": "aM0wo8qfdVOF4FDZ",
       "name": "Respuesta Con Registro",
       "type": "n8n-nodes-base.code",
       "position": [1340, 250],
@@ -112,7 +112,7 @@
       "typeVersion": 2
     },
     {
-      "id": "respuesta-sin-registro",
+      "id": "aM0wo8qfdVOF4FDZ",
       "name": "Respuesta Sin Registro",
       "type": "n8n-nodes-base.code",
       "position": [1120, 400],

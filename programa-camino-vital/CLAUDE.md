@@ -39,10 +39,14 @@ El script de deploy automáticamente:
 | n8n UI | https://n8n.habitos-vitales.com |
 | Ruta landing en servidor | `/root/camino-vital/programa-camino-vital/landing/` |
 | Ruta repo en servidor | `/root/camino-vital/programa-camino-vital/` |
+| Caddyfile | `/root/n8n/Caddyfile` |
 | Docker n8n | Container `n8n` |
 | Docker PostgreSQL | Container `n8n_postgres` |
+| Docker Caddy | Container `caddy` |
 | DB User | `n8n_admin` |
 | DB Name | `n8n` |
+
+---
 
 ## Tipos de Cambio y Cómo Desplegarlos
 
@@ -52,6 +56,79 @@ El script de deploy automáticamente:
 | Workflows n8n | Editar JSON local → git push → servidor: `deploy-production.sh` (reemplaza credentials automáticamente) |
 | Templates email (BD) | SQL directo en BD del servidor |
 | Variables de entorno | Editar `.env` en servidor → `docker compose down n8n && docker compose up -d n8n` |
+| **Esquema BD (migraciones)** | Crear SQL en `migrations/` → git push → aplicar en servidor (ver sección Migraciones) |
+
+---
+
+## Sistema de Migraciones de Base de Datos (OBLIGATORIO)
+
+### Por qué es necesario
+Los esquemas de local y producción pueden desincronizarse. Las migraciones aseguran que ambos entornos tengan la misma estructura de BD.
+
+### Ubicación
+```
+migrations/
+├── README.md                      # Documentación del sistema
+├── 001_initial_schema_sync.sql    # Primera migración
+├── 002_xxx.sql                    # Futuras migraciones
+└── ...
+```
+
+### Cuándo crear una migración
+
+**SIEMPRE que hagas cambios de esquema en local:**
+- `ALTER TABLE` (añadir/modificar columnas)
+- `CREATE TABLE` (nuevas tablas)
+- `CREATE INDEX` (nuevos índices)
+- `CREATE FUNCTION` (nuevas funciones)
+- Cambios en constraints
+
+### Cómo crear una migración
+
+1. Crear archivo con número secuencial:
+   ```
+   migrations/NNN_descripcion_breve.sql
+   ```
+
+2. Usar sentencias idempotentes:
+   ```sql
+   -- ✅ Correcto - se puede ejecutar múltiples veces
+   ALTER TABLE programa_users ADD COLUMN IF NOT EXISTS nuevo_campo VARCHAR(50);
+
+   -- ❌ Incorrecto - falla si ya existe
+   ALTER TABLE programa_users ADD COLUMN nuevo_campo VARCHAR(50);
+   ```
+
+3. Incluir comentarios con fecha y descripción
+
+### Flujo de deploy con migraciones
+
+```
+1. Cambiar esquema en LOCAL
+2. Probar que funciona en LOCAL
+3. Crear archivo SQL en migrations/
+4. git add . && git commit && git push
+5. SSH al servidor
+6. Aplicar migración:
+   scp migrations/NNN_xxx.sql root@164.90.222.166:/tmp/
+   ssh root@164.90.222.166 "docker exec -i n8n_postgres psql -U n8n_admin -d n8n < /tmp/NNN_xxx.sql"
+7. Ejecutar deploy-production.sh (para workflows)
+8. Reiniciar n8n si es necesario:
+   docker restart n8n
+```
+
+### Comando rápido para aplicar migración
+```bash
+# Desde local
+scp migrations/001_initial_schema_sync.sql root@164.90.222.166:/tmp/ && \
+ssh root@164.90.222.166 "docker exec -i n8n_postgres psql -U n8n_admin -d n8n < /tmp/001_initial_schema_sync.sql"
+```
+
+### Reglas importantes
+- **NUNCA** hacer cambios de esquema directamente en producción sin crear migración
+- **SIEMPRE** usar `IF NOT EXISTS` / `IF EXISTS` para idempotencia
+- **SIEMPRE** probar la migración en local antes de aplicar en producción
+- Mantener `migrations/README.md` actualizado con las migraciones aplicadas
 
 ## Configuración de Redirección Landing (Preventa → Programa)
 
@@ -136,6 +213,59 @@ reemplaza automáticamente estas referencias por los valores reales de producci�
 | `$env.SENDER_NAME` | `Camino Vital` |
 | `$env.N8N_HOST` | `n8n.habitos-vitales.com` |
 | `process.env.*` | Valores equivalentes |
+
+## NUNCA Actualizar Workflows Directamente en BD
+
+### Regla absoluta
+**NUNCA** actualizar workflows directamente en la base de datos. **SIEMPRE** usar el flujo:
+
+```
+Local (editar JSON) → git push → Servidor (deploy-production.sh)
+```
+
+### Por qué
+El script `deploy-production.sh` hace automáticamente:
+1. Reemplaza credential IDs locales → producción
+2. Reemplaza `process.env.*` y `$env.*` → valores reales
+3. Verifica que no queden referencias incorrectas
+
+Si bypaseas el script, los workflows fallan con errores como:
+- "Credential with ID does not exist"
+- "access to env vars denied"
+
+### Patrón correcto en archivos locales
+
+**En Code nodes:**
+```javascript
+// ✅ CORRECTO - El deploy script reemplaza esto
+const webhookUrl = process.env.WEBHOOK_URL || 'http://localhost:5678';
+const senderName = process.env.SENDER_NAME || 'Camino Vital';
+```
+
+**En expressions (HTTP Request, etc):**
+```
+// ✅ CORRECTO - El deploy script reemplaza esto
+={{ $env.BREVO_API_KEY }}
+={{ $env.WEBHOOK_URL }}/webhook/...
+```
+
+**Credential IDs:**
+```json
+// ✅ CORRECTO - Siempre usar ID local
+"credentials": {
+  "postgres": {
+    "id": "nLcUOvLreXurFbBs",
+    "name": "PostgreSQL local"
+  }
+}
+```
+
+### IDs de referencia
+| Recurso | Local | Producción |
+|---------|-------|------------|
+| PostgreSQL credential | `nLcUOvLreXurFbBs` | `mb8piXWj8Fpb7MSV` |
+
+---
 
 ## Troubleshooting: Error "access to env vars denied" en n8n
 

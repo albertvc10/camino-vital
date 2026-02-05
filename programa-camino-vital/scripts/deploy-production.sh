@@ -93,10 +93,17 @@ replace_in_db '={{\$env.SENDER_NAME}}' "$SENDER_NAME" "SENDER_NAME"
 # $env.N8N_HOST (en Code nodes)
 replace_in_db '\$env.N8N_HOST' "'$N8N_HOST'" "N8N_HOST (Code node)"
 
-# process.env.* (en Code nodes)
+# process.env.* (en Code nodes) - con y sin fallback
 replace_in_db "process.env.WEBHOOK_URL" "'$WEBHOOK_URL'" "process.env.WEBHOOK_URL"
 replace_in_db "process.env.SENDER_EMAIL" "'$SENDER_EMAIL'" "process.env.SENDER_EMAIL"
 replace_in_db "process.env.SENDER_NAME" "'$SENDER_NAME'" "process.env.SENDER_NAME"
+
+# Patrones con fallback || 'default' (común en Code nodes)
+# process.env.SENDER_NAME || 'Camino Vital' → 'Valor Real'
+replace_in_db "process.env.SENDER_NAME || 'Camino Vital'" "'$SENDER_NAME'" "SENDER_NAME con fallback"
+replace_in_db "process.env.SENDER_EMAIL || 'hola@habitos-vitales.com'" "'$SENDER_EMAIL'" "SENDER_EMAIL con fallback"
+replace_in_db "process.env.WEBHOOK_URL || 'http://localhost:5678'" "'$WEBHOOK_URL'" "WEBHOOK_URL con fallback localhost"
+replace_in_db "process.env.WEBHOOK_URL || 'https://n8n.habitos-vitales.com'" "'$WEBHOOK_URL'" "WEBHOOK_URL con fallback prod"
 
 # API keys hardcodeadas antiguas
 HARDCODED=$(docker exec $DB_CONTAINER psql -U $DB_USER -d $DB_NAME -t -c "
