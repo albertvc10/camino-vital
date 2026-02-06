@@ -1,7 +1,7 @@
 (function() {
   'use strict';
   var request = new XMLHttpRequest();
-  request.open('GET', 'assets/icons.svg', true);
+  request.open('GET', 'assets/icons.svg?v=2', true);
   request.onload = function() {
     if (request.status >= 200 && request.status < 400) {
       var div = document.createElement('div');
