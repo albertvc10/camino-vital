@@ -9,9 +9,9 @@
             --color-primary: #DFCA61;
             --color-success: #62B882;
             --color-error: #E74C3C;
-            --color-bg-dark: #232323;
-            --color-bg-card: #1C1C1C;
-            --color-bg-section: #2A2A2A;
+            --color-bg-dark: #2D2D2D;
+            --color-bg-card: #252525;
+            --color-bg-section: #353535;
             --color-text-primary: #E8E8E8;
             --color-text-secondary: #B5B5B5;
             --color-border: rgba(255,255,255,0.08);
@@ -403,17 +403,19 @@
         .check-list { list-style: none; margin: 25px 0; }
         .check-list li {
             display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px 0;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 8px 0;
             color: var(--color-text-secondary);
-            font-size: 17px;
+            font-size: 16px;
+            line-height: 1.5;
         }
         .check-list li .icon-svg {
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             stroke: var(--color-success);
             flex-shrink: 0;
+            margin-top: 3px;
         }
 
         /* ── FAQ ── */
@@ -538,7 +540,6 @@
             .btn-primary { padding: 16px 32px; font-size: 16px; width: 100%; text-align: center; }
             .steps-grid { grid-template-columns: 1fr 1fr; gap: 16px; }
             .session-preview { grid-template-columns: 1fr; gap: 30px; }
-            .session-image { order: -1; }
             .session-screenshot { max-width: 300px; }
             .icon-cards, .target-grid { grid-template-columns: 1fr; }
             .benefits-grid { grid-template-columns: repeat(2, 1fr); }
@@ -677,7 +678,7 @@
             <div class="hero-content">
                 <h1>Camino Vital</h1>
                 <p class="hero-subtitle">El recorrido de movimiento para cuidar tu autonomía y tu calidad de vida a largo plazo</p>
-                <p style="font-size: 18px; color: var(--color-text-secondary); margin-bottom: 30px;">Pensado para personas que quieren cuidarse y hacerlo con criterio desde el principio.</p>
+                <p style="font-size: 18px; color: var(--color-text-secondary); margin-bottom: 30px;">Pensado para personas que quieren cuidarse y hacerlo con criterio desde el principio, sea cual sea su punto de partida.</p>
 
                 <div class="hero-info">
                     <span>
@@ -688,14 +689,14 @@
                         <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-document"></use></svg>
                         Cuestionario personalizado de 2 minutos
                     </span>
-                    <span style="font-style: italic; color: var(--color-primary);">
-                        Acceso único al programa. Sin suscripciones ni compromisos.
-                    </span>
                 </div>
 
                 <a href="#" onclick="startQuiz(); return false;" class="btn-primary">
                     Reservar mi plaza
                 </a>
+                <p style="font-style: italic; color: var(--color-primary); margin-top: 15px; font-size: 15px;">
+                    Acceso único al programa. Sin suscripciones ni compromisos.
+                </p>
             </div>
 
             <!-- Scroll indicator -->
@@ -707,7 +708,7 @@
             </div>
         </section>
 
-        <!-- El recorrido que se adapta a ti -->
+        <!-- Se adapta a ti de verdad -->
         <section class="section section-alt">
             <div class="content-section">
                 <h2 style="text-align: center;">El recorrido que se adapta a ti</h2>
@@ -715,22 +716,38 @@
                 <p style="text-align: center;">Es un sistema pensado para ayudarte a mantener tu capacidad física y tu calidad de vida con el paso del tiempo, adaptándose a cómo estás hoy y a cómo evolucionas.</p>
                 <p style="text-align: center;">El recorrido comienza con un <strong>ciclo guiado de 12 semanas</strong>, pensado para construir una base sólida, segura y sostenible.</p>
 
-                <div class="emphasis-block" style="text-align: center;">
-                    <p>No es una rutina estándar.</p>
-                    <p>No es un plan cerrado.</p>
-                    <p><strong>Es un sistema flexible que progresa contigo.</strong></p>
+                <div class="icon-cards" style="margin-top: 40px;">
+                    <div class="icon-card">
+                        <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-shield"></use></svg>
+                        <div class="icon-card-text">
+                            <h4>Si tienes alguna limitación</h4>
+                            <p>La indicas en el cuestionario inicial y la tenemos en cuenta desde el primer día. Solo recibes ejercicios que puedes hacer.</p>
+                        </div>
+                    </div>
+                    <div class="icon-card">
+                        <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-trend-down"></use></svg>
+                        <div class="icon-card-text">
+                            <h4>Si algo te cuesta demasiado</h4>
+                            <p>Nos lo indicas después de la sesión y la siguiente semana ajustamos la intensidad.</p>
+                        </div>
+                    </div>
+                    <div class="icon-card">
+                        <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-trend-up"></use></svg>
+                        <div class="icon-card-text">
+                            <h4>Si te resulta demasiado fácil</h4>
+                            <p>También nos lo cuentas y subimos el nivel. El programa avanza contigo.</p>
+                        </div>
+                    </div>
+                    <div class="icon-card">
+                        <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-calendar"></use></svg>
+                        <div class="icon-card-text">
+                            <h4>Si una semana no puedes dedicarle tiempo</h4>
+                            <p>Cada domingo eliges cuántas sesiones puedes hacer esa semana: 2, 3, 4 o 5. Sin presión.</p>
+                        </div>
+                    </div>
                 </div>
 
-                <p style="text-align: center;">Desde el primer día:</p>
-                <ul class="check-list" style="max-width: 450px; margin: 25px auto;">
-                    <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Identificamos tu punto de partida</li>
-                    <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Tenemos en cuenta tu objetivo</li>
-                    <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Te proponemos el movimiento que tiene sentido para ti ahora</li>
-                </ul>
-
-                <p style="text-align: center;">A medida que mejoras, el trabajo evoluciona.</p>
-
-                <p class="highlight-text" style="max-width: 400px; margin: 30px auto; text-align: center; border-left: none; padding-left: 0; border-top: 3px solid var(--color-primary); padding-top: 20px;">El movimiento es la herramienta.<br><strong>Cuidarte a largo plazo, el objetivo.</strong></p>
+                <p class="highlight-text" style="max-width: 500px; margin: 40px auto 0; text-align: center; border-left: none; padding-left: 0; border-top: 3px solid var(--color-primary); padding-top: 20px;">El movimiento es la herramienta.<br><strong>Cuidarte a largo plazo, el objetivo.</strong></p>
             </div>
         </section>
 
@@ -819,9 +836,8 @@
                     </div>
                 </div>
 
-                <p style="text-align: center; margin-top: 40px;">Si una semana solo puedes entrenar dos días, el recorrido se ajusta a ello.</p>
-                <p style="text-align: center;">No sigues una rutina fija.</p>
-                <p style="text-align: center; font-size: 18px;"><strong>El programa se adapta tanto a tu cuerpo como a tu tiempo.</strong></p>
+                <p style="text-align: center; margin-top: 30px;">Tu respuesta nos ayuda a ajustar lo que viene.</p>
+                <p style="text-align: center;">Si ha pasado algo que debamos saber, puedes contárnoslo y lo tendremos en cuenta.</p>
             </div>
         </section>
 
@@ -832,32 +848,15 @@
                 <p style="text-align: center;"><strong>Este recorrido es para personas que quieren moverse bien hoy y seguir cuidando su capacidad física con el paso del tiempo.</strong></p>
                 <p style="text-align: center;"><strong>No importa si tienes 40, 60 o más.</strong><br>El punto de partida no es tu edad, es cómo estás hoy.</p>
 
-                <p style="text-align: center; margin-top: 30px;">Encaja tanto si:</p>
-                <ul class="check-list" style="max-width: 550px; margin: 20px auto;">
-                    <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg><strong>Te mueves poco o sin una estructura clara</strong> y quieres hacerlo con más seguridad y sentido</li>
-                    <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg><strong>Te encuentras razonablemente bien</strong> y quieres mantenerlo</li>
-                    <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg><strong>Quieres mejorar tu capacidad física</strong> sin entrenar con exigencia ni presión</li>
-                </ul>
-
-                <p style="text-align: center; margin-top: 30px;"><strong>Quizá te reconoces aquí:</strong></p>
-                <div class="target-grid">
-                    <div class="target-card">
-                        <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-crouch"></use></svg>
-                        <p><strong>Quieres sentirte más fuerte y estable</strong> en tu día a día</p>
-                    </div>
-                    <div class="target-card">
-                        <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-bell"></use></svg>
-                        <p><strong>Notas rigidez ocasional</strong> o falta de energía</p>
-                    </div>
-                    <div class="target-card">
-                        <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-footprint"></use></svg>
-                        <p><strong>Te preocupa perder capacidad</strong> con los años</p>
-                    </div>
-                    <div class="target-card">
-                        <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-warning"></use></svg>
-                        <p><strong>Quieres cuidarte</strong> sin ponerte metas irreales</p>
-                    </div>
-                </div>
+<div style="background: var(--color-bg-card); border-radius: var(--border-radius-card); padding: 30px 35px; max-width: 600px; margin: 30px auto;">
+<p style="text-align: center; margin-bottom: 20px; color: var(--color-text-primary);"><strong>Encaja contigo si:</strong></p>
+<ul class="check-list" style="margin: 0;">
+<li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Te mueves poco o sin una estructura clara y quieres hacerlo con <strong>más seguridad y sentido</strong></li>
+<li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Quieres mejorar tu capacidad física <strong>sin ponerte metas irreales</strong></li>
+<li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Te preocupa <strong>perder movilidad o fuerza</strong> con los años</li>
+<li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Sientes que te falta energía y quieres <strong>recuperar vitalidad</strong></li>
+</ul>
+</div>
 
                 <p style="text-align: center; font-size: 18px; margin-top: 30px;">Este programa parte de tu realidad actual,<br><strong>sea cual sea tu punto de partida.</strong></p>
             </div>
@@ -897,15 +896,15 @@
                     <div class="results-items">
                         <div class="result-item">
                             <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>
-                            Más seguridad al moverte
+                            Más confianza y fuerza al moverte
                         </div>
                         <div class="result-item">
                             <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>
-                            Mayor seguridad en tu cuerpo
+                            Mayor control de tu cuerpo
                         </div>
                         <div class="result-item">
                             <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>
-                            Más energía para tu vida diaria
+                            Más energía en tu día a día
                         </div>
                     </div>
                 </div>
@@ -916,35 +915,57 @@
         <section class="section">
             <div class="content-section">
                 <h2 style="text-align: center;">Un enfoque con criterio</h2>
-                <p style="text-align: center; max-width: 650px; margin: 0 auto 20px;">Este recorrido parte de una idea sencilla:</p>
-                <p style="text-align: center; max-width: 650px; margin: 0 auto 20px;">cuidar el cuerpo no va de hacer más,<br>va de hacer <strong>lo adecuado</strong> y poder <strong>sostenerlo en el tiempo</strong>.</p>
 
-                <p style="text-align: center; margin-top: 30px;">Muchos programas trabajan el movimiento por partes.<br>Aquí el enfoque es distinto.</p>
-                <p style="text-align: center;">No se entrenan ejercicios aislados.</p>
-                <p style="text-align: center;"><strong>Se trabaja la capacidad de moverte bien a lo largo del tiempo</strong>, con un sistema que se adapta a cómo estás hoy y evoluciona contigo.</p>
+                <div class="emphasis-block" style="text-align: center; max-width: 600px; margin: 30px auto;">
+                    <p>Camino Vital nace del mismo enfoque que trabajamos en <strong>Hábitos Vitales</strong>:</p>
+                    <p style="margin-bottom: 0;">Aplicar el ejercicio y el movimiento con criterio,<br>pensando en la <strong>salud</strong>, la <strong>autonomía</strong> y la <strong>longevidad</strong>.</p>
+                </div>
+
+                <p style="text-align: center; max-width: 600px; margin: 30px auto 20px;">Hoy sabemos que mantener la capacidad física con el paso del tiempo no depende de un solo tipo de ejercicio, sino de <strong>mantener distintas capacidades activas</strong>.</p>
+
+                <p class="highlight-text" style="max-width: 500px; margin: 30px auto 0; text-align: center; border-left: none; padding-left: 0; border-top: 3px solid var(--color-primary); padding-top: 20px;">Por eso el recorrido combina distintos estímulos de movimiento<br><strong>y se construye para poder sostenerse en el tiempo.</strong></p>
             </div>
         </section>
 
-        <!-- Qué recibes cuando accedes -->
+        <!-- Acceso al programa -->
         <section class="section section-alt">
             <div class="content-section">
-                <h2 style="text-align: center;">¿Qué recibes cuando accedes a Camino Vital?</h2>
-                <p style="text-align: center;">Cuando accedes al programa, el recorrido empieza paso a paso:</p>
+                <h2 style="text-align: center;">Acceso al programa</h2>
+                <p style="text-align: center;">En este momento se abre un <strong>número limitado de plazas</strong> para poder acompañar de forma cercana a quienes empiezan ahora.</p>
 
-                <ul class="check-list" style="max-width: 500px; margin: 25px auto;">
-                    <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Respondes un cuestionario inicial</li>
-                    <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Indicas cuántos días puedes entrenar esa semana</li>
-                    <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Recibes sesiones adaptadas a tu estado y a tu disponibilidad</li>
-                    <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>El recorrido se ajusta a medida que avanzas</li>
-                </ul>
+                <div class="pricing-card">
+                    <h3 class="pricing-title">Camino Vital</h3>
 
-                <p style="text-align: center;">No necesitas imprimir nada ni memorizar rutinas.</p>
-                <p style="text-align: center;"><strong>Todo llega por email, en el momento adecuado.</strong></p>
+                    <div class="pricing-includes">
+                        <ul class="check-list">
+                            <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Ciclo guiado de 12 semanas</li>
+                            <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Adaptación a tu estado, objetivo y disponibilidad</li>
+                            <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Acompañamiento cercano durante el recorrido</li>
+                            <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Acceso completo al programa</li>
+                            <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Entrega por email</li>
+                        </ul>
+                    </div>
+
+                    <div class="price-box">
+                        <div class="price-current">39&euro;</div>
+                        <p class="price-note">Precio reservado para quienes se inscriben antes del inicio del recorrido.</p>
+                        <p class="price-note" style="margin-top: 10px;">El recorrido comienza el 1 de marzo.<br>A partir de esa fecha, el acceso será de 89&euro;.</p>
+                    </div>
+
+                    <div class="start-date">
+                        <p>Inicio del recorrido</p>
+                        <div class="date">1 de marzo</div>
+                    </div>
+
+                    <a href="#" onclick="startQuiz(); return false;" class="btn-primary" style="width: 100%;">
+                        Reservar mi plaza
+                    </a>
+                </div>
             </div>
         </section>
 
         <!-- Preguntas frecuentes -->
-        <section class="section section-alt">
+        <section class="section">
             <div class="content-section">
                 <h2 style="text-align: center;">Preguntas frecuentes</h2>
 
@@ -998,43 +1019,6 @@
                         </div>
                         <div class="faq-answer"><p>Durante los primeros 14 días puedes solicitar la devolución. Sin explicaciones.</p></div>
                     </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Acceso al programa -->
-        <section class="section">
-            <div class="content-section">
-                <h2 style="text-align: center;">Acceso al programa</h2>
-                <p style="text-align: center;">En este momento se abre un <strong>número limitado de plazas</strong> para poder acompañar de forma cercana a quienes empiezan ahora.</p>
-
-                <div class="pricing-card">
-                    <h3 class="pricing-title">Camino Vital</h3>
-
-                    <div class="pricing-includes">
-                        <ul class="check-list">
-                            <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Ciclo guiado de 12 semanas</li>
-                            <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Adaptación a tu estado, objetivo y disponibilidad</li>
-                            <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Acompañamiento cercano durante el recorrido</li>
-                            <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Acceso completo al programa</li>
-                            <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Entrega por email</li>
-                        </ul>
-                    </div>
-
-                    <div class="price-box">
-                        <div class="price-current">39&euro;</div>
-                        <p class="price-note">Precio reservado para quienes se inscriben antes del inicio del recorrido.</p>
-                        <p class="price-note" style="margin-top: 10px;">El recorrido comienza el 1 de marzo.<br>A partir de esa fecha, el acceso será de 89&euro;.</p>
-                    </div>
-
-                    <div class="start-date">
-                        <p>Inicio del recorrido</p>
-                        <div class="date">1 de marzo</div>
-                    </div>
-
-                    <a href="#" onclick="startQuiz(); return false;" class="btn-primary" style="width: 100%;">
-                        Reservar mi plaza
-                    </a>
                 </div>
             </div>
         </section>
