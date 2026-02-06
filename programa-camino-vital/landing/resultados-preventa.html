@@ -138,21 +138,23 @@
 
         /* Countdown in header */
         .countdown-mini {
-            background: rgba(223, 202, 97, 0.15);
-            border: 1px solid rgba(223, 202, 97, 0.3);
-            border-radius: 12px;
-            padding: 15px 25px;
-            margin: 20px auto 0;
-            max-width: 400px;
+            background: rgba(223, 202, 97, 0.1);
+            border: 1px solid rgba(223, 202, 97, 0.2);
+            border-radius: 10px;
+            padding: 12px 20px;
+            margin: 0 auto 20px;
+            max-width: 320px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 20px;
+            gap: 15px;
         }
 
         .countdown-mini-label {
             font-size: 11px;
             color: var(--color-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
         }
 
         .countdown-mini-time {
@@ -328,18 +330,19 @@
 
         /* Pricing Section */
         .pricing-section {
-            background: linear-gradient(135deg, rgba(223, 202, 97, 0.1) 0%, rgba(98, 184, 130, 0.05) 100%);
-            padding: 50px 40px;
+            background: linear-gradient(135deg, rgba(223, 202, 97, 0.08) 0%, rgba(98, 184, 130, 0.04) 100%);
+            padding: 40px 35px;
             border-radius: var(--border-radius-card);
             text-align: center;
             margin-bottom: 40px;
-            border: 2px solid rgba(223, 202, 97, 0.3);
+            border: 2px solid rgba(223, 202, 97, 0.25);
         }
 
         .pricing-title {
             color: var(--color-primary);
-            font-size: 24px;
-            margin-bottom: 10px;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 5px;
         }
 
         .price-original {
@@ -395,6 +398,7 @@
             box-shadow: var(--shadow-button);
             transition: all var(--transition-fast);
             text-decoration: none;
+            margin-top: 10px;
         }
 
         .cta-button:hover {
@@ -403,23 +407,100 @@
         }
 
         .guarantee {
-            background: rgba(98, 184, 130, 0.1);
-            border: 2px dashed var(--color-success);
-            padding: 20px 25px;
-            border-radius: 12px;
-            margin-top: 30px;
+            background: rgba(98, 184, 130, 0.08);
+            border: 1px dashed rgba(98, 184, 130, 0.4);
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-top: 25px;
         }
 
         .guarantee p {
             color: var(--color-success);
-            font-weight: 600;
-            font-size: 15px;
+            font-weight: 500;
+            font-size: 13px;
+            margin: 0;
+            line-height: 1.5;
         }
 
         .stripe-note {
-            margin-top: 20px;
+            margin-top: 15px;
+            margin-bottom: 0;
+            color: var(--color-text-secondary);
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        /* Check list y pricing includes */
+        .check-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .check-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 10px 0;
+            color: var(--color-text-secondary);
+            font-size: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .check-list li:last-child {
+            border-bottom: none;
+        }
+        .check-list li .icon-svg {
+            width: 20px;
+            height: 20px;
+            stroke: var(--color-success);
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .pricing-includes {
+            text-align: left;
+            margin: 25px auto;
+            max-width: 340px;
+            background: rgba(0,0,0,0.2);
+            padding: 20px 25px;
+            border-radius: 12px;
+        }
+        .price-box {
+            margin: 30px 0 20px;
+            padding: 25px 0;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        .price-current {
+            font-size: 56px;
+            color: var(--color-primary);
+            font-weight: 700;
+            line-height: 1;
+            margin: 0 0 15px;
+        }
+        .price-note {
+            font-size: 14px;
+            color: var(--color-text-secondary);
+            margin: 0;
+            line-height: 1.5;
+        }
+        .start-date {
+            background: rgba(98,184,130,0.1);
+            border: 1px solid rgba(98,184,130,0.25);
+            padding: 12px 24px;
+            border-radius: 10px;
+            margin: 20px auto 25px;
+            display: inline-block;
+        }
+        .start-date p {
+            margin: 0;
             color: var(--color-text-secondary);
             font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .start-date .date {
+            color: var(--color-success);
+            font-size: 18px;
+            font-weight: 700;
+            margin-top: 4px;
         }
 
         /* Support Section */
@@ -516,6 +597,22 @@
             .countdown-mini {
                 flex-direction: column;
                 gap: 10px;
+            }
+
+            .price-current {
+                font-size: 48px;
+            }
+
+            .pricing-includes {
+                padding: 15px 20px;
+            }
+
+            .check-list li {
+                font-size: 14px;
+            }
+
+            .start-date {
+                padding: 10px 18px;
             }
         }
 
@@ -654,17 +751,31 @@
             </div>
 
             <div class="pricing-section">
-                <h3 class="pricing-title">Acceso completo a Camino Vital</h3>
-                <div class="price">39€</div>
-                <div class="price-subtext">El 1 de marzo sube a 89€</div>
-                <div class="price-detail" style="margin-top: 10px;">Pago único • <span id="priceDuration"></span></div>
+                <h3 class="pricing-title">Camino Vital</h3>
 
-                <div class="program-start-info">
-                    <p>Inicio del programa: <strong>1 de marzo de 2026</strong></p>
+                <div class="pricing-includes">
+                    <ul class="check-list">
+                        <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Ciclo guiado de 12 semanas</li>
+                        <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Adaptación a tu estado, objetivo y disponibilidad</li>
+                        <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Acompañamiento cercano durante el recorrido</li>
+                        <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Acceso completo al programa</li>
+                        <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Entrega por email</li>
+                    </ul>
+                </div>
+
+                <div class="price-box">
+                    <div class="price-current">39&euro;</div>
+                    <p class="price-note">Precio reservado para quienes se inscriben antes del inicio del recorrido.</p>
+                    <p class="price-note" style="margin-top: 10px;">El recorrido comienza el 1 de marzo.<br>A partir de esa fecha, el acceso será de 89&euro;.</p>
+                </div>
+
+                <div class="start-date">
+                    <p>Inicio del recorrido</p>
+                    <div class="date">1 de marzo</div>
                 </div>
 
                 <!-- Countdown -->
-                <div class="countdown-mini" style="margin-bottom: 25px;">
+                <div class="countdown-mini">
                     <span class="countdown-mini-label">Reservas hasta:</span>
                     <div class="countdown-mini-time">
                         <div class="countdown-mini-item">
@@ -831,7 +942,6 @@
         document.getElementById('userName').textContent = quizData.nombre;
         document.getElementById('userLevel').textContent = programData.nivel;
         document.getElementById('userDuration').textContent = programData.duration;
-        document.getElementById('priceDuration').textContent = programData.duration;
         document.getElementById('userFocus').textContent = programData.focus;
 
         // Razones por las que es perfecto
