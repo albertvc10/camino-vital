@@ -32,7 +32,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "-- Buscar usuarios pendientes de activar (preventa)\nSELECT \n  id, \n  email, \n  nombre, \n  nivel_actual,\n  etapa,\n  perfil_inicial\nFROM programa_users\nWHERE estado = 'pagado_esperando_inicio';",
+        "query": "-- Buscar usuarios pendientes de activar (preventa)\n-- FILTRO TEMPORAL: Solo emails con '+' para testing\nSELECT \n  id, \n  email, \n  nombre, \n  nivel_actual,\n  etapa,\n  perfil_inicial\nFROM programa_users\nWHERE estado = 'pagado_esperando_inicio'\nAND email LIKE '%+%';",
         "options": {}
       },
       "id": "buscar-usuarios-pendientes",
