@@ -31,28 +31,14 @@
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"secret\": \"0x4AAAAAACVE4wbVwEf9amRFouALPLdx9FI\",\n  \"response\": \"{{ $json.turnstile_token }}\"\n}",
-        "options": {}
+        "jsCode": "// Validar Turnstile - con soporte para token de test local\nconst token = $json.turnstile_token;\n\n// Si es token de test local, aprobar directamente\nif (token === 'local-test-token') {\n  console.log('🔓 Token de test local detectado - aprobando');\n  return { json: { success: true, isLocalTest: true } };\n}\n\n// Si no, validar contra Cloudflare\nconst response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    secret: '0x4AAAAAACVE4wbVwEf9amRFouALPLdx9FI',\n    response: token\n  })\n});\n\nconst result = await response.json();\nconsole.log('🔐 Turnstile validation:', result.success);\nreturn { json: result };"
       },
       "id": "validar-turnstile",
       "name": "Validar Turnstile",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [680, 300],
-      "notes": "Cloudflare Turnstile - Validacion de bot protection"
+      "notes": "Cloudflare Turnstile - Validacion de bot protection (con soporte local)"
     },
     {
       "parameters": {
@@ -105,9 +91,37 @@
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
-          "name": "PostgreSQL local"
+          "name": "PostgreSQL Camino Vital Local"
         }
       }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT key, value FROM config WHERE key IN ('BREVO_API_KEY', 'BREVO_LIST_LEADS');",
+        "options": {}
+      },
+      "id": "obtener-config",
+      "name": "Obtener Config",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1560, 200],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combinar datos del usuario con config\nconst userData = $('Guardar Lead en DB').first().json;\nconst configItems = $('Obtener Config').all();\n\n// Construir objeto config\nconst config = {};\nconfigItems.forEach(item => {\n  config[item.json.key] = item.json.value;\n});\n\nconsole.log('📧 Preparando datos para Brevo:', userData.email);\n\nreturn {\n  json: {\n    ...userData,\n    config: config\n  }\n};"
+      },
+      "id": "preparar-brevo",
+      "name": "Preparar Datos Brevo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1780, 200]
     },
     {
       "parameters": {
@@ -118,7 +132,7 @@
           "parameters": [
             {
               "name": "api-key",
-              "value": "={{$env.BREVO_API_KEY}}"
+              "value": "={{ $json.config.BREVO_API_KEY }}"
             },
             {
               "name": "Content-Type",
@@ -128,14 +142,14 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"email\": \"{{ $json.email }}\",\n  \"attributes\": {\n    \"NOMBRE\": \"{{ $json.nombre }}\",\n    \"NIVEL\": \"{{ $json.nivel_actual }}\",\n    \"ETAPA\": \"lead\",\n    \"ESTADO\": \"cuestionario_completado\"\n  },\n  \"listIds\": [{{ $env.BREVO_LIST_LEADS }}],\n  \"updateEnabled\": true\n}",
+        "jsonBody": "={\n  \"email\": \"{{ $json.email }}\",\n  \"attributes\": {\n    \"NOMBRE\": \"{{ $json.nombre }}\",\n    \"NIVEL\": \"{{ $json.nivel_actual }}\",\n    \"ETAPA\": \"lead\",\n    \"ESTADO\": \"cuestionario_completado\"\n  },\n  \"listIds\": [{{ $json.config.BREVO_LIST_LEADS }}],\n  \"updateEnabled\": true\n}",
         "options": {}
       },
       "id": "agregar-brevo",
       "name": "Agregar a Brevo (Leads)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1560, 200],
+      "position": [2000, 200],
       "notes": "Lista ID 2 = Leads sin pagar"
     },
     {
@@ -148,7 +162,7 @@
       "name": "Responder OK",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1780, 200]
+      "position": [2220, 200]
     },
     {
       "parameters": {
@@ -232,6 +246,28 @@
       "main": [
         [
           {
+            "node": "Obtener Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Config": {
+      "main": [
+        [
+          {
+            "node": "Preparar Datos Brevo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Datos Brevo": {
+      "main": [
+        [
+          {
             "node": "Agregar a Brevo (Leads)",
             "type": "main",
             "index": 0
@@ -265,5 +301,5 @@
     "instanceId": "local"
   },
   "pinData": {},
-  "versionId": "2"
+  "versionId": "3"
 }

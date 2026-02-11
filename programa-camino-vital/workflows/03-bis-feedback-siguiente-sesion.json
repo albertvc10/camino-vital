@@ -1,6 +1,6 @@
 {
-  "id": "gK4fkbdfnVFE0Ieg",
-  "name": "Camino Vital - 03-bis Feedback y Siguiente Sesión",
+  "id": "uQ0KqwaII78YdFSa",
+  "name": "Camino Vital - 03-bis Feedback y Siguiente Sesi\u00f3n",
   "active": true,
   "nodes": [
     {
@@ -10,7 +10,7 @@
         "options": {}
       },
       "id": "a17e48bc-c544-42f6-8a5c-b06adbbaac39",
-      "name": "Webhook Sesión Completada",
+      "name": "Webhook Sesi\u00f3n Completada",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
@@ -22,7 +22,28 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=-- Obtener datos del usuario\nSELECT \n  id,\n  email,\n  nombre,\n  etapa,\n  nivel_actual,\n  semana_actual,\n  sesiones_objetivo_semana,\n  sesiones_completadas_semana,\n  sesion_actual_dentro_semana,\n  auth_token\nFROM programa_users\nWHERE id = {{ $json.query.user_id }};",
+        "query": "SELECT jsonb_object_agg(key, value) as config FROM config WHERE key IN ('WEBHOOK_URL', 'BREVO_API_KEY', 'SENDER_EMAIL', 'SENDER_NAME');",
+        "options": {}
+      },
+      "id": "obtener-config-03bis",
+      "name": "Obtener Config",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        -80,
+        -16
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=-- Obtener datos del usuario\nSELECT \n  id,\n  email,\n  nombre,\n  etapa,\n  nivel_actual,\n  semana_actual,\n  sesiones_objetivo_semana,\n  sesiones_completadas_semana,\n  sesion_actual_dentro_semana,\n  auth_token\nFROM programa_users\nWHERE id = {{ $node['Webhook Sesi\u00f3n Completada'].json.query.user_id }};",
         "options": {}
       },
       "id": "8f2006d7-cdb8-463a-aa8c-53be434aaa05",
@@ -30,7 +51,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
       "position": [
-        16,
+        80,
         -16
       ],
       "credentials": {
@@ -51,7 +72,7 @@
           "conditions": [
             {
               "id": "sesion-ya-procesada",
-              "leftValue": "={{ Number($node[\"Webhook Sesión Completada\"].json.query.sesion) }}",
+              "leftValue": "={{ Number($node[\"Webhook Sesi\u00f3n Completada\"].json.query.sesion) }}",
               "rightValue": "={{ $json.sesion_actual_dentro_semana }}",
               "operator": {
                 "type": "number",
@@ -64,7 +85,7 @@
         "options": {}
       },
       "id": "if-sesion-ya-procesada",
-      "name": "IF: ¿Sesión ya procesada?",
+      "name": "IF: \u00bfSesi\u00f3n ya procesada?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
@@ -109,7 +130,7 @@
         }
       },
       "id": "responder-ya-procesada",
-      "name": "Responder: Sesión Ya Procesada",
+      "name": "Responder: Sesi\u00f3n Ya Procesada",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
@@ -120,7 +141,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=-- Registrar feedback de sesión completada (con upsert para evitar duplicados)\nWITH feedback_parsed AS (\n  SELECT \n    '{{ $node[\"Webhook Sesión Completada\"].json.query.feedback }}' as feedback_raw,\n    CASE \n      WHEN '{{ $node[\"Webhook Sesión Completada\"].json.query.feedback }}' IN ('completa_facil', 'completa_bien', 'completa_dificil') THEN 'completa'\n      WHEN '{{ $node[\"Webhook Sesión Completada\"].json.query.feedback }}' IN ('incompleta_tiempo', 'incompleta_dificil', 'dolor') THEN 'incompleta'\n      ELSE 'completa'\n    END as completitud,\n    CASE \n      WHEN '{{ $node[\"Webhook Sesión Completada\"].json.query.feedback }}' = 'completa_facil' THEN 'facil'\n      WHEN '{{ $node[\"Webhook Sesión Completada\"].json.query.feedback }}' = 'completa_bien' THEN 'apropiado'\n      WHEN '{{ $node[\"Webhook Sesión Completada\"].json.query.feedback }}' = 'completa_dificil' THEN 'dificil'\n      ELSE NULL\n    END as respuesta,\n    CASE \n      WHEN '{{ $node[\"Webhook Sesión Completada\"].json.query.feedback }}' = 'incompleta_tiempo' THEN 'tiempo'\n      WHEN '{{ $node[\"Webhook Sesión Completada\"].json.query.feedback }}' = 'incompleta_dificil' THEN 'muy_dificil'\n      WHEN '{{ $node[\"Webhook Sesión Completada\"].json.query.feedback }}' = 'dolor' THEN 'dolor'\n      ELSE NULL\n    END as razon_no_completar\n)\nINSERT INTO programa_feedback (\n  user_id,\n  semana,\n  etapa,\n  nivel,\n  sesion_numero,\n  tipo_feedback,\n  respuesta,\n  completitud,\n  razon_no_completar,\n  accion_tomada\n)\nSELECT \n  {{ $node[\"Obtener Datos Usuario\"].json.id }},\n  {{ $node[\"Obtener Datos Usuario\"].json.semana_actual }},\n  '{{ $node[\"Obtener Datos Usuario\"].json.etapa }}',\n  '{{ $node[\"Obtener Datos Usuario\"].json.nivel_actual }}',\n  {{ $node[\"Webhook Sesión Completada\"].json.query.sesion }},\n  'sesion_completada',\n  fp.respuesta,\n  fp.completitud,\n  fp.razon_no_completar,\n  'procesando'\nFROM feedback_parsed fp\nON CONFLICT (user_id, sesion_numero, semana, tipo_feedback) \nDO UPDATE SET \n  respuesta = EXCLUDED.respuesta,\n  completitud = EXCLUDED.completitud,\n  razon_no_completar = EXCLUDED.razon_no_completar,\n  accion_tomada = 'procesando',\n  created_at = NOW()\nRETURNING *;",
+        "query": "=-- Registrar feedback de sesi\u00f3n completada (con upsert para evitar duplicados)\nWITH feedback_parsed AS (\n  SELECT \n    '{{ $node[\"Webhook Sesi\u00f3n Completada\"].json.query.feedback }}' as feedback_raw,\n    CASE \n      WHEN '{{ $node[\"Webhook Sesi\u00f3n Completada\"].json.query.feedback }}' IN ('completa_facil', 'completa_bien', 'completa_dificil') THEN 'completa'\n      WHEN '{{ $node[\"Webhook Sesi\u00f3n Completada\"].json.query.feedback }}' IN ('incompleta_tiempo', 'incompleta_dificil', 'dolor') THEN 'incompleta'\n      ELSE 'completa'\n    END as completitud,\n    CASE \n      WHEN '{{ $node[\"Webhook Sesi\u00f3n Completada\"].json.query.feedback }}' = 'completa_facil' THEN 'facil'\n      WHEN '{{ $node[\"Webhook Sesi\u00f3n Completada\"].json.query.feedback }}' = 'completa_bien' THEN 'apropiado'\n      WHEN '{{ $node[\"Webhook Sesi\u00f3n Completada\"].json.query.feedback }}' = 'completa_dificil' THEN 'dificil'\n      ELSE NULL\n    END as respuesta,\n    CASE \n      WHEN '{{ $node[\"Webhook Sesi\u00f3n Completada\"].json.query.feedback }}' = 'incompleta_tiempo' THEN 'tiempo'\n      WHEN '{{ $node[\"Webhook Sesi\u00f3n Completada\"].json.query.feedback }}' = 'incompleta_dificil' THEN 'muy_dificil'\n      WHEN '{{ $node[\"Webhook Sesi\u00f3n Completada\"].json.query.feedback }}' = 'dolor' THEN 'dolor'\n      ELSE NULL\n    END as razon_no_completar\n)\nINSERT INTO programa_feedback (\n  user_id,\n  semana,\n  etapa,\n  nivel,\n  sesion_numero,\n  tipo_feedback,\n  respuesta,\n  completitud,\n  razon_no_completar,\n  accion_tomada\n)\nSELECT \n  {{ $node[\"Obtener Datos Usuario\"].json.id }},\n  {{ $node[\"Obtener Datos Usuario\"].json.semana_actual }},\n  '{{ $node[\"Obtener Datos Usuario\"].json.etapa }}',\n  '{{ $node[\"Obtener Datos Usuario\"].json.nivel_actual }}',\n  {{ $node[\"Webhook Sesi\u00f3n Completada\"].json.query.sesion }},\n  'sesion_completada',\n  fp.respuesta,\n  fp.completitud,\n  fp.razon_no_completar,\n  'procesando'\nFROM feedback_parsed fp\nON CONFLICT (user_id, sesion_numero, semana, tipo_feedback) \nDO UPDATE SET \n  respuesta = EXCLUDED.respuesta,\n  completitud = EXCLUDED.completitud,\n  razon_no_completar = EXCLUDED.razon_no_completar,\n  accion_tomada = 'procesando',\n  created_at = NOW()\nRETURNING *;",
         "options": {}
       },
       "id": "976495bf-7a0a-46d8-b6db-e06665071fa4",
@@ -183,7 +204,7 @@
         "options": {}
       },
       "id": "cfe1c4e6-ba15-45bf-99c7-49267e16612f",
-      "name": "IF: ¿Quedan más sesiones?",
+      "name": "IF: \u00bfQuedan m\u00e1s sesiones?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
@@ -214,7 +235,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Renderizar template con variables\nconst template = $json.html_template;\nconst usuario = $node['Actualizar Progreso Usuario'].json;\n\nconst html = template\n  .replace(/\\{\\{sesion_completada\\}\\}/g, (usuario.sesion_actual_dentro_semana - 1) || '1');\n\nreturn { json: { html, usuario_id: usuario.id } };"
+        "jsCode": "// Renderizar template con variables\nconst template = $json.html_template;\nconst usuario = $node['Actualizar Progreso Usuario'].json;\n\n// Obtener config (agregado en JSON)\nconst config = $('Obtener Config').first().json.config;\n\nconst html = template\n  .replace(/\\{\\{sesion_completada\\}\\}/g, (usuario.sesion_actual_dentro_semana - 1) || '1');\n\nreturn { json: { html, usuario_id: usuario.id, webhook_url: config.WEBHOOK_URL || 'http://localhost:5678' } };"
       },
       "id": "renderizar-procesando",
       "name": "Renderizar Procesando",
@@ -252,7 +273,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=http://localhost:5678/webhook/generar-sesion-ia",
+        "url": "={{ $node['Renderizar Procesando'].json.webhook_url }}/webhook/generar-sesion-ia",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ { \"user_id\": $node[\"Actualizar Progreso Usuario\"].json.id } }}",
@@ -266,7 +287,7 @@
         }
       },
       "id": "d6c5d6d1-426a-4c43-9449-e8e0d8cf420d",
-      "name": "Generar Sesión con IA",
+      "name": "Generar Sesi\u00f3n con IA",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -281,7 +302,7 @@
         "options": {}
       },
       "id": "ad485636-e4e6-490c-bb88-6d0fb3057a3c",
-      "name": "Obtener Sesión Completa",
+      "name": "Obtener Sesi\u00f3n Completa",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
       "position": [
@@ -302,7 +323,7 @@
         "options": {}
       },
       "id": "obtener-template-email-sesion",
-      "name": "Obtener Template Email Sesión",
+      "name": "Obtener Template Email Sesi\u00f3n",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
       "position": [
@@ -318,10 +339,10 @@
     },
     {
       "parameters": {
-        "jsCode": "// Preparar email usando template de BD\nconst template = $json.html_template;\nconst usuario = $node['Actualizar Progreso Usuario'].json;\nconst sesion = $node['Obtener Sesión Completa'].json;\n\nconsole.log('📧 Preparando email con sesión usando template BD');\n\nconst webhookUrl = process.env.WEBHOOK_URL || 'http://localhost:5678';\nconst sesionUrl = `${webhookUrl}/webhook/view-session/sesion/${sesion.sesion_id}?token=${usuario.auth_token}`;\n\n// Calcular total de ejercicios según tipo\nlet totalEjercicios = 'N/A';\nlet enfoqueTexto = sesion.enfoque || 'Mixto';\n\nif (sesion.enfoque === 'fuerza' && sesion.calentamiento && sesion.trabajo_principal) {\n  const calentamiento = typeof sesion.calentamiento === 'string' ? JSON.parse(sesion.calentamiento) : sesion.calentamiento;\n  const trabajoPrincipal = typeof sesion.trabajo_principal === 'string' ? JSON.parse(sesion.trabajo_principal) : sesion.trabajo_principal;\n  totalEjercicios = `${(calentamiento?.length || 0) + (trabajoPrincipal?.length || 0)} ejercicios personalizados`;\n  enfoqueTexto = 'Fuerza Funcional';\n} else if (sesion.enfoque === 'cardio') {\n  totalEjercicios = 'Actividad cardiovascular guiada';\n  enfoqueTexto = 'Cardio y Resistencia';\n}\n\n// Reemplazar variables en el template\nconst emailHTML = template\n  .replace(/\\{\\{sesion_numero\\}\\}/g, usuario.sesion_actual_dentro_semana || '')\n  .replace(/\\{\\{sesiones_objetivo\\}\\}/g, usuario.sesiones_objetivo_semana || '')\n  .replace(/\\{\\{nombre\\}\\}/g, usuario.nombre || '')\n  .replace(/\\{\\{introduccion\\}\\}/g, sesion.introduccion_personalizada || 'Sesión diseñada para tu nivel y objetivos.')\n  .replace(/\\{\\{duracion\\}\\}/g, sesion.duracion_estimada || '25-30 minutos')\n  .replace(/\\{\\{enfoque\\}\\}/g, enfoqueTexto)\n  .replace(/\\{\\{contenido\\}\\}/g, totalEjercicios)\n  .replace(/\\{\\{nivel\\}\\}/g, usuario.nivel_actual || '')\n  .replace(/\\{\\{sesion_url\\}\\}/g, sesionUrl);\n\nreturn {\n  json: {\n    user_id: usuario.id,\n    user_email: usuario.email,\n    user_nombre: usuario.nombre,\n    sesion_id: sesion.sesion_id,\n    sesiones_objetivo: usuario.sesiones_objetivo_semana,\n    semana: usuario.semana_actual,\n    sesion_numero: usuario.sesion_actual_dentro_semana,\n    email_html: emailHTML,\n    asunto: `🎯 Semana ${usuario.semana_actual} · Sesión ${usuario.sesion_actual_dentro_semana} de ${usuario.sesiones_objetivo_semana}: ${sesion.titulo}`\n  }\n};"
+        "jsCode": "// Preparar email usando template de BD\nconst template = $json.html_template;\nconst usuario = $node['Actualizar Progreso Usuario'].json;\nconst sesion = $node['Obtener Sesi\u00f3n Completa'].json;\n\n// Obtener config (agregado en JSON)\nconst config = $('Obtener Config').first().json.config;\n\nconsole.log('\ud83d\udce7 Preparando email con sesi\u00f3n usando template BD');\n\nconst webhookUrl = config.WEBHOOK_URL || 'http://localhost:5678';\nconst sesionUrl = `${webhookUrl}/webhook/view-session/sesion/${sesion.sesion_id}?token=${usuario.auth_token}`;\n\n// Calcular total de ejercicios seg\u00fan tipo\nlet totalEjercicios = 'N/A';\nlet enfoqueTexto = sesion.enfoque || 'Mixto';\n\nif (sesion.enfoque === 'fuerza' && sesion.calentamiento && sesion.trabajo_principal) {\n  const calentamiento = typeof sesion.calentamiento === 'string' ? JSON.parse(sesion.calentamiento) : sesion.calentamiento;\n  const trabajoPrincipal = typeof sesion.trabajo_principal === 'string' ? JSON.parse(sesion.trabajo_principal) : sesion.trabajo_principal;\n  totalEjercicios = `${(calentamiento?.length || 0) + (trabajoPrincipal?.length || 0)} ejercicios personalizados`;\n  enfoqueTexto = 'Fuerza Funcional';\n} else if (sesion.enfoque === 'cardio') {\n  totalEjercicios = 'Actividad cardiovascular guiada';\n  enfoqueTexto = 'Cardio y Resistencia';\n}\n\n// Reemplazar variables en el template\nconst emailHTML = template\n  .replace(/\\{\\{sesion_numero\\}\\}/g, usuario.sesion_actual_dentro_semana || '')\n  .replace(/\\{\\{sesiones_objetivo\\}\\}/g, usuario.sesiones_objetivo_semana || '')\n  .replace(/\\{\\{nombre\\}\\}/g, usuario.nombre || '')\n  .replace(/\\{\\{introduccion\\}\\}/g, sesion.introduccion_personalizada || 'Sesi\u00f3n dise\u00f1ada para tu nivel y objetivos.')\n  .replace(/\\{\\{duracion\\}\\}/g, sesion.duracion_estimada || '25-30 minutos')\n  .replace(/\\{\\{enfoque\\}\\}/g, enfoqueTexto)\n  .replace(/\\{\\{contenido\\}\\}/g, totalEjercicios)\n  .replace(/\\{\\{nivel\\}\\}/g, usuario.nivel_actual || '')\n  .replace(/\\{\\{sesion_url\\}\\}/g, sesionUrl);\n\nreturn {\n  json: {\n    user_id: usuario.id,\n    user_email: usuario.email,\n    user_nombre: usuario.nombre,\n    sesion_id: sesion.sesion_id,\n    sesiones_objetivo: usuario.sesiones_objetivo_semana,\n    semana: usuario.semana_actual,\n    sesion_numero: usuario.sesion_actual_dentro_semana,\n    email_html: emailHTML,\n    asunto: `\ud83c\udfaf Semana ${usuario.semana_actual} \u00b7 Sesi\u00f3n ${usuario.sesion_actual_dentro_semana} de ${usuario.sesiones_objetivo_semana}: ${sesion.titulo}`\n  }\n};"
       },
       "id": "19af2f83-045a-46ee-b2af-ebcf2f85eb72",
-      "name": "Preparar Email Sesión",
+      "name": "Preparar Email Sesi\u00f3n",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -331,7 +352,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Preparar body JSON para Brevo\nconst input = $input.first().json;\n\nconst brevoBody = {\n  sender: {\n    name: \"Camino Vital\",\n    email: \"hola@habitos-vitales.com\"\n  },\n  to: [\n    {\n      email: input.user_email,\n      name: input.user_nombre\n    }\n  ],\n  subject: input.asunto,\n  htmlContent: input.email_html\n};\n\nreturn {\n  json: {\n    ...input,\n    brevo_body: brevoBody\n  }\n};"
+        "jsCode": "// Preparar body JSON para Brevo\nconst input = $input.first().json;\n\n// Obtener config (agregado en JSON)\nconst config = $('Obtener Config').first().json.config;\n\nconst brevoBody = {\n  sender: {\n    name: config.SENDER_NAME || 'Camino Vital',\n    email: config.SENDER_EMAIL || 'hola@habitos-vitales.com'\n  },\n  to: [\n    {\n      email: input.user_email,\n      name: input.user_nombre\n    }\n  ],\n  subject: input.asunto,\n  htmlContent: input.email_html\n};\n\nreturn {\n  json: {\n    ...input,\n    brevo_body: brevoBody,\n    brevo_api_key: config.BREVO_API_KEY\n  }\n};"
       },
       "id": "dde2bd64-0d76-4a65-84e0-54d592aa8d54",
       "name": "Preparar Body Brevo",
@@ -351,7 +372,7 @@
           "parameters": [
             {
               "name": "api-key",
-              "value": "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"
+              "value": "={{ $json.brevo_api_key }}"
             },
             {
               "name": "content-type",
@@ -365,7 +386,7 @@
         "options": {}
       },
       "id": "453bccb5-b7f5-4ffc-86ef-d14b69fcad56",
-      "name": "Enviar Email vía Brevo",
+      "name": "Enviar Email v\u00eda Brevo",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -376,11 +397,11 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=-- Registrar envío de sesión personalizada\nWITH envio_insertado AS (\n  INSERT INTO programa_envios (user_id, sesion_id, estado, fecha_envio)\n  VALUES (\n    {{ $node[\"Preparar Body Brevo\"].json.user_id }},\n    {{ $node[\"Preparar Body Brevo\"].json.sesion_id }},\n    'enviado',\n    NOW()\n  )\n  RETURNING id, user_id, sesion_id\n),\nusuario_actualizado AS (\n  UPDATE programa_users\n  SET \n    fecha_ultimo_envio = NOW(),\n    envios_totales = envios_totales + 1\n  WHERE id = {{ $node[\"Preparar Body Brevo\"].json.user_id }}\n  RETURNING id, envios_totales\n)\nSELECT \n  e.id as envio_id,\n  e.user_id,\n  e.sesion_id,\n  u.envios_totales,\n  {{ $node[\"Preparar Body Brevo\"].json.sesiones_objetivo }} as sesiones_objetivo\nFROM envio_insertado e, usuario_actualizado u;",
+        "query": "=-- Registrar env\u00edo de sesi\u00f3n personalizada\nWITH envio_insertado AS (\n  INSERT INTO programa_envios (user_id, sesion_id, estado, fecha_envio)\n  VALUES (\n    {{ $node[\"Preparar Body Brevo\"].json.user_id }},\n    {{ $node[\"Preparar Body Brevo\"].json.sesion_id }},\n    'enviado',\n    NOW()\n  )\n  RETURNING id, user_id, sesion_id\n),\nusuario_actualizado AS (\n  UPDATE programa_users\n  SET \n    fecha_ultimo_envio = NOW(),\n    envios_totales = envios_totales + 1\n  WHERE id = {{ $node[\"Preparar Body Brevo\"].json.user_id }}\n  RETURNING id, envios_totales\n)\nSELECT \n  e.id as envio_id,\n  e.user_id,\n  e.sesion_id,\n  u.envios_totales,\n  {{ $node[\"Preparar Body Brevo\"].json.sesiones_objetivo }} as sesiones_objetivo\nFROM envio_insertado e, usuario_actualizado u;",
         "options": {}
       },
       "id": "78a5c921-8696-45b6-8baa-1b921e926619",
-      "name": "Registrar Envío",
+      "name": "Registrar Env\u00edo",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
       "position": [
@@ -397,7 +418,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=-- Actualizar feedback con acción tomada\nUPDATE programa_feedback\nSET accion_tomada = 'envio_siguiente_sesion'\nWHERE id = {{ $node[\"Registrar Feedback\"].json.id }};",
+        "query": "=-- Actualizar feedback con acci\u00f3n tomada\nUPDATE programa_feedback\nSET accion_tomada = 'envio_siguiente_sesion'\nWHERE id = {{ $node[\"Registrar Feedback\"].json.id }};",
         "options": {}
       },
       "id": "1aa2a7c9-e11f-4e5a-ac7d-6a314bcc2010",
@@ -496,7 +517,18 @@
     }
   ],
   "connections": {
-    "Webhook Sesión Completada": {
+    "Webhook Sesi\u00f3n Completada": {
+      "main": [
+        [
+          {
+            "node": "Obtener Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Config": {
       "main": [
         [
           {
@@ -511,14 +543,14 @@
       "main": [
         [
           {
-            "node": "IF: ¿Sesión ya procesada?",
+            "node": "IF: \u00bfSesi\u00f3n ya procesada?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "IF: ¿Sesión ya procesada?": {
+    "IF: \u00bfSesi\u00f3n ya procesada?": {
       "main": [
         [
           {
@@ -540,7 +572,7 @@
       "main": [
         [
           {
-            "node": "Responder: Sesión Ya Procesada",
+            "node": "Responder: Sesi\u00f3n Ya Procesada",
             "type": "main",
             "index": 0
           }
@@ -562,14 +594,14 @@
       "main": [
         [
           {
-            "node": "IF: ¿Quedan más sesiones?",
+            "node": "IF: \u00bfQuedan m\u00e1s sesiones?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "IF: ¿Quedan más sesiones?": {
+    "IF: \u00bfQuedan m\u00e1s sesiones?": {
       "main": [
         [
           {
@@ -613,47 +645,47 @@
       "main": [
         [
           {
-            "node": "Generar Sesión con IA",
+            "node": "Generar Sesi\u00f3n con IA",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Generar Sesión con IA": {
+    "Generar Sesi\u00f3n con IA": {
       "main": [
         [
           {
-            "node": "Obtener Sesión Completa",
+            "node": "Obtener Sesi\u00f3n Completa",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Obtener Sesión Completa": {
+    "Obtener Sesi\u00f3n Completa": {
       "main": [
         [
           {
-            "node": "Obtener Template Email Sesión",
+            "node": "Obtener Template Email Sesi\u00f3n",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Obtener Template Email Sesión": {
+    "Obtener Template Email Sesi\u00f3n": {
       "main": [
         [
           {
-            "node": "Preparar Email Sesión",
+            "node": "Preparar Email Sesi\u00f3n",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Preparar Email Sesión": {
+    "Preparar Email Sesi\u00f3n": {
       "main": [
         [
           {
@@ -668,25 +700,25 @@
       "main": [
         [
           {
-            "node": "Enviar Email vía Brevo",
+            "node": "Enviar Email v\u00eda Brevo",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Enviar Email vía Brevo": {
+    "Enviar Email v\u00eda Brevo": {
       "main": [
         [
           {
-            "node": "Registrar Envío",
+            "node": "Registrar Env\u00edo",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Registrar Envío": {
+    "Registrar Env\u00edo": {
       "main": [
         [
           {
@@ -734,5 +766,5 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "v3-protection"
+  "versionId": "v4-config-table"
 }

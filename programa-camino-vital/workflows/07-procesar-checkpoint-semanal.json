@@ -18,11 +18,36 @@
       "name": "Webhook Checkpoint Semanal",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [
-        240,
-        300
-      ],
+      "position": [240, 300],
       "webhookId": "checkpoint-semanal"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT key, value FROM config WHERE key IN ('WEBHOOK_URL');",
+        "options": {}
+      },
+      "id": "obtener-config",
+      "name": "Obtener Config",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [360, 300],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combinar query params con config\nconst webhookData = $('Webhook Checkpoint Semanal').first().json;\nconst configItems = $('Obtener Config').all();\n\n// Construir objeto config\nconst config = {};\nconfigItems.forEach(item => {\n  config[item.json.key] = item.json.value;\n});\n\nreturn {\n  json: {\n    query: webhookData.query,\n    config: config\n  }\n};"
+      },
+      "id": "combinar-config",
+      "name": "Combinar Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 300]
     },
     {
       "parameters": {
@@ -34,10 +59,7 @@
       "name": "Analizar Semana",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [
-        460,
-        300
-      ],
+      "position": [600, 300],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -49,17 +71,14 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=-- Procesar checkpoint con la elección del usuario\nSELECT * FROM procesar_checkpoint_interactivo(\n  {{ $node['Analizar Semana'].json.out_user_id }},\n  {{ $node['Webhook Checkpoint Semanal'].json.query.sesiones || 3 }},\n  '{{ $node['Analizar Semana'].json.accion_nivel }}',\n  {{ $node['Analizar Semana'].json.accion_intensidad }},\n  '{{ $node['Analizar Semana'].json.adherencia_nivel }}',\n  '{{ $node['Analizar Semana'].json.feedback_mayoritario }}',\n  '{{ $node['Analizar Semana'].json.explicacion_corta }}'\n);",
+        "query": "=-- Procesar checkpoint con la elección del usuario\nSELECT * FROM procesar_checkpoint_interactivo(\n  {{ $node['Analizar Semana'].json.out_user_id }},\n  {{ $node['Combinar Config'].json.query.sesiones || 3 }},\n  '{{ $node['Analizar Semana'].json.accion_nivel }}',\n  {{ $node['Analizar Semana'].json.accion_intensidad }},\n  '{{ $node['Analizar Semana'].json.adherencia_nivel }}',\n  '{{ $node['Analizar Semana'].json.feedback_mayoritario }}',\n  '{{ $node['Analizar Semana'].json.explicacion_corta }}'\n);",
         "options": {}
       },
       "id": "procesar-checkpoint",
       "name": "Procesar Checkpoint",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [
-        680,
-        300
-      ],
+      "position": [800, 300],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -67,6 +86,16 @@
         }
       },
       "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Añadir config al resultado del checkpoint\nconst checkpointData = $json;\nconst configData = $('Combinar Config').first().json.config;\n\nreturn {\n  json: {\n    ...checkpointData,\n    config: configData\n  }\n};"
+      },
+      "id": "add-config",
+      "name": "Añadir Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [920, 300]
     },
     {
       "parameters": {
@@ -95,10 +124,7 @@
       "name": "IF: ¿Checkpoint ya procesado?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [
-        900,
-        300
-      ]
+      "position": [1040, 300]
     },
     {
       "parameters": {
@@ -120,10 +146,7 @@
       "name": "Responder Ya Procesado",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [
-        1120,
-        200
-      ]
+      "position": [1260, 200]
     },
     {
       "parameters": {
@@ -152,10 +175,7 @@
       "name": "IF: ¿Programa completado (>12 sem)?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [
-        1120,
-        400
-      ]
+      "position": [1260, 400]
     },
     {
       "parameters": {
@@ -167,10 +187,7 @@
       "name": "Marcar Programa Completado",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [
-        1340,
-        350
-      ],
+      "position": [1480, 350],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -188,10 +205,7 @@
       "name": "Obtener Template Fin Programa",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [
-        1560,
-        350
-      ],
+      "position": [1700, 350],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -201,21 +215,18 @@
     },
     {
       "parameters": {
-        "jsCode": "// Preparar email de programa completado\nconst template = $json.html_template;\nconst usuario = $node['Marcar Programa Completado'].json;\n\nconst emailHTML = template\n  .replace(/\\{\\{nombre\\}\\}/g, usuario.nombre || 'Usuario')\n  .replace(/\\{\\{nivel_actual\\}\\}/g, usuario.nivel_actual || '')\n  .replace(/\\{\\{intensidad\\}\\}/g, usuario.intensidad_nivel || '');\n\nreturn {\n  json: {\n    user_id: usuario.id,\n    user_email: usuario.email,\n    user_nombre: usuario.nombre,\n    email_html: emailHTML,\n    asunto: '🏆 ¡Felicidades! Has completado Camino Vital'\n  }\n};"
+        "jsCode": "// Preparar email de programa completado\nconst template = $json.html_template;\nconst usuario = $node['Marcar Programa Completado'].json;\nconst config = $node['Añadir Config'].json.config;\nconst webhookUrl = config.WEBHOOK_URL || 'http://localhost:5678';\n\nconst emailHTML = template\n  .replace(/\\{\\{nombre\\}\\}/g, usuario.nombre || 'Usuario')\n  .replace(/\\{\\{nivel_actual\\}\\}/g, usuario.nivel_actual || '')\n  .replace(/\\{\\{intensidad\\}\\}/g, usuario.intensidad_nivel || '');\n\nreturn {\n  json: {\n    user_id: usuario.id,\n    user_email: usuario.email,\n    user_nombre: usuario.nombre,\n    email_html: emailHTML,\n    asunto: '🏆 ¡Felicidades! Has completado Camino Vital',\n    webhook_url: webhookUrl\n  }\n};"
       },
       "id": "preparar-email-fin",
       "name": "Preparar Email Fin Programa",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [
-        1780,
-        350
-      ]
+      "position": [1920, 350]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.WEBHOOK_URL }}/webhook/util/enviar-email",
+        "url": "={{ $json.webhook_url }}/webhook/util/enviar-email",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify($json) }}",
@@ -227,10 +238,7 @@
       "name": "Enviar Email Fin (UTIL)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        2000,
-        350
-      ]
+      "position": [2140, 350]
     },
     {
       "parameters": {
@@ -252,18 +260,37 @@
       "name": "Responder Programa Completado",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [
-        2220,
-        350
-      ]
+      "position": [2360, 350]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>¡Confirmado!</title></head><body style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #232323; color: #E8E8E8; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0;\"><div style=\"background: #1C1C1C; padding: 40px; border-radius: 18px; text-align: center; max-width: 450px;\"><div style=\"font-size: 64px; margin-bottom: 20px;\">🎉</div><h1 style=\"color: #62B882; margin: 0 0 15px 0;\">¡Perfecto, {{ $json.nombre }}!</h1><p style=\"color: #B5B5B5; font-size: 16px; margin: 0 0 25px 0;\">Tu configuración para la <strong style=\"color: #DFCA61;\">Semana {{ $json.semana_actual }}</strong></p><div style=\"background: rgba(98,184,130,0.1); border-radius: 12px; padding: 20px; margin: 20px 0;\"><p style=\"margin: 5px 0; color: #B5B5B5;\">📊 Nivel: <strong style=\"color: #E8E8E8;\">{{ $json.nivel_actual.toUpperCase() }}</strong></p><p style=\"margin: 5px 0; color: #B5B5B5;\">⚡ Intensidad: <strong style=\"color: #E8E8E8;\">{{ $json.intensidad_nivel }}%</strong></p><p style=\"margin: 5px 0; color: #B5B5B5;\">📅 Sesiones/semana: <strong style=\"color: #E8E8E8;\">{{ $json.sesiones_objetivo_semana }}</strong></p></div><p style=\"color: #62B882; margin: 20px 0 0 0;\">📬 En breve recibirás tu primera sesión por email</p></div></body></html>",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=utf-8"
+              }
+            ]
+          }
+        }
+      },
+      "id": "responder-confirmacion",
+      "name": "Responder Confirmación Inmediata",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1380, 500]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.WEBHOOK_URL }}/webhook/generar-sesion-ia",
+        "url": "={{ $node['Añadir Config'].json.config.WEBHOOK_URL || 'http://localhost:5678' }}/webhook/generar-sesion-ia",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ user_id: $json.id }) }}",
+        "jsonBody": "={{ JSON.stringify({ user_id: $node['Añadir Config'].json.id }) }}",
         "options": {
           "timeout": 120000
         }
@@ -272,25 +299,19 @@
       "name": "Llamar Generador Sesión IA",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        1460,
-        500
-      ]
+      "position": [1600, 500]
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=SELECT \n  s.*,\n  u.email as user_email,\n  u.nombre as user_nombre,\n  u.nivel_actual,\n  u.intensidad_nivel,\n  u.volumen_extra,\n  u.auth_token\nFROM programa_sesiones s\nJOIN programa_users u ON s.user_id = u.id\nWHERE s.user_id = {{ $node['Procesar Checkpoint'].json.id }}\n  AND s.semana = {{ $node['Procesar Checkpoint'].json.semana_actual }}\n  AND s.numero_sesion = 1\nORDER BY s.created_at DESC\nLIMIT 1;",
+        "query": "=SELECT \n  s.*,\n  u.email as user_email,\n  u.nombre as user_nombre,\n  u.nivel_actual,\n  u.intensidad_nivel,\n  u.volumen_extra,\n  u.auth_token\nFROM programa_sesiones s\nJOIN programa_users u ON s.user_id = u.id\nWHERE s.user_id = {{ $node['Añadir Config'].json.id }}\n  AND s.semana = {{ $node['Añadir Config'].json.semana_actual }}\n  AND s.numero_sesion = 1\nORDER BY s.created_at DESC\nLIMIT 1;",
         "options": {}
       },
       "id": "obtener-sesion-generada",
       "name": "Obtener Sesión Generada",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [
-        1680,
-        500
-      ],
+      "position": [1820, 500],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -308,10 +329,7 @@
       "name": "Obtener Template Nueva Semana",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [
-        1900,
-        500
-      ],
+      "position": [2040, 500],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -321,21 +339,18 @@
     },
     {
       "parameters": {
-        "jsCode": "// Preparar email usando templates de BD\nconst templates = $json;\nconst sesion = $node['Obtener Sesión Generada'].json;\nconst checkpointData = $node['Procesar Checkpoint'].json;\n\nconsole.log('📧 Preparando email checkpoint con sesión nueva semana');\n\nconst webhookUrl = process.env.WEBHOOK_URL || 'http://localhost:5678';\nconst sesionUrl = `${webhookUrl}/webhook/view-session/sesion/${sesion.id}?token=${sesion.auth_token}`;\n\n// Calcular total ejercicios y enfoque\nlet totalEjercicios = 'N/A';\nlet enfoqueTexto = 'Mixto';\n\nif (sesion.enfoque === 'fuerza' && sesion.calentamiento && sesion.trabajo_principal) {\n  const calentamiento = typeof sesion.calentamiento === 'string' ? JSON.parse(sesion.calentamiento) : sesion.calentamiento;\n  const trabajoPrincipal = typeof sesion.trabajo_principal === 'string' ? JSON.parse(sesion.trabajo_principal) : sesion.trabajo_principal;\n  totalEjercicios = `${(calentamiento?.length || 0) + (trabajoPrincipal?.length || 0)} ejercicios personalizados`;\n  enfoqueTexto = 'Fuerza Funcional';\n} else if (sesion.enfoque === 'cardio') {\n  totalEjercicios = 'Actividad cardiovascular guiada';\n  enfoqueTexto = 'Cardio y Resistencia';\n}\n\n// Determinar banner de ajuste usando accion_tomada (nuevo campo)\nlet bannerAjuste = '';\nconst accion = checkpointData.accion_tomada;\nconsole.log('🎯 Acción tomada:', accion);\n\nif (accion && accion !== 'mantener') {\n  let bannerTemplate = '';\n\n  if (accion === 'subir' || accion === 'subir_mucho') {\n    bannerTemplate = templates.banner_subir;\n  } else if (accion === 'bajar' || accion === 'bajar_mucho') {\n    bannerTemplate = templates.banner_bajar;\n  }\n\n  if (bannerTemplate) {\n    bannerAjuste = bannerTemplate\n      .replace(/\\{\\{ajuste_razon\\}\\}/g, checkpointData.ajuste_razon || '')\n      .replace(/\\{\\{ajuste_nivel\\}\\}/g, (checkpointData.nivel_actual || '').toUpperCase())\n      .replace(/\\{\\{ajuste_intensidad\\}\\}/g, checkpointData.ajuste_intensidad || '');\n  }\n}\n\n// Reemplazar variables en el template principal\nconst emailHTML = templates.html_template\n  .replace(/\\{\\{semana\\}\\}/g, sesion.semana || '')\n  .replace(/\\{\\{nombre\\}\\}/g, sesion.user_nombre || '')\n  .replace(/\\{\\{semana_anterior\\}\\}/g, (checkpointData.semana_actual - 1) || '')\n  .replace(/\\{\\{banner_ajuste\\}\\}/g, bannerAjuste)\n  .replace(/\\{\\{titulo\\}\\}/g, sesion.titulo || '')\n  .replace(/\\{\\{descripcion\\}\\}/g, sesion.descripcion || 'Sesión personalizada para tu nivel')\n  .replace(/\\{\\{duracion\\}\\}/g, sesion.duracion_estimada || '30')\n  .replace(/\\{\\{enfoque\\}\\}/g, enfoqueTexto)\n  .replace(/\\{\\{contenido\\}\\}/g, totalEjercicios)\n  .replace(/\\{\\{sesion_url\\}\\}/g, sesionUrl)\n  .replace(/\\{\\{sesiones_objetivo\\}\\}/g, checkpointData.sesiones_objetivo_semana || '');\n\nreturn {\n  json: {\n    user_id: sesion.user_id,\n    user_email: sesion.user_email,\n    user_nombre: sesion.user_nombre,\n    sesion_id: sesion.id,\n    email_html: emailHTML,\n    asunto: `🎯 Semana ${sesion.semana} - Sesión 1: ${sesion.titulo}`\n  }\n};\n"
+        "jsCode": "// Preparar email usando templates de BD\nconst templates = $json;\nconst sesion = $node['Obtener Sesión Generada'].json;\nconst checkpointData = $node['Añadir Config'].json;\nconst config = checkpointData.config;\n\nconsole.log('📧 Preparando email checkpoint con sesión nueva semana');\n\nconst webhookUrl = config.WEBHOOK_URL || 'http://localhost:5678';\nconst sesionUrl = `${webhookUrl}/webhook/view-session/sesion/${sesion.id}?token=${sesion.auth_token}`;\n\n// Calcular total ejercicios y enfoque\nlet totalEjercicios = 'N/A';\nlet enfoqueTexto = 'Mixto';\n\nif (sesion.enfoque === 'fuerza' && sesion.calentamiento && sesion.trabajo_principal) {\n  const calentamiento = typeof sesion.calentamiento === 'string' ? JSON.parse(sesion.calentamiento) : sesion.calentamiento;\n  const trabajoPrincipal = typeof sesion.trabajo_principal === 'string' ? JSON.parse(sesion.trabajo_principal) : sesion.trabajo_principal;\n  totalEjercicios = `${(calentamiento?.length || 0) + (trabajoPrincipal?.length || 0)} ejercicios personalizados`;\n  enfoqueTexto = 'Fuerza Funcional';\n} else if (sesion.enfoque === 'cardio') {\n  totalEjercicios = 'Actividad cardiovascular guiada';\n  enfoqueTexto = 'Cardio y Resistencia';\n}\n\n// Determinar banner de ajuste usando accion_tomada (nuevo campo)\nlet bannerAjuste = '';\nconst accion = checkpointData.accion_tomada;\nconsole.log('🎯 Acción tomada:', accion);\n\nif (accion && accion !== 'mantener') {\n  let bannerTemplate = '';\n\n  if (accion === 'subir' || accion === 'subir_mucho') {\n    bannerTemplate = templates.banner_subir;\n  } else if (accion === 'bajar' || accion === 'bajar_mucho') {\n    bannerTemplate = templates.banner_bajar;\n  }\n\n  if (bannerTemplate) {\n    bannerAjuste = bannerTemplate\n      .replace(/\\{\\{ajuste_razon\\}\\}/g, checkpointData.ajuste_razon || '')\n      .replace(/\\{\\{ajuste_nivel\\}\\}/g, (checkpointData.nivel_actual || '').toUpperCase())\n      .replace(/\\{\\{ajuste_intensidad\\}\\}/g, checkpointData.ajuste_intensidad || '');\n  }\n}\n\n// Reemplazar variables en el template principal\nconst emailHTML = templates.html_template\n  .replace(/\\{\\{semana\\}\\}/g, sesion.semana || '')\n  .replace(/\\{\\{nombre\\}\\}/g, sesion.user_nombre || '')\n  .replace(/\\{\\{semana_anterior\\}\\}/g, (checkpointData.semana_actual - 1) || '')\n  .replace(/\\{\\{banner_ajuste\\}\\}/g, bannerAjuste)\n  .replace(/\\{\\{titulo\\}\\}/g, sesion.titulo || '')\n  .replace(/\\{\\{descripcion\\}\\}/g, sesion.descripcion || 'Sesión personalizada para tu nivel')\n  .replace(/\\{\\{duracion\\}\\}/g, sesion.duracion_estimada || '30')\n  .replace(/\\{\\{enfoque\\}\\}/g, enfoqueTexto)\n  .replace(/\\{\\{contenido\\}\\}/g, totalEjercicios)\n  .replace(/\\{\\{sesion_url\\}\\}/g, sesionUrl)\n  .replace(/\\{\\{sesiones_objetivo\\}\\}/g, checkpointData.sesiones_objetivo_semana || '');\n\nreturn {\n  json: {\n    user_id: sesion.user_id,\n    user_email: sesion.user_email,\n    user_nombre: sesion.user_nombre,\n    sesion_id: sesion.id,\n    email_html: emailHTML,\n    asunto: `🎯 Semana ${sesion.semana} - Sesión 1: ${sesion.titulo}`,\n    webhook_url: webhookUrl\n  }\n};\n"
       },
       "id": "preparar-email-sesion",
       "name": "Preparar Email Sesión",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [
-        2120,
-        500
-      ]
+      "position": [2260, 500]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.WEBHOOK_URL }}/webhook/util/enviar-email",
+        "url": "={{ $json.webhook_url }}/webhook/util/enviar-email",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify($json) }}",
@@ -347,35 +362,7 @@
       "name": "Enviar Email Sesión (UTIL)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        2340,
-        500
-      ]
-    },
-    {
-      "parameters": {
-        "respondWith": "text",
-        "responseBody": "=<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>¡Confirmado!</title></head><body style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #232323; color: #E8E8E8; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0;\"><div style=\"background: #1C1C1C; padding: 40px; border-radius: 18px; text-align: center; max-width: 450px;\"><div style=\"font-size: 64px; margin-bottom: 20px;\">🎉</div><h1 style=\"color: #62B882; margin: 0 0 15px 0;\">¡Perfecto, {{ $node['Procesar Checkpoint'].json.nombre }}!</h1><p style=\"color: #B5B5B5; font-size: 16px; margin: 0 0 25px 0;\">Tu configuración para la <strong style=\"color: #DFCA61;\">Semana {{ $node['Procesar Checkpoint'].json.semana_actual }}</strong></p><div style=\"background: rgba(98,184,130,0.1); border-radius: 12px; padding: 20px; margin: 20px 0;\"><p style=\"margin: 5px 0; color: #B5B5B5;\">📊 Nivel: <strong style=\"color: #E8E8E8;\">{{ $node['Procesar Checkpoint'].json.nivel_actual.toUpperCase() }}</strong></p><p style=\"margin: 5px 0; color: #B5B5B5;\">⚡ Intensidad: <strong style=\"color: #E8E8E8;\">{{ $node['Procesar Checkpoint'].json.intensidad_nivel }}%</strong></p><p style=\"margin: 5px 0; color: #B5B5B5;\">📅 Sesiones/semana: <strong style=\"color: #E8E8E8;\">{{ $node['Procesar Checkpoint'].json.sesiones_objetivo_semana }}</strong></p></div><p style=\"color: #62B882; margin: 20px 0 0 0;\">📬 En breve recibirás tu primera sesión por email</p></div></body></html>",
-        "options": {
-          "responseCode": 200,
-          "responseHeaders": {
-            "entries": [
-              {
-                "name": "Content-Type",
-                "value": "text/html; charset=utf-8"
-              }
-            ]
-          }
-        }
-      },
-      "id": "responder-confirmacion",
-      "name": "Responder Confirmación Inmediata",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.1,
-      "position": [
-        1240,
-        500
-      ]
+      "position": [2480, 500]
     },
     {
       "parameters": {
@@ -397,14 +384,33 @@
       "name": "Responder Error",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [
-        680,
-        500
-      ]
+      "position": [800, 500]
     }
   ],
   "connections": {
     "Webhook Checkpoint Semanal": {
+      "main": [
+        [
+          {
+            "node": "Obtener Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Config": {
+      "main": [
+        [
+          {
+            "node": "Combinar Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combinar Config": {
       "main": [
         [
           {
@@ -439,7 +445,7 @@
       "main": [
         [
           {
-            "node": "IF: ¿Checkpoint ya procesado?",
+            "node": "Añadir Config",
             "type": "main",
             "index": 0
           }
@@ -449,6 +455,17 @@
         [
           {
             "node": "Responder Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Añadir Config": {
+      "main": [
+        [
+          {
+            "node": "IF: ¿Checkpoint ya procesado?",
             "type": "main",
             "index": 0
           }
@@ -600,8 +617,8 @@
   "staticData": null,
   "meta": null,
   "pinData": {},
-  "versionId": "v5-respuesta-inmediata              ",
-  "versionCounter": 43,
+  "versionId": "v6-config-table",
+  "versionCounter": 44,
   "triggerCount": 1,
   "tags": [],
   "shared": [

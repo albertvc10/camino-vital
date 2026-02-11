@@ -264,6 +264,62 @@ const senderName = process.env.SENDER_NAME || 'Camino Vital';
 | Recurso | Local | Producción |
 |---------|-------|------------|
 | PostgreSQL credential | `nLcUOvLreXurFbBs` | `mb8piXWj8Fpb7MSV` |
+| BREVO_LIST_LEADS (tabla config) | `15` | `14` |
+| BREVO_LIST_ACTIVO (tabla config) | `17` | `13` |
+
+**IMPORTANTE:** La tabla `config` es específica de cada entorno (no se sincroniza con git). Asegurarse de que los valores sean correctos en cada base de datos.
+
+### IDs de Workflows para Execute Workflow (IMPORTANTE)
+
+El nodo "Execute Workflow" de n8n **no funciona bien con nombres que tienen caracteres especiales** (€, paréntesis, etc.). Por eso usamos IDs en vez de nombres.
+
+| Workflow | ID Local | ID Producción |
+|----------|----------|---------------|
+| 01a Onboarding Programa (89€) | `jOAMKOPOez9lOK0r` | `91AOC0TOGBkijdGV` |
+| 01b Onboarding Preventa (39€) | `dq6hrmEPgNoHjuxt` | `VR27PpYFMXzYP5Vo` |
+
+**El script de deploy debe reemplazar estos IDs** igual que reemplaza los credential IDs.
+
+---
+
+## Cambios Pendientes de Deploy (Febrero 2026)
+
+### Resumen de cambios realizados en local
+
+**1. Workflow 01 Router Pago Stripe**
+- Cambiado Execute Workflow de `mode: "name"` a `mode: "id"`
+- Los IDs son específicos de cada entorno
+- **Acción deploy:** Añadir reemplazo de IDs de workflows al script `deploy-production.sh`
+
+**2. Workflow 04 Guardar Lead**
+- Nodo "Validar Turnstile" cambiado de HTTP Request a Code node
+- Ahora detecta `local-test-token` y lo aprueba sin llamar a Cloudflare
+- **Acción deploy:** Ninguna especial, el código funciona en ambos entornos
+
+**3. Workflow 00 Activar Usuarios Programados**
+- Query de config cambiada a `jsonb_object_agg()` para devolver 1 fila
+- Código de "Renderizar Template" actualizado para usar `$json.config.WEBHOOK_URL`
+- **Acción deploy:** Ninguna especial, el código funciona en ambos entornos
+
+### Checklist pre-deploy
+
+```bash
+# 1. Obtener IDs de workflows en producción
+ssh root@164.90.222.166 "docker exec n8n_postgres psql -U n8n_admin -d n8n -t -c \"
+SELECT id, name FROM workflow_entity
+WHERE name LIKE '%01a%' OR name LIKE '%01b%';\""
+
+# 2. Actualizar este documento con los IDs de producción
+
+# 3. Actualizar deploy-production.sh para reemplazar IDs de workflows
+
+# 4. Verificar tabla config en producción tiene valores correctos
+ssh root@164.90.222.166 "docker exec n8n_postgres psql -U n8n_admin -d n8n -c \"
+SELECT key, value FROM config;\""
+
+# 5. Ejecutar deploy
+bash /root/camino-vital/programa-camino-vital/scripts/deploy-production.sh
+```
 
 ---
 
@@ -605,3 +661,94 @@ docker restart caddy
 
 ### Nota adicional
 El error `ValidationError: The 'X-Forwarded-For' header is set but the Express 'trust proxy' setting is false` que aparece en los logs de n8n es un warning, **no causa el problema de Connection lost**. Puedes ignorarlo si los WebSockets funcionan.
+
+---
+
+## Troubleshooting: Workflow no se puede publicar (sin número de versión)
+
+### Síntomas
+- Al intentar publicar un workflow en n8n UI, no se genera número de versión
+- El botón de "Publish" no funciona o da error
+- Ocurre frecuentemente después de importar workflows con `n8n import:workflow`
+
+### Causa
+Cuando se importa un workflow via CLI o se actualiza directamente en la BD:
+1. El `versionId` puede no ser un UUID válido
+2. La tabla `workflow_history` no tiene entrada para ese workflow
+3. El `activeVersionId` queda vacío
+
+### Solución
+Ejecutar este SQL para cada workflow afectado (reemplazar `'%NOMBRE_WORKFLOW%'`):
+
+```bash
+docker exec n8n_postgres psql -U n8n -d n8n -c "
+-- 1. Asegurar versionId es UUID válido
+UPDATE workflow_entity
+SET \"versionId\" = gen_random_uuid()::varchar(36)
+WHERE name LIKE '%NOMBRE_WORKFLOW%'
+  AND \"versionId\" !~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
+
+-- 2. Insertar/actualizar en workflow_history
+INSERT INTO workflow_history (\"versionId\", \"workflowId\", authors, \"createdAt\", \"updatedAt\", nodes, connections, name, autosaved, description)
+SELECT
+    \"versionId\",
+    id as \"workflowId\",
+    '' as authors,
+    \"createdAt\",
+    \"updatedAt\",
+    nodes,
+    connections,
+    name,
+    false as autosaved,
+    description
+FROM workflow_entity
+WHERE name LIKE '%NOMBRE_WORKFLOW%'
+ON CONFLICT (\"versionId\", \"workflowId\") DO UPDATE SET
+    nodes = EXCLUDED.nodes,
+    connections = EXCLUDED.connections,
+    \"updatedAt\" = NOW();
+
+-- 3. Establecer activeVersionId
+UPDATE workflow_entity
+SET \"activeVersionId\" = \"versionId\"
+WHERE name LIKE '%NOMBRE_WORKFLOW%';
+"
+
+# 4. Reiniciar n8n
+docker restart n8n
+```
+
+### Para arreglar TODOS los workflows de una vez
+```bash
+docker exec n8n_postgres psql -U n8n -d n8n -c "
+-- Actualizar todos los versionId que no sean UUID
+UPDATE workflow_entity
+SET \"versionId\" = gen_random_uuid()::varchar(36)
+WHERE \"versionId\" !~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
+
+-- Insertar todos en workflow_history
+INSERT INTO workflow_history (\"versionId\", \"workflowId\", authors, \"createdAt\", \"updatedAt\", nodes, connections, name, autosaved, description)
+SELECT
+    \"versionId\",
+    id as \"workflowId\",
+    '' as authors,
+    \"createdAt\",
+    \"updatedAt\",
+    nodes,
+    connections,
+    name,
+    false as autosaved,
+    description
+FROM workflow_entity
+ON CONFLICT (\"versionId\", \"workflowId\") DO NOTHING;
+
+-- Establecer activeVersionId para todos los activos
+UPDATE workflow_entity
+SET \"activeVersionId\" = \"versionId\"
+WHERE active = true;
+"
+docker restart n8n
+```
+
+### Prevención
+Después de cada `n8n import:workflow`, ejecutar el fix de versionado antes de intentar publicar en la UI.

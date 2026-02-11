@@ -14,6 +14,24 @@
     {
       "parameters": {
         "operation": "executeQuery",
+        "query": "SELECT jsonb_object_agg(key, value) as config FROM config WHERE key IN ('WEBHOOK_URL', 'BREVO_API_KEY', 'SENDER_EMAIL', 'SENDER_NAME');",
+        "options": {}
+      },
+      "id": "obtener-config",
+      "name": "Obtener Config",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [460, 300],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
         "query": "SELECT html_template FROM email_templates WHERE nombre = 'email_bienvenida' AND activo = true;",
         "options": {}
       },
@@ -21,7 +39,7 @@
       "name": "Obtener Template Bienvenida",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [460, 300],
+      "position": [680, 300],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -39,7 +57,7 @@
       "name": "Buscar Usuarios Pendientes",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [680, 300],
+      "position": [900, 300],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -74,7 +92,7 @@
       "name": "IF ¿Hay usuarios?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [900, 300]
+      "position": [1120, 300]
     },
     {
       "parameters": {
@@ -84,7 +102,7 @@
       "name": "Log Sin Usuarios",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1120, 400]
+      "position": [1340, 400]
     },
     {
       "parameters": {
@@ -96,7 +114,7 @@
       "name": "Activar Usuario en DB",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [1120, 200],
+      "position": [1340, 200],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -106,13 +124,13 @@
     },
     {
       "parameters": {
-        "jsCode": "// Renderizar template para TODOS los usuarios del array\nconst items = $input.all();\nconst template = $('Obtener Template Bienvenida').first().json.html_template;\n\n// Determinar base_url según entorno\nconst baseUrl = process.env.WEBHOOK_URL || 'http://localhost:5678';\n\nconsole.log('📧 Procesando', items.length, 'usuarios');\n\n// Procesar cada usuario\nconst results = items.map(item => {\n  const usuario = item.json;\n  const nivel = usuario.nivel_actual === 'iniciacion' ? 'Iniciación' : 'Intermedio';\n  \n  console.log('  → Renderizando email para:', usuario.email);\n  \n  const html = template\n    .replace(/\\{\\{nombre\\}\\}/g, usuario.nombre || '')\n    .replace(/\\{\\{nivel\\}\\}/g, nivel)\n    .replace(/\\{\\{user_id\\}\\}/g, usuario.id)\n    .replace(/\\{\\{base_url\\}\\}/g, baseUrl);\n  \n  return {\n    json: {\n      html_renderizado: html,\n      email: usuario.email,\n      nombre: usuario.nombre,\n      user_id: usuario.id\n    }\n  };\n});\n\nreturn results;"
+        "jsCode": "// Renderizar template para TODOS los usuarios del array\nconst items = $input.all();\nconst template = $('Obtener Template Bienvenida').first().json.html_template;\n\n// Obtener config desde BD (agregado en una sola fila JSON)\nconst config = $('Obtener Config').first().json.config;\n\nconst baseUrl = config.WEBHOOK_URL || 'http://localhost:5678';\nconst brevoApiKey = config.BREVO_API_KEY;\nconst senderEmail = config.SENDER_EMAIL || 'hola@habitos-vitales.com';\nconst senderName = config.SENDER_NAME || 'Camino Vital';\n\nconsole.log('📧 Procesando', items.length, 'usuarios');\n\n// Procesar cada usuario\nconst results = items.map(item => {\n  const usuario = item.json;\n  const nivel = usuario.nivel_actual === 'iniciacion' ? 'Iniciación' : 'Intermedio';\n  \n  console.log('  → Renderizando email para:', usuario.email);\n  \n  const html = template\n    .replace(/\\{\\{nombre\\}\\}/g, usuario.nombre || '')\n    .replace(/\\{\\{nivel\\}\\}/g, nivel)\n    .replace(/\\{\\{user_id\\}\\}/g, usuario.id)\n    .replace(/\\{\\{base_url\\}\\}/g, baseUrl);\n  \n  return {\n    json: {\n      html_renderizado: html,\n      email: usuario.email,\n      nombre: usuario.nombre,\n      user_id: usuario.id,\n      brevo_api_key: brevoApiKey,\n      sender_email: senderEmail,\n      sender_name: senderName\n    }\n  };\n});\n\nreturn results;"
       },
       "id": "renderizar-template",
       "name": "Renderizar Template",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1340, 200]
+      "position": [1560, 200]
     },
     {
       "parameters": {
@@ -123,7 +141,7 @@
           "parameters": [
             {
               "name": "api-key",
-              "value": "={{$env.BREVO_API_KEY}}"
+              "value": "={{ $json.brevo_api_key }}"
             },
             {
               "name": "Content-Type",
@@ -133,14 +151,14 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"sender\": {\n    \"name\": \"Camino Vital - Hábitos Vitales\",\n    \"email\": \"hola@habitos-vitales.com\"\n  },\n  \"to\": [\n    {\n      \"email\": \"{{ $json.email }}\",\n      \"name\": \"{{ $json.nombre }}\"\n    }\n  ],\n  \"subject\": \"✨ ¡Tu Camino Vital empieza hoy! Elige cuántas sesiones hacer\",\n  \"htmlContent\": {{ JSON.stringify($json.html_renderizado) }}\n}",
+        "jsonBody": "={\n  \"sender\": {\n    \"name\": \"{{ $json.sender_name }}\",\n    \"email\": \"{{ $json.sender_email }}\"\n  },\n  \"to\": [\n    {\n      \"email\": \"{{ $json.email }}\",\n      \"name\": \"{{ $json.nombre }}\"\n    }\n  ],\n  \"subject\": \"✨ ¡Tu Camino Vital empieza hoy! Elige cuántas sesiones hacer\",\n  \"htmlContent\": {{ JSON.stringify($json.html_renderizado) }}\n}",
         "options": {}
       },
       "id": "enviar-email-bienvenida",
       "name": "Enviar Email Bienvenida",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1560, 200]
+      "position": [1780, 200]
     },
     {
       "parameters": {
@@ -150,11 +168,22 @@
       "name": "Log Éxito",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1780, 200]
+      "position": [2000, 200]
     }
   ],
   "connections": {
     "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Obtener Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Config": {
       "main": [
         [
           {
@@ -257,5 +286,5 @@
     "instanceId": "local"
   },
   "pinData": {},
-  "versionId": "5"
+  "versionId": "6"
 }

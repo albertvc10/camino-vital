@@ -21,6 +21,24 @@
     {
       "parameters": {
         "operation": "executeQuery",
+        "query": "SELECT key, value FROM config WHERE key IN ('BREVO_API_KEY', 'SENDER_EMAIL', 'SENDER_NAME');",
+        "options": {}
+      },
+      "id": "obtener-config",
+      "name": "Obtener Config",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [460, 300],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
         "query": "-- Leads que completaron cuestionario hace 3 días y no han pagado\nSELECT \n  id,\n  email,\n  nombre,\n  nivel_actual,\n  perfil_inicial,\n  created_at\nFROM programa_users\nWHERE estado = 'lead'\n  AND created_at::date = (CURRENT_DATE - INTERVAL '3 days')::date\n  AND NOT EXISTS (\n    SELECT 1 FROM programa_users pu2 \n    WHERE pu2.email = programa_users.email \n    AND pu2.estado = 'activo'\n  )\nORDER BY created_at;",
         "options": {}
       },
@@ -28,11 +46,11 @@
       "name": "Obtener Leads 3 Días",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [460, 200],
+      "position": [680, 200],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
-          "name": "PostgreSQL local"
+          "name": "PostgreSQL Camino Vital Local"
         }
       }
     },
@@ -46,13 +64,35 @@
       "name": "Obtener Leads 7 Días",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [460, 400],
+      "position": [680, 400],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
-          "name": "PostgreSQL local"
+          "name": "PostgreSQL Camino Vital Local"
         }
       }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Preparar email día 3 con config\nconst lead = $json;\nconst configItems = $('Obtener Config').all();\n\n// Construir objeto config\nconst config = {};\nconfigItems.forEach(item => {\n  config[item.json.key] = item.json.value;\n});\n\nconst nivelDisplay = lead.nivel_actual === 'iniciacion' ? 'Iniciación' : 'Intermedio';\n\nreturn {\n  json: {\n    ...lead,\n    nivel_display: nivelDisplay,\n    brevo_api_key: config.BREVO_API_KEY,\n    sender_name: config.SENDER_NAME || 'Camino Vital',\n    sender_email: config.SENDER_EMAIL || 'hola@habitos-vitales.com'\n  }\n};"
+      },
+      "id": "preparar-email-3dias",
+      "name": "Preparar Email 3 Días",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Preparar email día 7 con config\nconst lead = $json;\nconst configItems = $('Obtener Config').all();\n\n// Construir objeto config\nconst config = {};\nconfigItems.forEach(item => {\n  config[item.json.key] = item.json.value;\n});\n\nconst nivelDisplay = lead.nivel_actual === 'iniciacion' ? 'Iniciación' : 'Intermedio';\n\nreturn {\n  json: {\n    ...lead,\n    nivel_display: nivelDisplay,\n    brevo_api_key: config.BREVO_API_KEY,\n    sender_name: config.SENDER_NAME || 'Camino Vital',\n    sender_email: config.SENDER_EMAIL || 'hola@habitos-vitales.com'\n  }\n};"
+      },
+      "id": "preparar-email-7dias",
+      "name": "Preparar Email 7 Días",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 400]
     },
     {
       "parameters": {
@@ -63,7 +103,7 @@
           "parameters": [
             {
               "name": "api-key",
-              "value": "={{$env.BREVO_API_KEY}}"
+              "value": "={{ $json.brevo_api_key }}"
             },
             {
               "name": "Content-Type",
@@ -73,14 +113,14 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"sender\": {\n    \"name\": \"Camino Vital\",\n    \"email\": \"hola@habitos-vitales.com\"\n  },\n  \"to\": [\n    {\n      \"email\": \"{{ $json.email }}\",\n      \"name\": \"{{ $json.nombre }}\"\n    }\n  ],\n  \"subject\": \"{{ $json.nombre }}, tu programa personalizado te está esperando\",\n  \"htmlContent\": \"<!DOCTYPE html><html><head><meta charset='UTF-8'></head><body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;'><h1 style='color: #2e7d32; font-size: 28px;'>Hola {{ $json.nombre }},</h1><p style='font-size: 16px; line-height: 1.6;'>Hace unos días completaste nuestro cuestionario para <strong>Camino Vital</strong>.</p><p style='font-size: 16px; line-height: 1.6;'>Vimos que tu programa personalizado sería de <strong>nivel {{ $json.nivel_actual === 'iniciacion' ? 'Iniciación' : 'Intermedio' }}</strong>, diseñado específicamente para tu situación actual.</p><div style='background: #e8f5e9; border-left: 4px solid #4CAF50; padding: 20px; margin: 30px 0; border-radius: 4px;'><p style='margin: 0; font-size: 16px;'><strong>¿Qué te está frenando?</strong></p><p style='margin: 15px 0 0; line-height: 1.6;'>Sabemos que empezar no es fácil. Pero cada día que pasa sin moverte, tu cuerpo se adapta... a no moverse.</p></div><p style='font-size: 16px; line-height: 1.6;'>No necesitas estar en forma para empezar.<br>Empiezas para volver a sentirte capaz.</p><div style='text-align: center; margin: 40px 0;'><a href='https://habitos-vitales.com/camino-vital/checkout?email={{ $json.email }}' style='background: linear-gradient(135deg, #4CAF50 0%, #2e7d32 100%); color: white; padding: 18px 40px; font-size: 18px; border-radius: 50px; text-decoration: none; display: inline-block; font-weight: bold; box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);'>Empezar mi programa ahora →</a></div><p style='font-size: 14px; color: #666; text-align: center;'>Solo 39€ • Garantía de 7 días • Sin permanencia</p><p style='font-size: 16px; line-height: 1.6; margin-top: 40px;'>Si tienes dudas, responde este email. Estamos aquí para ayudarte.</p><p style='font-size: 16px;'>Un saludo,<br><strong>El equipo de Camino Vital</strong></p></body></html>\"\n}",
+        "jsonBody": "={\n  \"sender\": {\n    \"name\": \"{{ $json.sender_name }}\",\n    \"email\": \"{{ $json.sender_email }}\"\n  },\n  \"to\": [\n    {\n      \"email\": \"{{ $json.email }}\",\n      \"name\": \"{{ $json.nombre }}\"\n    }\n  ],\n  \"subject\": \"{{ $json.nombre }}, tu programa personalizado te está esperando\",\n  \"htmlContent\": \"<!DOCTYPE html><html><head><meta charset='UTF-8'></head><body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;'><h1 style='color: #2e7d32; font-size: 28px;'>Hola {{ $json.nombre }},</h1><p style='font-size: 16px; line-height: 1.6;'>Hace unos días completaste nuestro cuestionario para <strong>Camino Vital</strong>.</p><p style='font-size: 16px; line-height: 1.6;'>Vimos que tu programa personalizado sería de <strong>nivel {{ $json.nivel_display }}</strong>, diseñado específicamente para tu situación actual.</p><div style='background: #e8f5e9; border-left: 4px solid #4CAF50; padding: 20px; margin: 30px 0; border-radius: 4px;'><p style='margin: 0; font-size: 16px;'><strong>¿Qué te está frenando?</strong></p><p style='margin: 15px 0 0; line-height: 1.6;'>Sabemos que empezar no es fácil. Pero cada día que pasa sin moverte, tu cuerpo se adapta... a no moverse.</p></div><p style='font-size: 16px; line-height: 1.6;'>No necesitas estar en forma para empezar.<br>Empiezas para volver a sentirte capaz.</p><div style='text-align: center; margin: 40px 0;'><a href='https://habitos-vitales.com/camino-vital/checkout?email={{ $json.email }}' style='background: linear-gradient(135deg, #4CAF50 0%, #2e7d32 100%); color: white; padding: 18px 40px; font-size: 18px; border-radius: 50px; text-decoration: none; display: inline-block; font-weight: bold; box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);'>Empezar mi programa ahora →</a></div><p style='font-size: 14px; color: #666; text-align: center;'>Solo 39€ • Garantía de 7 días • Sin permanencia</p><p style='font-size: 16px; line-height: 1.6; margin-top: 40px;'>Si tienes dudas, responde este email. Estamos aquí para ayudarte.</p><p style='font-size: 16px;'>Un saludo,<br><strong>El equipo de Camino Vital</strong></p></body></html>\"\n}",
         "options": {}
       },
       "id": "enviar-email-3dias",
       "name": "Enviar Email Día 3",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [680, 200]
+      "position": [1120, 200]
     },
     {
       "parameters": {
@@ -91,7 +131,7 @@
           "parameters": [
             {
               "name": "api-key",
-              "value": "={{$env.BREVO_API_KEY}}"
+              "value": "={{ $json.brevo_api_key }}"
             },
             {
               "name": "Content-Type",
@@ -101,18 +141,29 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"sender\": {\n    \"name\": \"Camino Vital\",\n    \"email\": \"hola@habitos-vitales.com\"\n  },\n  \"to\": [\n    {\n      \"email\": \"{{ $json.email }}\",\n      \"name\": \"{{ $json.nombre }}\"\n    }\n  ],\n  \"subject\": \"[Última oportunidad] 20% descuento en tu programa {{ $json.nivel_actual }}\",\n  \"htmlContent\": \"<!DOCTYPE html><html><head><meta charset='UTF-8'></head><body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;'><div style='background: #fff3cd; border: 2px solid #ffc107; padding: 20px; text-align: center; border-radius: 8px; margin-bottom: 30px;'><p style='margin: 0; font-size: 14px; font-weight: bold; color: #856404;'>⏰ OFERTA ESPECIAL - VÁLIDA HOY</p></div><h1 style='color: #2e7d32; font-size: 28px;'>{{ $json.nombre }}, esta es tu última oportunidad</h1><p style='font-size: 16px; line-height: 1.6;'>Hace una semana preparamos tu programa personalizado de <strong>nivel {{ $json.nivel_actual === 'iniciacion' ? 'Iniciación' : 'Intermedio' }}</strong>.</p><p style='font-size: 16px; line-height: 1.6;'>No queremos que lo dejes pasar.</p><div style='background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border: 3px solid #4CAF50; border-radius: 12px; padding: 30px; margin: 30px 0; text-align: center;'><p style='margin: 0 0 10px; font-size: 18px; color: #2e7d32;'><strong>Tu programa Base Vital</strong></p><p style='margin: 0; font-size: 48px; color: #2e7d32; font-weight: bold;'><span style='text-decoration: line-through; opacity: 0.5; font-size: 32px;'>39€</span> 31€</p><p style='margin: 10px 0 0; font-size: 16px; color: #666;'>Ahorra 8€ • Solo por hoy</p></div><div style='text-align: center; margin: 40px 0;'><a href='https://habitos-vitales.com/camino-vital/checkout?email={{ $json.email }}&discount=ULTIMAOPORTUNIDAD' style='background: linear-gradient(135deg, #4CAF50 0%, #2e7d32 100%); color: white; padding: 20px 50px; font-size: 20px; border-radius: 50px; text-decoration: none; display: inline-block; font-weight: bold; box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);'>Aprovechar mi descuento →</a></div><p style='font-size: 14px; color: #666; text-align: center; margin: 30px 0;'>🔒 Pago seguro con Stripe • Garantía de 7 días</p><div style='background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 40px 0;'><p style='margin: 0 0 10px; font-weight: bold;'>Lo que incluye tu programa:</p><ul style='margin: 0; padding-left: 20px; line-height: 1.8;'><li>8-12 semanas de ejercicios personalizados</li><li>3 emails por semana con rutinas claras</li><li>Videos demostrativos de cada ejercicio</li><li>Adaptación automática según tu progreso</li><li>Soporte personalizado por email</li></ul></div><p style='font-size: 16px; line-height: 1.6;'>Esta es la última vez que te escribiremos sobre esto.</p><p style='font-size: 16px; line-height: 1.6;'>Si no es el momento, lo entendemos. Pero si lo que te frena es la duda... este descuento es nuestra forma de decirte: <strong>empieza hoy</strong>.</p><p style='font-size: 16px; margin-top: 40px;'>Un saludo,<br><strong>El equipo de Camino Vital</strong></p><p style='font-size: 12px; color: #999; margin-top: 40px; border-top: 1px solid #ddd; padding-top: 20px;'>PD: Este descuento expira a las 23:59 de hoy. Después, el precio vuelve a 39€.</p></body></html>\"\n}",
+        "jsonBody": "={\n  \"sender\": {\n    \"name\": \"{{ $json.sender_name }}\",\n    \"email\": \"{{ $json.sender_email }}\"\n  },\n  \"to\": [\n    {\n      \"email\": \"{{ $json.email }}\",\n      \"name\": \"{{ $json.nombre }}\"\n    }\n  ],\n  \"subject\": \"[Última oportunidad] 20% descuento en tu programa {{ $json.nivel_actual }}\",\n  \"htmlContent\": \"<!DOCTYPE html><html><head><meta charset='UTF-8'></head><body style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;'><div style='background: #fff3cd; border: 2px solid #ffc107; padding: 20px; text-align: center; border-radius: 8px; margin-bottom: 30px;'><p style='margin: 0; font-size: 14px; font-weight: bold; color: #856404;'>⏰ OFERTA ESPECIAL - VÁLIDA HOY</p></div><h1 style='color: #2e7d32; font-size: 28px;'>{{ $json.nombre }}, esta es tu última oportunidad</h1><p style='font-size: 16px; line-height: 1.6;'>Hace una semana preparamos tu programa personalizado de <strong>nivel {{ $json.nivel_display }}</strong>.</p><p style='font-size: 16px; line-height: 1.6;'>No queremos que lo dejes pasar.</p><div style='background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border: 3px solid #4CAF50; border-radius: 12px; padding: 30px; margin: 30px 0; text-align: center;'><p style='margin: 0 0 10px; font-size: 18px; color: #2e7d32;'><strong>Tu programa Base Vital</strong></p><p style='margin: 0; font-size: 48px; color: #2e7d32; font-weight: bold;'><span style='text-decoration: line-through; opacity: 0.5; font-size: 32px;'>39€</span> 31€</p><p style='margin: 10px 0 0; font-size: 16px; color: #666;'>Ahorra 8€ • Solo por hoy</p></div><div style='text-align: center; margin: 40px 0;'><a href='https://habitos-vitales.com/camino-vital/checkout?email={{ $json.email }}&discount=ULTIMAOPORTUNIDAD' style='background: linear-gradient(135deg, #4CAF50 0%, #2e7d32 100%); color: white; padding: 20px 50px; font-size: 20px; border-radius: 50px; text-decoration: none; display: inline-block; font-weight: bold; box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);'>Aprovechar mi descuento →</a></div><p style='font-size: 14px; color: #666; text-align: center; margin: 30px 0;'>🔒 Pago seguro con Stripe • Garantía de 7 días</p><div style='background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 40px 0;'><p style='margin: 0 0 10px; font-weight: bold;'>Lo que incluye tu programa:</p><ul style='margin: 0; padding-left: 20px; line-height: 1.8;'><li>8-12 semanas de ejercicios personalizados</li><li>3 emails por semana con rutinas claras</li><li>Videos demostrativos de cada ejercicio</li><li>Adaptación automática según tu progreso</li><li>Soporte personalizado por email</li></ul></div><p style='font-size: 16px; line-height: 1.6;'>Esta es la última vez que te escribiremos sobre esto.</p><p style='font-size: 16px; line-height: 1.6;'>Si no es el momento, lo entendemos. Pero si lo que te frena es la duda... este descuento es nuestra forma de decirte: <strong>empieza hoy</strong>.</p><p style='font-size: 16px; margin-top: 40px;'>Un saludo,<br><strong>El equipo de Camino Vital</strong></p><p style='font-size: 12px; color: #999; margin-top: 40px; border-top: 1px solid #ddd; padding-top: 20px;'>PD: Este descuento expira a las 23:59 de hoy. Después, el precio vuelve a 39€.</p></body></html>\"\n}",
         "options": {}
       },
       "id": "enviar-email-7dias",
       "name": "Enviar Email Día 7 (Descuento)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [680, 400]
+      "position": [1120, 400]
     }
   ],
   "connections": {
     "Trigger Diario 10:00 AM": {
+      "main": [
+        [
+          {
+            "node": "Obtener Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Config": {
       "main": [
         [
           {
@@ -132,7 +183,7 @@
       "main": [
         [
           {
-            "node": "Enviar Email Día 3",
+            "node": "Preparar Email 3 Días",
             "type": "main",
             "index": 0
           }
@@ -140,6 +191,28 @@
       ]
     },
     "Obtener Leads 7 Días": {
+      "main": [
+        [
+          {
+            "node": "Preparar Email 7 Días",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Email 3 Días": {
+      "main": [
+        [
+          {
+            "node": "Enviar Email Día 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Email 7 Días": {
       "main": [
         [
           {
@@ -165,5 +238,5 @@
     "instanceId": "local"
   },
   "pinData": {},
-  "versionId": "1"
+  "versionId": "2"
 }

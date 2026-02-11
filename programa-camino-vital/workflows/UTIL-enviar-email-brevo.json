@@ -3,7 +3,7 @@
   "active": true,
   "nodes": [
     {
-      "id": "aM0wo8qfdVOF4FDZ",
+      "id": "webhook-email",
       "name": "Webhook Enviar Email",
       "type": "n8n-nodes-base.webhook",
       "position": [240, 300],
@@ -17,20 +17,38 @@
       "typeVersion": 2
     },
     {
-      "id": "aM0wo8qfdVOF4FDZ",
-      "name": "Preparar Body Brevo",
-      "type": "n8n-nodes-base.code",
+      "id": "get-config",
+      "name": "Obtener Config",
+      "type": "n8n-nodes-base.postgres",
       "position": [460, 300],
       "parameters": {
-        "jsCode": "// Preparar body para Brevo - CENTRALIZADO\n// Entrada esperada:\n// - user_email: string\n// - user_nombre: string\n// - asunto: string\n// - email_html: string\n// - user_id: number (opcional, para registrar envío)\n// - sesion_id: number (opcional)\n\nconst input = $json.body || $json;\n\n// Obtener sender desde config o usar defaults\nconst senderName = process.env.SENDER_NAME || 'Camino Vital';\nconst senderEmail = process.env.SENDER_EMAIL || 'hola@habitos-vitales.com';\n\nconst brevoBody = {\n  sender: {\n    name: senderName,\n    email: senderEmail\n  },\n  to: [\n    {\n      email: input.user_email,\n      name: input.user_nombre || input.user_email\n    }\n  ],\n  subject: input.asunto || input.email_asunto,\n  htmlContent: input.email_html\n};\n\nconsole.log('📧 Preparando email para:', input.user_email);\nconsole.log('📋 Asunto:', brevoBody.subject);\n\nreturn {\n  json: {\n    ...input,\n    brevo_body: brevoBody\n  }\n};"
+        "query": "SELECT key, value FROM config WHERE key IN ('BREVO_API_KEY', 'SENDER_EMAIL', 'SENDER_NAME');",
+        "options": {},
+        "operation": "executeQuery"
+      },
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      },
+      "typeVersion": 2.4
+    },
+    {
+      "id": "preparar-body",
+      "name": "Preparar Body Brevo",
+      "type": "n8n-nodes-base.code",
+      "position": [680, 300],
+      "parameters": {
+        "jsCode": "// Preparar body para Brevo - CENTRALIZADO\n// Entrada esperada:\n// - user_email: string\n// - user_nombre: string\n// - asunto: string\n// - email_html: string\n// - user_id: number (opcional, para registrar envío)\n// - sesion_id: number (opcional)\n\nconst input = $('Webhook Enviar Email').first().json.body || $('Webhook Enviar Email').first().json;\n\n// Obtener config desde BD\nconst configItems = $('Obtener Config').all();\nconst config = {};\nconfigItems.forEach(item => {\n  config[item.json.key] = item.json.value;\n});\n\nconst senderName = config.SENDER_NAME || 'Camino Vital';\nconst senderEmail = config.SENDER_EMAIL || 'hola@habitos-vitales.com';\nconst brevoApiKey = config.BREVO_API_KEY;\n\nconst brevoBody = {\n  sender: {\n    name: senderName,\n    email: senderEmail\n  },\n  to: [\n    {\n      email: input.user_email,\n      name: input.user_nombre || input.user_email\n    }\n  ],\n  subject: input.asunto || input.email_asunto,\n  htmlContent: input.email_html\n};\n\nconsole.log('📧 Preparando email para:', input.user_email);\nconsole.log('📋 Asunto:', brevoBody.subject);\n\nreturn {\n  json: {\n    ...input,\n    brevo_body: brevoBody,\n    brevo_api_key: brevoApiKey\n  }\n};"
       },
       "typeVersion": 2
     },
     {
-      "id": "aM0wo8qfdVOF4FDZ",
+      "id": "enviar-email",
       "name": "Enviar Email vía Brevo",
       "type": "n8n-nodes-base.httpRequest",
-      "position": [680, 300],
+      "position": [900, 300],
       "parameters": {
         "url": "https://api.brevo.com/v3/smtp/email",
         "method": "POST",
@@ -43,7 +61,7 @@
           "parameters": [
             {
               "name": "api-key",
-              "value": "={{ $env.BREVO_API_KEY }}"
+              "value": "={{ $json.brevo_api_key }}"
             },
             {
               "name": "content-type",
@@ -55,10 +73,10 @@
       "typeVersion": 4.2
     },
     {
-      "id": "aM0wo8qfdVOF4FDZ",
+      "id": "if-registrar",
       "name": "IF: ¿Registrar Envío?",
       "type": "n8n-nodes-base.if",
-      "position": [900, 300],
+      "position": [1120, 300],
       "parameters": {
         "options": {},
         "conditions": {
@@ -70,7 +88,7 @@
           "combinator": "and",
           "conditions": [
             {
-              "id": "aM0wo8qfdVOF4FDZ",
+              "id": "check-user-id",
               "operator": {
                 "type": "number",
                 "operation": "gt"
@@ -84,10 +102,10 @@
       "typeVersion": 2
     },
     {
-      "id": "aM0wo8qfdVOF4FDZ",
+      "id": "registrar-envio",
       "name": "Registrar Envío en BD",
       "type": "n8n-nodes-base.postgres",
-      "position": [1120, 250],
+      "position": [1340, 250],
       "parameters": {
         "query": "=SELECT * FROM registrar_envio(\n  {{ $node['Preparar Body Brevo'].json.user_id }},\n  {{ $node['Preparar Body Brevo'].json.sesion_id || 'NULL' }}\n);",
         "options": {},
@@ -102,20 +120,20 @@
       "typeVersion": 2.4
     },
     {
-      "id": "aM0wo8qfdVOF4FDZ",
+      "id": "respuesta-con-registro",
       "name": "Respuesta Con Registro",
       "type": "n8n-nodes-base.code",
-      "position": [1340, 250],
+      "position": [1560, 250],
       "parameters": {
         "jsCode": "// Respuesta final\nconst input = $node['Preparar Body Brevo'].json;\nconst brevoResponse = $node['Enviar Email vía Brevo'].json;\nconst envioDb = $json || {};\n\nreturn {\n  json: {\n    success: true,\n    email_enviado: true,\n    destinatario: input.user_email,\n    asunto: input.asunto || input.email_asunto,\n    brevo_message_id: brevoResponse.messageId,\n    envio_id: envioDb.envio_id || null,\n    envios_totales: envioDb.envios_totales || null\n  }\n};"
       },
       "typeVersion": 2
     },
     {
-      "id": "aM0wo8qfdVOF4FDZ",
+      "id": "respuesta-sin-registro",
       "name": "Respuesta Sin Registro",
       "type": "n8n-nodes-base.code",
-      "position": [1120, 400],
+      "position": [1340, 400],
       "parameters": {
         "jsCode": "// Respuesta sin registro en BD\nconst input = $node['Preparar Body Brevo'].json;\nconst brevoResponse = $node['Enviar Email vía Brevo'].json;\n\nreturn {\n  json: {\n    success: true,\n    email_enviado: true,\n    destinatario: input.user_email,\n    asunto: input.asunto || input.email_asunto,\n    brevo_message_id: brevoResponse.messageId,\n    envio_id: null,\n    envios_totales: null\n  }\n};"
       },
@@ -124,6 +142,9 @@
   ],
   "connections": {
     "Webhook Enviar Email": {
+      "main": [[{"node": "Obtener Config", "type": "main", "index": 0}]]
+    },
+    "Obtener Config": {
       "main": [[{"node": "Preparar Body Brevo", "type": "main", "index": 0}]]
     },
     "Preparar Body Brevo": {
@@ -145,7 +166,7 @@
   "settings": {"executionOrder": "v1"},
   "staticData": null,
   "pinData": {},
-  "versionId": "2",
+  "versionId": "3",
   "triggerCount": 1,
   "tags": []
 }

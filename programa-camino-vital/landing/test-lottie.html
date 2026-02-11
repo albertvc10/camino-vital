@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Lottie - Comparativa Animaciones</title>
+    <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@latest/dist/dotlottie-wc.js" type="module"></script>
+    <style>
+        :root {
+            --color-primary: #DFCA61;
+            --color-bg-dark: #2D2D2D;
+            --color-text-primary: #E8E8E8;
+        }
+
+        body {
+            background: var(--color-bg-dark);
+            color: var(--color-text-primary);
+            font-family: system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        h1 {
+            color: var(--color-primary);
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #B5B5B5;
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .option {
+            background: #252525;
+            border-radius: 18px;
+            padding: 30px;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: border-color 0.3s;
+        }
+
+        .option:hover {
+            border-color: var(--color-primary);
+        }
+
+        .option h3 {
+            color: var(--color-primary);
+            margin: 0 0 5px 0;
+            font-size: 18px;
+        }
+
+        .option p {
+            color: #B5B5B5;
+            font-size: 14px;
+            margin: 0 0 20px 0;
+        }
+
+        .option-number {
+            background: var(--color-primary);
+            color: #1C1C1C;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin: 0 auto 15px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Comparativa Animaciones Lottie</h1>
+    <p class="subtitle">Elige la que mejor encaje con Camino Vital</p>
+
+    <div class="options">
+        <!-- Opción 1: Stretch (el que te gustó) -->
+        <div class="option">
+            <div class="option-number">1</div>
+            <h3>Stretch</h3>
+            <p>Estiramiento metafórico</p>
+            <dotlottie-wc
+                src="https://assets-v2.lottiefiles.com/a/cb7bb10e-1161-11ee-8a02-7b472381a476/m3DcZAdvmW.lottie"
+                style="width: 300px; height: 300px"
+                loop
+                autoplay
+            ></dotlottie-wc>
+        </div>
+
+        <!-- Opción 2: Transformation -->
+        <div class="option">
+            <div class="option-number">2</div>
+            <h3>Transformation</h3>
+            <p>Transformación abstracta</p>
+            <dotlottie-wc
+                src="https://assets-v2.lottiefiles.com/a/baf4c4d6-1163-11ee-9883-6384488843d8/Cdt48rtnvm.lottie"
+                style="width: 300px; height: 300px"
+                loop
+                autoplay
+            ></dotlottie-wc>
+        </div>
+
+        <!-- Opción 3: Shape Morphing -->
+        <div class="option">
+            <div class="option-number">3</div>
+            <h3>Shape Morphing</h3>
+            <p>Formas que se transforman</p>
+            <dotlottie-wc
+                src="https://assets-v2.lottiefiles.com/a/ffd5bd26-1181-11ee-82b9-d77d464ebffc/ZVXMQduKCw.lottie"
+                style="width: 300px; height: 300px"
+                loop
+                autoplay
+            ></dotlottie-wc>
+        </div>
+
+        <!-- Opción 4: Morph Shapes -->
+        <div class="option">
+            <div class="option-number">4</div>
+            <h3>Morph Shapes</h3>
+            <p>Cambio de formas fluido</p>
+            <dotlottie-wc
+                src="https://assets-v2.lottiefiles.com/a/4bd596a8-1167-11ee-8a6e-d77e25aa737a/X32eqSfdcI.lottie"
+                style="width: 300px; height: 300px"
+                loop
+                autoplay
+            ></dotlottie-wc>
+        </div>
+
+        <!-- Opción 5: Organic Shape -->
+        <div class="option">
+            <div class="option-number">5</div>
+            <h3>Organic Shape</h3>
+            <p>Forma orgánica fluida</p>
+            <dotlottie-wc
+                src="https://assets-v2.lottiefiles.com/a/88198794-1169-11ee-a26f-43dfff231029/ayB1bgzOTX.lottie"
+                style="width: 300px; height: 300px"
+                loop
+                autoplay
+            ></dotlottie-wc>
+        </div>
+
+        <!-- Opción 6: Flex -->
+        <div class="option">
+            <div class="option-number">6</div>
+            <h3>Flex</h3>
+            <p>Flexibilidad abstracta</p>
+            <dotlottie-wc
+                src="https://assets-v2.lottiefiles.com/a/bb69553e-1182-11ee-8e05-0b1b4e97800f/oC8YSVTZpA.lottie"
+                style="width: 300px; height: 300px"
+                loop
+                autoplay
+            ></dotlottie-wc>
+        </div>
+
+        <!-- Opción 7: Meditation -->
+        <div class="option">
+            <div class="option-number">7</div>
+            <h3>Meditation</h3>
+            <p>Meditación abstracta</p>
+            <dotlottie-wc
+                src="https://assets-v2.lottiefiles.com/a/203cfaaa-1189-11ee-b933-a3404c59e5e9/pPV08QWtuB.lottie"
+                style="width: 300px; height: 300px"
+                loop
+                autoplay
+            ></dotlottie-wc>
+        </div>
+
+        <!-- Opción 8: Blob -->
+        <div class="option">
+            <div class="option-number">8</div>
+            <h3>Blob</h3>
+            <p>Forma blob orgánica</p>
+            <dotlottie-wc
+                src="https://assets-v2.lottiefiles.com/a/02227146-baaa-11ef-827d-e32bb9462c75/zmQh18MJqt.lottie"
+                style="width: 300px; height: 300px"
+                loop
+                autoplay
+            ></dotlottie-wc>
+        </div>
+    </div>
+</body>
+</html>

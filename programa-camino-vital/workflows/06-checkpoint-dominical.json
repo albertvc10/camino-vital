@@ -22,10 +22,25 @@
       "name": "Cron: Cada Domingo 18:00",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [
-        240,
-        300
-      ]
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT key, value FROM config WHERE key IN ('WEBHOOK_URL');",
+        "options": {}
+      },
+      "id": "obtener-config",
+      "name": "Obtener Config",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [400, 300],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
     },
     {
       "parameters": {
@@ -37,10 +52,7 @@
       "name": "Resetear Flag Semanal",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [
-        460,
-        140
-      ],
+      "position": [560, 140],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -59,10 +71,7 @@
       "name": "Obtener Templates",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [
-        680,
-        300
-      ],
+      "position": [780, 300],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -80,10 +89,7 @@
       "name": "Obtener Usuarios con Análisis",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [
-        900,
-        300
-      ],
+      "position": [1000, 300],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -118,10 +124,7 @@
       "name": "IF: ¿Semana 12 (Programa completado)?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [
-        1120,
-        300
-      ]
+      "position": [1220, 300]
     },
     {
       "parameters": {
@@ -133,10 +136,7 @@
       "name": "Marcar Programa Completado",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [
-        1340,
-        200
-      ],
+      "position": [1440, 200],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -147,21 +147,18 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "// Preparar email de programa completado\n\nfunction replaceVariables(template, variables) {\n  let result = template;\n  for (const [key, value] of Object.entries(variables)) {\n    const safeValue = String(value ?? '');\n    const regex = new RegExp(`\\\\{\\\\{${key}\\\\}\\\\}`, 'g');\n    result = result.replace(regex, safeValue);\n  }\n  return result;\n}\n\n// Usuario actual (del nodo anterior en el loop)\nconst usuario = $json;\n// Template obtenido al inicio del workflow\nconst template = $('Obtener Templates').first().json.template_completado;\n\nconsole.log('🏆 Preparando email de programa completado para:', usuario.email);\n\nconst variables = {\n  nombre: usuario.nombre,\n  nivel_actual: usuario.nivel_actual,\n  intensidad: usuario.intensidad_nivel\n};\n\nconst emailHTML = replaceVariables(template, variables);\n\nreturn {\n  json: {\n    user_id: usuario.id,\n    user_email: usuario.email,\n    user_nombre: usuario.nombre,\n    email_html: emailHTML,\n    asunto: '🏆 ¡Felicidades! Has completado Camino Vital'\n  }\n};"
+        "jsCode": "// Preparar email de programa completado\n\nfunction replaceVariables(template, variables) {\n  let result = template;\n  for (const [key, value] of Object.entries(variables)) {\n    const safeValue = String(value ?? '');\n    const regex = new RegExp(`\\\\{\\\\{${key}\\\\}\\\\}`, 'g');\n    result = result.replace(regex, safeValue);\n  }\n  return result;\n}\n\n// Usuario actual (del nodo anterior en el loop)\nconst usuario = $json;\n// Template obtenido al inicio del workflow\nconst template = $('Obtener Templates').first().json.template_completado;\n// Config obtenida al inicio del workflow\nconst configItems = $('Obtener Config').all();\nconst config = {};\nconfigItems.forEach(item => {\n  config[item.json.key] = item.json.value;\n});\nconst webhookUrl = config.WEBHOOK_URL || 'http://localhost:5678';\n\nconsole.log('🏆 Preparando email de programa completado para:', usuario.email);\n\nconst variables = {\n  nombre: usuario.nombre,\n  nivel_actual: usuario.nivel_actual,\n  intensidad: usuario.intensidad_nivel\n};\n\nconst emailHTML = replaceVariables(template, variables);\n\nreturn {\n  json: {\n    user_id: usuario.id,\n    user_email: usuario.email,\n    user_nombre: usuario.nombre,\n    email_html: emailHTML,\n    asunto: '🏆 ¡Felicidades! Has completado Camino Vital',\n    webhook_url: webhookUrl\n  }\n};"
       },
       "id": "preparar-email-completado",
       "name": "Preparar Email Programa Completado",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [
-        1560,
-        200
-      ]
+      "position": [1660, 200]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.WEBHOOK_URL }}/webhook/util/enviar-email",
+        "url": "={{ $json.webhook_url }}/webhook/util/enviar-email",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify($json) }}",
@@ -173,29 +170,23 @@
       "name": "Enviar Email Completado (UTIL)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        1780,
-        200
-      ]
+      "position": [1880, 200]
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "// Preparar email de checkpoint semanal CON mensaje personalizado\n\nfunction replaceVariables(template, variables) {\n  let result = template;\n  for (const [key, value] of Object.entries(variables)) {\n    const safeValue = String(value ?? '');\n    const regex = new RegExp(`\\\\{\\\\{${key}\\\\}\\\\}`, 'g');\n    result = result.replace(regex, safeValue);\n  }\n  return result;\n}\n\n// Usuario actual con análisis (viene del IF, es el item actual del loop)\nconst usuario = $json;\n// Template obtenido al inicio del workflow\nconst template = $('Obtener Templates').first().json.template_checkpoint;\n\nconsole.log('📧 Preparando checkpoint para:', usuario.email);\nconsole.log('💬 Mensaje personalizado:', usuario.mensaje_usuario);\n\n// Construir mensaje con contexto de sesiones\nconst sesionesInfo = `Completaste ${usuario.sesiones_completadas_semana} de ${usuario.sesiones_objetivo_semana} sesiones esta semana. `;\nconst mensajeCompleto = sesionesInfo + (usuario.mensaje_usuario || 'Sigue así, ¡vas muy bien!');\n\nconst variables = {\n  nombre: usuario.nombre,\n  semana_actual: usuario.semana_actual,\n  semana_siguiente: usuario.semana_actual + 1,\n  sesiones_completadas: usuario.sesiones_completadas_semana,\n  sesiones_objetivo: usuario.sesiones_objetivo_semana,\n  adherencia_porcentaje: usuario.adherencia_porcentaje || 0,\n  nivel_actual: usuario.nivel_actual,\n  intensidad: usuario.intensidad_nivel,\n  mensaje_usuario: mensajeCompleto,\n  user_id: usuario.id,\n  webhook_url: process.env.WEBHOOK_URL || 'http://localhost:5678'\n};\n\nconst emailHTML = replaceVariables(template, variables);\n\nreturn {\n  json: {\n    user_id: usuario.id,\n    user_email: usuario.email,\n    user_nombre: usuario.nombre,\n    semana: usuario.semana_actual,\n    email_html: emailHTML,\n    asunto: `📊 Checkpoint Semana ${usuario.semana_actual} - ¿Cómo quieres continuar?`\n  }\n};"
+        "jsCode": "// Preparar email de checkpoint semanal CON mensaje personalizado\n\nfunction replaceVariables(template, variables) {\n  let result = template;\n  for (const [key, value] of Object.entries(variables)) {\n    const safeValue = String(value ?? '');\n    const regex = new RegExp(`\\\\{\\\\{${key}\\\\}\\\\}`, 'g');\n    result = result.replace(regex, safeValue);\n  }\n  return result;\n}\n\n// Usuario actual con análisis (viene del IF, es el item actual del loop)\nconst usuario = $json;\n// Template obtenido al inicio del workflow\nconst template = $('Obtener Templates').first().json.template_checkpoint;\n// Config obtenida al inicio del workflow\nconst configItems = $('Obtener Config').all();\nconst config = {};\nconfigItems.forEach(item => {\n  config[item.json.key] = item.json.value;\n});\nconst webhookUrl = config.WEBHOOK_URL || 'http://localhost:5678';\n\nconsole.log('📧 Preparando checkpoint para:', usuario.email);\nconsole.log('💬 Mensaje personalizado:', usuario.mensaje_usuario);\n\n// Construir mensaje con contexto de sesiones\nconst sesionesInfo = `Completaste ${usuario.sesiones_completadas_semana} de ${usuario.sesiones_objetivo_semana} sesiones esta semana. `;\nconst mensajeCompleto = sesionesInfo + (usuario.mensaje_usuario || 'Sigue así, ¡vas muy bien!');\n\nconst variables = {\n  nombre: usuario.nombre,\n  semana_actual: usuario.semana_actual,\n  semana_siguiente: usuario.semana_actual + 1,\n  sesiones_completadas: usuario.sesiones_completadas_semana,\n  sesiones_objetivo: usuario.sesiones_objetivo_semana,\n  adherencia_porcentaje: usuario.adherencia_porcentaje || 0,\n  nivel_actual: usuario.nivel_actual,\n  intensidad: usuario.intensidad_nivel,\n  mensaje_usuario: mensajeCompleto,\n  user_id: usuario.id,\n  webhook_url: webhookUrl\n};\n\nconst emailHTML = replaceVariables(template, variables);\n\nreturn {\n  json: {\n    user_id: usuario.id,\n    user_email: usuario.email,\n    user_nombre: usuario.nombre,\n    semana: usuario.semana_actual,\n    email_html: emailHTML,\n    asunto: `📊 Checkpoint Semana ${usuario.semana_actual} - ¿Cómo quieres continuar?`,\n    webhook_url: webhookUrl\n  }\n};"
       },
       "id": "preparar-email-checkpoint",
       "name": "Preparar Email Checkpoint",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [
-        1340,
-        400
-      ]
+      "position": [1440, 400]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.WEBHOOK_URL }}/webhook/util/enviar-email",
+        "url": "={{ $json.webhook_url }}/webhook/util/enviar-email",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify($json) }}",
@@ -207,14 +198,22 @@
       "name": "Enviar Checkpoint (UTIL)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        1560,
-        400
-      ]
+      "position": [1660, 400]
     }
   ],
   "connections": {
     "Cron: Cada Domingo 18:00": {
+      "main": [
+        [
+          {
+            "node": "Obtener Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Config": {
       "main": [
         [
           {
@@ -314,8 +313,8 @@
   },
   "meta": null,
   "pinData": {},
-  "versionId": "v8-fix-duplicados-rama-paralela    ",
-  "versionCounter": 53,
+  "versionId": "v9-config-table",
+  "versionCounter": 54,
   "triggerCount": 1,
   "tags": [],
   "shared": [

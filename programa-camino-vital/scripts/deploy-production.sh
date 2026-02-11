@@ -29,6 +29,12 @@ LOCAL_CRED_ID="nLcUOvLreXurFbBs"
 LOCAL_CRED_ID_OLD="postgres-local"
 PROD_CRED_ID="mb8piXWj8Fpb7MSV"
 
+# IDs de workflows (para Execute Workflow nodes)
+LOCAL_WF_01A="jOAMKOPOez9lOK0r"
+PROD_WF_01A="91AOC0TOGBkijdGV"
+LOCAL_WF_01B="dq6hrmEPgNoHjuxt"
+PROD_WF_01B="VR27PpYFMXzYP5Vo"
+
 # Valores de producción (leídos de .env)
 BREVO_API_KEY=$(grep '^BREVO_API_KEY=' $PROD_ENV | cut -d'=' -f2)
 BREVO_LIST_LEADS=$(grep '^BREVO_LIST_LEADS=' $PROD_ENV | cut -d'=' -f2)
@@ -70,6 +76,11 @@ echo ""
 echo ">> Paso 2: Reemplazar credential IDs locales → producción"
 replace_in_db "$LOCAL_CRED_ID" "$PROD_CRED_ID" "ID local ($LOCAL_CRED_ID)"
 replace_in_db "$LOCAL_CRED_ID_OLD" "$PROD_CRED_ID" "ID antiguo ($LOCAL_CRED_ID_OLD)"
+
+echo ""
+echo ">> Paso 2b: Reemplazar workflow IDs (Execute Workflow nodes)"
+replace_in_db "$LOCAL_WF_01A" "$PROD_WF_01A" "Workflow 01a Onboarding Programa"
+replace_in_db "$LOCAL_WF_01B" "$PROD_WF_01B" "Workflow 01b Onboarding Preventa"
 
 echo ""
 echo ">> Paso 3: Reemplazar \$env y process.env → valores de producción"

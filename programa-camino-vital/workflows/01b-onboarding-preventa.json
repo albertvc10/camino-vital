@@ -13,13 +13,31 @@
     },
     {
       "parameters": {
-        "jsCode": "// Extraer datos del pago desde el Router\nconst input = $input.first().json;\nconst body = input.body;\n\nconsole.log('📦 [PREVENTA 39€] Procesando pago...');\n\nconst session = body.data?.object;\nconst customerDetails = session?.customer_details;\n\nlet customerEmail = customerDetails?.email;\nlet customerName = customerDetails?.name || '';\nlet amountPaid = (session?.amount_total || 0) / 100;\nlet stripeCustomerId = session?.customer;\n\nconsole.log('📧 Email:', customerEmail);\nconsole.log('💰 Monto:', amountPaid);\n\nif (!customerEmail) {\n  console.log('⚠️ No se pudo extraer email, ignorando evento');\n  return [];\n}\n\n// Fecha inicio programa: 1 de marzo 2026\nconst fechaInicio = '2026-03-01 09:00:00';\n\nreturn {\n  json: {\n    email: customerEmail,\n    nombre: customerName,\n    monto_pagado: amountPaid,\n    stripe_customer_id: stripeCustomerId,\n    fecha_pago: new Date().toISOString(),\n    fecha_inicio_programa: fechaInicio\n  }\n};"
+        "operation": "executeQuery",
+        "query": "SELECT key, value FROM config WHERE key IN ('BREVO_API_KEY', 'BREVO_LIST_LEADS', 'BREVO_LIST_ACTIVO', 'SENDER_EMAIL', 'SENDER_NAME');",
+        "options": {}
+      },
+      "id": "obtener-config",
+      "name": "Obtener Config",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [460, 300],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extraer datos del pago desde el Router\nconst input = $('Ejecutar desde Router').first().json;\nconst body = input.body;\n\n// Obtener config desde BD\nconst configItems = $('Obtener Config').all();\nconst config = {};\nconfigItems.forEach(item => {\n  config[item.json.key] = item.json.value;\n});\n\nconsole.log('📦 [PREVENTA 39€] Procesando pago...');\n\nconst session = body.data?.object;\nconst customerDetails = session?.customer_details;\n\nlet customerEmail = customerDetails?.email;\nlet customerName = customerDetails?.name || '';\nlet amountPaid = (session?.amount_total || 0) / 100;\nlet stripeCustomerId = session?.customer;\n\nconsole.log('📧 Email:', customerEmail);\nconsole.log('💰 Monto:', amountPaid);\n\nif (!customerEmail) {\n  console.log('⚠️ No se pudo extraer email, ignorando evento');\n  return [];\n}\n\n// Fecha inicio programa: 1 de marzo 2026\nconst fechaInicio = '2026-03-01 09:00:00';\n\nreturn {\n  json: {\n    email: customerEmail,\n    nombre: customerName,\n    monto_pagado: amountPaid,\n    stripe_customer_id: stripeCustomerId,\n    fecha_pago: new Date().toISOString(),\n    fecha_inicio_programa: fechaInicio,\n    config: config\n  }\n};"
       },
       "id": "extraer-datos-pago",
       "name": "Extraer Datos del Pago",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [460, 300]
+      "position": [680, 300]
     },
     {
       "parameters": {
@@ -31,7 +49,7 @@
       "name": "Actualizar Usuario (Preventa)",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [680, 300],
+      "position": [900, 300],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -41,13 +59,13 @@
     },
     {
       "parameters": {
-        "jsCode": "// Manejar caso donde UPDATE no devuelve filas (usuario ya pagado)\nconst items = $input.all();\n\nif (items.length === 0) {\n  // No hay filas = usuario ya tenía pago registrado\n  console.log('⏭️ UPDATE no devolvió filas - usuario ya tenía pago');\n  return [{ json: { recien_pagado: false, status: 'already_paid' } }];\n}\n\n// Si hay filas, pasar los datos\nreturn items;"
+        "jsCode": "// Manejar caso donde UPDATE no devuelve filas (usuario ya pagado)\nconst items = $input.all();\nconst config = $('Extraer Datos del Pago').first().json.config;\n\nif (items.length === 0) {\n  console.log('⏭️ UPDATE no devolvió filas - usuario ya tenía pago');\n  return [{ json: { recien_pagado: false, status: 'already_paid', config: config } }];\n}\n\n// Si hay filas, pasar los datos con config\nreturn items.map(item => ({\n  json: { ...item.json, config: config }\n}));"
       },
       "id": "manejar-resultado-vacio",
       "name": "Manejar Resultado Vacío",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [790, 300]
+      "position": [1120, 300]
     },
     {
       "parameters": {
@@ -76,17 +94,17 @@
       "name": "IF ¿Recién pagado?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [1010, 300]
+      "position": [1340, 300]
     },
     {
       "parameters": {
-        "jsCode": "// Formatear datos para enviar email\nconst input = $input.first().json;\n\nconsole.log('🔄 Formateando datos de usuario para email plaza reservada...');\n\n// Formatear fecha de inicio para mostrar\nconst fechaInicio = new Date(input.fecha_inicio_programa);\nconst opciones = { day: 'numeric', month: 'long', year: 'numeric' };\nconst fechaFormateada = fechaInicio.toLocaleDateString('es-ES', opciones);\n\nreturn {\n  json: {\n    id: input.id,\n    email: input.email,\n    nombre: input.nombre,\n    nivel_actual: input.nivel_actual,\n    estado: input.estado,\n    fecha_inicio_programa: fechaFormateada,\n    monto_pagado: input.monto_pagado\n  }\n};"
+        "jsCode": "// Formatear datos para enviar email\nconst input = $input.first().json;\nconst config = input.config;\n\nconsole.log('🔄 Formateando datos de usuario para email plaza reservada...');\n\n// Formatear fecha de inicio para mostrar\nconst fechaInicio = new Date(input.fecha_inicio_programa);\nconst opciones = { day: 'numeric', month: 'long', year: 'numeric' };\nconst fechaFormateada = fechaInicio.toLocaleDateString('es-ES', opciones);\n\nreturn {\n  json: {\n    id: input.id,\n    email: input.email,\n    nombre: input.nombre,\n    nivel_actual: input.nivel_actual,\n    estado: input.estado,\n    fecha_inicio_programa: fechaFormateada,\n    monto_pagado: input.monto_pagado,\n    config: config\n  }\n};"
       },
       "id": "formatear-datos-usuario",
       "name": "Formatear Datos Usuario",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1120, 200]
+      "position": [1560, 200]
     },
     {
       "parameters": {
@@ -96,7 +114,7 @@
       "name": "Log Ya Pagado",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1120, 400]
+      "position": [1560, 400]
     },
     {
       "parameters": {
@@ -107,7 +125,7 @@
           "parameters": [
             {
               "name": "api-key",
-              "value": "={{$env.BREVO_API_KEY}}"
+              "value": "={{ $json.config.BREVO_API_KEY }}"
             },
             {
               "name": "Content-Type",
@@ -117,14 +135,14 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"email\": \"{{ $json.email }}\",\n  \"attributes\": {\n    \"NOMBRE\": \"{{ $json.nombre }}\",\n    \"NIVEL\": \"{{ $json.nivel_actual }}\",\n    \"ETAPA\": \"base_vital\",\n    \"ESTADO\": \"pagado_esperando_inicio\",\n    \"FECHA_INICIO_PROGRAMA\": \"2026-03-01\"\n  },\n  \"listIds\": [{{ $env.BREVO_LIST_ACTIVO }}],\n  \"unlinkListIds\": [{{ $env.BREVO_LIST_LEADS }}],\n  \"updateEnabled\": true\n}",
+        "jsonBody": "={\n  \"email\": \"{{ $json.email }}\",\n  \"attributes\": {\n    \"NOMBRE\": \"{{ $json.nombre }}\",\n    \"NIVEL\": \"{{ $json.nivel_actual }}\",\n    \"ETAPA\": \"base_vital\",\n    \"ESTADO\": \"pagado_esperando_inicio\",\n    \"FECHA_INICIO_PROGRAMA\": \"2026-03-01\"\n  },\n  \"listIds\": [{{ $json.config.BREVO_LIST_ACTIVO }}],\n  \"unlinkListIds\": [{{ $json.config.BREVO_LIST_LEADS }}],\n  \"updateEnabled\": true\n}",
         "options": {}
       },
       "id": "actualizar-brevo",
       "name": "Actualizar Brevo (Pagados Preventa)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1340, 200]
+      "position": [1780, 200]
     },
     {
       "parameters": {
@@ -136,7 +154,7 @@
       "name": "Obtener Template Plaza Reservada",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [1560, 200],
+      "position": [2000, 200],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -146,13 +164,13 @@
     },
     {
       "parameters": {
-        "jsCode": "// Renderizar template con variables del usuario\nconst template = $json.html_template;\nconst usuario = $('Formatear Datos Usuario').first().json;\n\nconsole.log('🔄 Renderizando template plaza reservada para:', usuario.email);\n\n// Reemplazar variables\nconst html = template\n  .replace(/\\{\\{nombre\\}\\}/g, usuario.nombre || '')\n  .replace(/\\{\\{fecha_inicio_programa\\}\\}/g, usuario.fecha_inicio_programa || '1 de marzo de 2026');\n\nreturn {\n  json: {\n    html_renderizado: html,\n    email: usuario.email,\n    nombre: usuario.nombre\n  }\n};"
+        "jsCode": "// Renderizar template con variables del usuario\nconst template = $json.html_template;\nconst usuario = $('Formatear Datos Usuario').first().json;\nconst config = usuario.config;\n\nconsole.log('🔄 Renderizando template plaza reservada para:', usuario.email);\n\n// Reemplazar variables\nconst html = template\n  .replace(/\\{\\{nombre\\}\\}/g, usuario.nombre || '')\n  .replace(/\\{\\{fecha_inicio_programa\\}\\}/g, usuario.fecha_inicio_programa || '1 de marzo de 2026');\n\nreturn {\n  json: {\n    html_renderizado: html,\n    email: usuario.email,\n    nombre: usuario.nombre,\n    config: config\n  }\n};"
       },
       "id": "renderizar-template",
       "name": "Renderizar Template",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1780, 200]
+      "position": [2220, 200]
     },
     {
       "parameters": {
@@ -163,7 +181,7 @@
           "parameters": [
             {
               "name": "api-key",
-              "value": "={{$env.BREVO_API_KEY}}"
+              "value": "={{ $json.config.BREVO_API_KEY }}"
             },
             {
               "name": "Content-Type",
@@ -173,18 +191,29 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"sender\": {\n    \"name\": \"Camino Vital - Hábitos Vitales\",\n    \"email\": \"hola@habitos-vitales.com\"\n  },\n  \"to\": [\n    {\n      \"email\": \"{{ $json.email }}\",\n      \"name\": \"{{ $json.nombre }}\"\n    }\n  ],\n  \"subject\": \"🎉 ¡Tu plaza está reservada! - Camino Vital\",\n  \"htmlContent\": {{ JSON.stringify($json.html_renderizado) }}\n}",
+        "jsonBody": "={\n  \"sender\": {\n    \"name\": \"{{ $json.config.SENDER_NAME }}\",\n    \"email\": \"{{ $json.config.SENDER_EMAIL }}\"\n  },\n  \"to\": [\n    {\n      \"email\": \"{{ $json.email }}\",\n      \"name\": \"{{ $json.nombre }}\"\n    }\n  ],\n  \"subject\": \"🎉 ¡Tu plaza está reservada! - Camino Vital\",\n  \"htmlContent\": {{ JSON.stringify($json.html_renderizado) }}\n}",
         "options": {}
       },
       "id": "enviar-email-plaza-reservada",
       "name": "Enviar Email Plaza Reservada",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2000, 200]
+      "position": [2440, 200]
     }
   ],
   "connections": {
     "Ejecutar desde Router": {
+      "main": [
+        [
+          {
+            "node": "Obtener Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Config": {
       "main": [
         [
           {
@@ -304,5 +333,5 @@
     }
   ],
   "pinData": {},
-  "versionId": "1"
+  "versionId": "2"
 }
