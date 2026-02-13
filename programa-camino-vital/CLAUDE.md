@@ -566,13 +566,45 @@ TAREA: Añadir campo "telefono" a programa_users
 
 ---
 
+## Estados de Usuario (programa_users.estado)
+
+| Estado | Descripción | Cómo se llega | Siguiente estado |
+|--------|-------------|---------------|------------------|
+| `lead` | Usuario completó el cuestionario pero no ha pagado | Workflow 04-guardar-lead | `pagado_esperando_inicio` (al pagar) |
+| `pagado_esperando_inicio` | Usuario pagó (preventa 39€) y espera inicio del programa | Workflow 01-router tras pago Stripe | `activo` (workflow 00 en fecha de inicio) |
+| `activo` | Usuario está haciendo el programa activamente | Workflow 00-activar-usuarios | `completado` (tras semana 12) |
+| `completado` | Usuario terminó las 12 semanas del programa | Workflow 07-checkpoint cuando semana >= 13 | - |
+
+### Flujo típico de estados
+```
+lead → pagado_esperando_inicio → activo → completado
+```
+
+### Queries útiles por estado
+```sql
+-- Usuarios pendientes de activar (para workflow 00)
+SELECT * FROM programa_users
+WHERE estado = 'pagado_esperando_inicio'
+  AND fecha_inicio_programa <= CURRENT_DATE;
+
+-- Usuarios activos
+SELECT * FROM programa_users WHERE estado = 'activo';
+
+-- Resetear usuario para testing (volver a estado pre-activación)
+UPDATE programa_users SET estado = 'pagado_esperando_inicio' WHERE email = 'test@example.com';
+```
+
+---
+
 ## Borrar Usuario de la Base de Datos
 
-Cuando necesites borrar un usuario para hacer pruebas, hay que borrar de **3 tablas** debido a claves foráneas y tracking de idempotencia:
+Cuando necesites borrar un usuario para hacer pruebas, hay que borrar de **5 tablas** debido a claves foráneas:
 
 ### Comando completo (LOCAL)
 ```bash
-psql -U albert -d n8n -c "
+docker exec n8n_postgres psql -U n8n -d n8n -c "
+DELETE FROM programa_historial_ajustes WHERE user_id IN (SELECT id FROM programa_users WHERE email = 'EMAIL_AQUI');
+DELETE FROM programa_feedback WHERE user_id IN (SELECT id FROM programa_users WHERE email = 'EMAIL_AQUI');
 DELETE FROM programa_sesiones WHERE user_id IN (SELECT id FROM programa_users WHERE email = 'EMAIL_AQUI');
 DELETE FROM stripe_events_processed WHERE email = 'EMAIL_AQUI';
 DELETE FROM programa_users WHERE email = 'EMAIL_AQUI';
@@ -581,35 +613,31 @@ DELETE FROM programa_users WHERE email = 'EMAIL_AQUI';
 
 ### Comando completo (PRODUCCIÓN)
 ```bash
-docker exec n8n_postgres psql -U n8n_admin -d n8n -c "
+ssh root@164.90.222.166 "docker exec n8n_postgres psql -U n8n_admin -d n8n -c \"
+DELETE FROM programa_historial_ajustes WHERE user_id IN (SELECT id FROM programa_users WHERE email = 'EMAIL_AQUI');
+DELETE FROM programa_feedback WHERE user_id IN (SELECT id FROM programa_users WHERE email = 'EMAIL_AQUI');
 DELETE FROM programa_sesiones WHERE user_id IN (SELECT id FROM programa_users WHERE email = 'EMAIL_AQUI');
 DELETE FROM stripe_events_processed WHERE email = 'EMAIL_AQUI';
 DELETE FROM programa_users WHERE email = 'EMAIL_AQUI';
-"
+\""
 ```
 
-### Por qué 3 tablas
+### Por qué 5 tablas
 
 | Tabla | Razón |
 |-------|-------|
-| `programa_sesiones` | Foreign key a `programa_users.id`. Si no borras primero las sesiones, el DELETE del usuario falla |
-| `stripe_events_processed` | Guarda los `checkout_session_id` ya procesados para evitar duplicados. Si no la borras, al rehacer el pago con el mismo usuario Stripe piensa que ya procesó el evento y no activa el workflow de onboarding |
+| `programa_historial_ajustes` | FK a `programa_users.id` - historial de cambios de nivel/intensidad |
+| `programa_feedback` | FK a `programa_users.id` - feedback de sesiones completadas |
+| `programa_sesiones` | FK a `programa_users.id` - sesiones generadas |
+| `stripe_events_processed` | Guarda `checkout_session_id` para evitar duplicados |
 | `programa_users` | Tabla principal del usuario |
 
 ### Orden importante
-1. Primero `programa_sesiones` (tiene FK a users)
-2. Luego `stripe_events_processed` (referencia email)
-3. Finalmente `programa_users`
-
-### Ejemplo práctico
-```bash
-# LOCAL - borrar usuario de prueba
-psql -U albert -d n8n -c "
-DELETE FROM programa_sesiones WHERE user_id IN (SELECT id FROM programa_users WHERE email = 'albertvc10@gmail.com');
-DELETE FROM stripe_events_processed WHERE email = 'albertvc10@gmail.com';
-DELETE FROM programa_users WHERE email = 'albertvc10@gmail.com';
-"
-```
+1. `programa_historial_ajustes` (FK a users)
+2. `programa_feedback` (FK a users)
+3. `programa_sesiones` (FK a users)
+4. `stripe_events_processed` (referencia email)
+5. `programa_users`
 
 ---
 
