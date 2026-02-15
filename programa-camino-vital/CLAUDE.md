@@ -264,6 +264,7 @@ const senderName = process.env.SENDER_NAME || 'Camino Vital';
 | Recurso | Local | Producción |
 |---------|-------|------------|
 | PostgreSQL credential | `nLcUOvLreXurFbBs` | `mb8piXWj8Fpb7MSV` |
+| Anthropic API credential | `GGPk1JGIxV4tqjD0` | `8sFVQ2DJIXvjvVfJ` |
 | BREVO_LIST_LEADS (tabla config) | `15` | `14` |
 | BREVO_LIST_ACTIVO (tabla config) | `17` | `13` |
 

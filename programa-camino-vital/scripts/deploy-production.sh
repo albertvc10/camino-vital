@@ -24,10 +24,14 @@ DB_NAME="n8n"
 DB_CONTAINER="n8n_postgres"
 PROD_ENV="/root/n8n/.env"
 
-# IDs de credenciales
+# IDs de credenciales - PostgreSQL
 LOCAL_CRED_ID="nLcUOvLreXurFbBs"
 LOCAL_CRED_ID_OLD="postgres-local"
 PROD_CRED_ID="mb8piXWj8Fpb7MSV"
+
+# IDs de credenciales - Anthropic API
+LOCAL_ANTHROPIC_ID="GGPk1JGIxV4tqjD0"
+PROD_ANTHROPIC_ID="8sFVQ2DJIXvjvVfJ"
 
 # IDs de workflows (para Execute Workflow nodes)
 LOCAL_WF_01A="jOAMKOPOez9lOK0r"
@@ -74,8 +78,9 @@ replace_in_db() {
 
 echo ""
 echo ">> Paso 2: Reemplazar credential IDs locales → producción"
-replace_in_db "$LOCAL_CRED_ID" "$PROD_CRED_ID" "ID local ($LOCAL_CRED_ID)"
-replace_in_db "$LOCAL_CRED_ID_OLD" "$PROD_CRED_ID" "ID antiguo ($LOCAL_CRED_ID_OLD)"
+replace_in_db "$LOCAL_CRED_ID" "$PROD_CRED_ID" "PostgreSQL local ($LOCAL_CRED_ID)"
+replace_in_db "$LOCAL_CRED_ID_OLD" "$PROD_CRED_ID" "PostgreSQL antiguo ($LOCAL_CRED_ID_OLD)"
+replace_in_db "$LOCAL_ANTHROPIC_ID" "$PROD_ANTHROPIC_ID" "Anthropic API ($LOCAL_ANTHROPIC_ID)"
 
 echo ""
 echo ">> Paso 2b: Reemplazar workflow IDs (Execute Workflow nodes)"
@@ -143,7 +148,8 @@ ERRORS=0
 REMAINING=$(docker exec $DB_CONTAINER psql -U $DB_USER -d $DB_NAME -t -c "
 SELECT count(*) FROM workflow_entity
 WHERE nodes::text LIKE '%$LOCAL_CRED_ID%'
-   OR nodes::text LIKE '%$LOCAL_CRED_ID_OLD%';
+   OR nodes::text LIKE '%$LOCAL_CRED_ID_OLD%'
+   OR nodes::text LIKE '%$LOCAL_ANTHROPIC_ID%';
 ")
 REMAINING=$(echo "$REMAINING" | xargs)
 if [ "$REMAINING" != "0" ]; then
