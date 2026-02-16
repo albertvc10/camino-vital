@@ -169,11 +169,39 @@ landing/           → Páginas web (servidas por Caddy)
   cuestionario.html → Cuestionario de evaluación
   resultados.html  → Resultados + pago programa normal
   resultados-preventa.html → Resultados + pago preventa
+  privacidad.html  → Política de Privacidad (RGPD)
+  aviso-legal.html → Aviso Legal (LSSI-CE)
+  condiciones.html → Condiciones de Contratación
 workflows/         → Workflows n8n (JSON exportados)
 templates/         → Templates de email
 database/          → Scripts SQL
 docs/              → Documentación interna
 ```
+
+## Documentos Legales
+
+### Páginas legales (RGPD + LSSI-CE)
+| Página | Contenido |
+|--------|-----------|
+| `privacidad.html` | Política de Privacidad - tratamiento de datos, incluidos datos de salud |
+| `aviso-legal.html` | Aviso Legal - identificación de la empresa, propiedad intelectual |
+| `condiciones.html` | Condiciones de Contratación - precio, garantía 14 días, proceso de compra |
+
+### Datos de la empresa (para documentos legales)
+| Campo | Valor |
+|-------|-------|
+| Empresa | NEURON APPS, S.L. |
+| CIF | B67521302 |
+| Dirección | Carrer Bisbe Soler, 16, 08140 Caldes de Montbui (España) |
+| Email contacto | neuronapps.es@gmail.com |
+
+### Consentimientos en cuestionario
+El `cuestionario.html` incluye dos checkboxes obligatorios en el paso 5:
+1. **Aceptación de Privacidad y Condiciones** - enlaza a los documentos legales
+2. **Consentimiento datos de salud** - requerido por RGPD para datos sensibles (limitaciones físicas, nivel actividad)
+
+### Garantía de devolución
+Se ofrece **14 días de garantía sin preguntas**. Documentado en `condiciones.html` sección 5.
 
 ## Precios Actuales
 

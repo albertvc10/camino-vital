@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Condiciones de Contratación - Camino Vital</title>
+    <style>
+        :root {
+            --color-primary: #DFCA61;
+            --color-success: #62B882;
+            --color-bg-dark: #2D2D2D;
+            --color-bg-card: #252525;
+            --color-text-primary: #E8E8E8;
+            --color-text-secondary: #B5B5B5;
+            --color-border: rgba(255,255,255,0.08);
+            --border-radius-card: 18px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+            line-height: 1.7;
+            color: var(--color-text-secondary);
+            background: var(--color-bg-dark);
+            min-height: 100vh;
+        }
+
+        .page-container { max-width: 100%; overflow-x: hidden; }
+
+        /* Navbar */
+        .navbar {
+            background: var(--color-bg-card);
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--color-border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .navbar-content {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+        }
+        .navbar-logo { width: 200px; height: auto; }
+
+        /* Content */
+        .content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
+
+        h1 {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--color-primary);
+            margin-bottom: 10px;
+        }
+
+        .last-updated {
+            font-size: 14px;
+            color: var(--color-text-secondary);
+            margin-bottom: 40px;
+        }
+
+        h2 {
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--color-text-primary);
+            margin-top: 40px;
+            margin-bottom: 15px;
+        }
+
+        h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--color-text-primary);
+            margin-top: 25px;
+            margin-bottom: 10px;
+        }
+
+        p { margin-bottom: 15px; }
+
+        ul, ol {
+            margin-bottom: 15px;
+            padding-left: 25px;
+        }
+
+        li { margin-bottom: 8px; }
+
+        strong { color: var(--color-text-primary); }
+
+        a { color: var(--color-primary); }
+
+        .highlight-box {
+            background: var(--color-bg-card);
+            border-left: 4px solid var(--color-primary);
+            padding: 20px;
+            border-radius: 0 var(--border-radius-card) var(--border-radius-card) 0;
+            margin: 25px 0;
+        }
+
+        .highlight-box.success {
+            border-left-color: var(--color-success);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 12px 15px;
+            border: 1px solid var(--color-border);
+        }
+
+        th {
+            background: var(--color-bg-card);
+            color: var(--color-text-primary);
+            font-weight: 600;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--color-bg-card);
+            padding: 40px 20px;
+            text-align: center;
+            border-top: 1px solid var(--color-border);
+            margin-top: 60px;
+        }
+        .footer-brand img { width: 150px; height: auto; margin-bottom: 15px; }
+        .footer p { font-size: 14px; margin-bottom: 8px; }
+        .footer a { color: var(--color-primary); text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
+        .footer-links { margin: 20px 0; }
+        .footer-links a { margin: 0 15px; }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <!-- Navbar -->
+        <nav class="navbar">
+            <div class="navbar-content">
+                <a href="index.html" class="navbar-brand">
+                    <img src="https://habitos-vitales.com/wp-content/uploads/2023/09/1-e1769547181637.png" alt="Hábitos Vitales" class="navbar-logo">
+                </a>
+            </div>
+        </nav>
+
+        <!-- Content -->
+        <div class="content">
+            <h1>Condiciones de Contratación</h1>
+            <p class="last-updated">Última actualización: febrero 2026</p>
+
+            <p>Las presentes Condiciones Generales de Contratación regulan la relación comercial entre <strong>NEURON APPS, S.L.</strong> y los usuarios que contraten el programa <strong>Camino Vital</strong>.</p>
+            <p>Al contratar el programa, el usuario declara haber leído, entendido y aceptado estas condiciones en su totalidad.</p>
+
+            <h2>1. Identificación del prestador</h2>
+            <table>
+                <tr>
+                    <th>Dato</th>
+                    <th>Información</th>
+                </tr>
+                <tr>
+                    <td>Denominación social</td>
+                    <td>NEURON APPS, S.L.</td>
+                </tr>
+                <tr>
+                    <td>CIF</td>
+                    <td>B67521302</td>
+                </tr>
+                <tr>
+                    <td>Domicilio</td>
+                    <td>Carrer Bisbe Soler, 16, 08140 Caldes de Montbui (España)</td>
+                </tr>
+                <tr>
+                    <td>Email</td>
+                    <td><a href="mailto:neuronapps.es@gmail.com">neuronapps.es@gmail.com</a></td>
+                </tr>
+            </table>
+
+            <h2>2. Descripción del servicio</h2>
+            <p><strong>Camino Vital</strong> es un programa de ejercicio físico personalizado de 12 semanas de duración, diseñado especialmente para personas mayores de 60 años. El programa incluye:</p>
+            <ul>
+                <li><strong>Evaluación inicial personalizada:</strong> Cuestionario para adaptar el programa a tu nivel, limitaciones y objetivos.</li>
+                <li><strong>Sesiones semanales personalizadas:</strong> 3 sesiones por semana (2 de fuerza + 1 de cardio) generadas mediante inteligencia artificial y adaptadas a tu progreso.</li>
+                <li><strong>Vídeos demostrativos:</strong> Cada ejercicio incluye vídeo explicativo para una correcta ejecución.</li>
+                <li><strong>Sistema de feedback:</strong> Posibilidad de indicar cómo te ha ido cada sesión para ajustar la intensidad.</li>
+                <li><strong>Seguimiento semanal:</strong> Checkpoints semanales para evaluar tu progreso y adaptar el programa.</li>
+                <li><strong>Soporte por email:</strong> Atención a dudas y consultas durante todo el programa.</li>
+            </ul>
+
+            <h2>3. Precio y forma de pago</h2>
+            <table>
+                <tr>
+                    <th>Concepto</th>
+                    <th>Precio</th>
+                </tr>
+                <tr>
+                    <td>Programa Camino Vital (12 semanas)</td>
+                    <td><strong>89 €</strong> (IVA incluido)</td>
+                </tr>
+            </table>
+            <p>El pago se realiza de forma única al contratar el programa, mediante tarjeta de crédito/débito a través de la plataforma segura <strong>Stripe</strong>.</p>
+            <p>Una vez confirmado el pago, recibirás un email de confirmación con las instrucciones para comenzar el programa.</p>
+
+            <h2>4. Proceso de contratación</h2>
+            <ol>
+                <li><strong>Cuestionario inicial:</strong> El usuario completa un cuestionario con sus datos personales, nivel de actividad, limitaciones físicas y objetivos.</li>
+                <li><strong>Visualización de resultados:</strong> Se muestra un resumen del perfil y las recomendaciones iniciales.</li>
+                <li><strong>Pago:</strong> El usuario procede al pago seguro mediante Stripe.</li>
+                <li><strong>Confirmación:</strong> Tras el pago, el usuario recibe un email de bienvenida.</li>
+                <li><strong>Selección de cantidad:</strong> El usuario indica cuántas sesiones por semana desea realizar.</li>
+                <li><strong>Inicio del programa:</strong> Se envía la primera sesión personalizada por email.</li>
+            </ol>
+
+            <h2>5. Garantía de satisfacción</h2>
+            <div class="highlight-box success">
+                <p><strong>14 días de garantía sin preguntas</strong></p>
+                <p>Si por cualquier motivo no estás satisfecho con el programa, puedes solicitar el reembolso completo dentro de los <strong>14 días naturales</strong> siguientes a la compra, sin necesidad de dar explicaciones.</p>
+            </div>
+            <p>Para solicitar el reembolso, simplemente envía un email a <a href="mailto:neuronapps.es@gmail.com">neuronapps.es@gmail.com</a> indicando tu nombre y el email con el que te registraste. Procesaremos el reembolso en un plazo máximo de 14 días.</p>
+
+            <h2>6. Derecho de desistimiento</h2>
+            <p>De acuerdo con el Real Decreto Legislativo 1/2007 (Ley General para la Defensa de los Consumidores y Usuarios), el usuario tiene derecho a desistir del contrato en un plazo de <strong>14 días naturales</strong> desde la contratación, sin necesidad de justificación.</p>
+            <p>Para ejercer el derecho de desistimiento, puedes:</p>
+            <ul>
+                <li>Enviar un email a <a href="mailto:neuronapps.es@gmail.com">neuronapps.es@gmail.com</a> manifestando tu voluntad de desistir.</li>
+                <li>Utilizar el siguiente modelo de formulario (no obligatorio):</li>
+            </ul>
+            <div class="highlight-box">
+                <p><em>"A la atención de NEURON APPS, S.L.:<br><br>
+                Por la presente comunico que desisto del contrato de prestación del servicio Camino Vital.<br><br>
+                Fecha de contratación: [fecha]<br>
+                Nombre del consumidor: [nombre]<br>
+                Email de registro: [email]<br>
+                Fecha: [fecha actual]<br>
+                Firma (solo si se envía en papel)"</em></p>
+            </div>
+
+            <h2>7. Obligaciones del usuario</h2>
+            <p>Al contratar el programa, el usuario se compromete a:</p>
+            <ul>
+                <li>Proporcionar información veraz en el cuestionario inicial, especialmente sobre limitaciones físicas y estado de salud.</li>
+                <li>Consultar con un profesional médico antes de iniciar el programa si tiene dudas sobre su aptitud física.</li>
+                <li>Seguir las indicaciones de seguridad incluidas en cada sesión.</li>
+                <li>No compartir el acceso al programa con terceros.</li>
+                <li>No reproducir, distribuir o comercializar los contenidos del programa.</li>
+            </ul>
+
+            <h2>8. Limitación de responsabilidad</h2>
+            <p>NEURON APPS, S.L.:</p>
+            <ul>
+                <li>Proporciona el programa como una herramienta de bienestar general, <strong>no como sustituto de consejo médico profesional</strong>.</li>
+                <li>No se hace responsable de lesiones derivadas de una ejecución incorrecta de los ejercicios o del incumplimiento de las indicaciones de seguridad.</li>
+                <li>Recomienda encarecidamente consultar con un médico antes de iniciar cualquier programa de ejercicio físico, especialmente a personas con condiciones médicas preexistentes.</li>
+            </ul>
+
+            <h2>9. Duración y acceso</h2>
+            <ul>
+                <li><strong>Duración del programa:</strong> 12 semanas desde el inicio.</li>
+                <li><strong>Acceso a las sesiones:</strong> Las sesiones se envían por email y permanecen accesibles mediante los enlaces proporcionados.</li>
+                <li><strong>Ritmo flexible:</strong> El usuario puede realizar las sesiones a su propio ritmo, aunque se recomienda seguir la cadencia propuesta para obtener mejores resultados.</li>
+            </ul>
+
+            <h2>10. Modificaciones del servicio</h2>
+            <p>NEURON APPS, S.L. se reserva el derecho de:</p>
+            <ul>
+                <li>Actualizar y mejorar los contenidos del programa.</li>
+                <li>Modificar el formato de entrega de las sesiones, siempre manteniendo la calidad del servicio.</li>
+                <li>Suspender temporalmente el servicio por mantenimiento técnico, notificando previamente a los usuarios cuando sea posible.</li>
+            </ul>
+
+            <h2>11. Protección de datos</h2>
+            <p>Los datos personales proporcionados serán tratados conforme a nuestra <a href="privacidad.html">Política de Privacidad</a>, que el usuario declara haber leído y aceptado.</p>
+
+            <h2>12. Atención al cliente</h2>
+            <p>Para cualquier consulta, incidencia o reclamación:</p>
+            <div class="highlight-box">
+                <p><strong>Email:</strong> <a href="mailto:neuronapps.es@gmail.com">neuronapps.es@gmail.com</a></p>
+                <p>Nos comprometemos a responder en un plazo máximo de 48 horas laborables.</p>
+            </div>
+
+            <h2>13. Resolución de conflictos</h2>
+            <p>En caso de controversia, las partes intentarán resolver el conflicto de forma amistosa. Si no fuera posible:</p>
+            <ul>
+                <li>El usuario puede acudir a la <a href="https://ec.europa.eu/consumers/odr" target="_blank">plataforma europea de resolución de litigios en línea (ODR)</a>.</li>
+                <li>Serán competentes los Juzgados y Tribunales del domicilio del consumidor.</li>
+            </ul>
+
+            <h2>14. Legislación aplicable</h2>
+            <p>Estas condiciones se rigen por la legislación española, en particular:</p>
+            <ul>
+                <li>Real Decreto Legislativo 1/2007 (Ley General para la Defensa de los Consumidores y Usuarios)</li>
+                <li>Ley 34/2002 de Servicios de la Sociedad de la Información (LSSI-CE)</li>
+                <li>Reglamento (UE) 2016/679 de Protección de Datos (RGPD)</li>
+            </ul>
+
+            <h2>15. Contacto</h2>
+            <div class="highlight-box">
+                <p><strong>NEURON APPS, S.L.</strong><br>
+                Carrer Bisbe Soler, 16<br>
+                08140 Caldes de Montbui (España)<br>
+                Email: <a href="mailto:neuronapps.es@gmail.com">neuronapps.es@gmail.com</a></p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-brand">
+                <img src="https://habitos-vitales.com/wp-content/uploads/2023/09/1-e1769547181637.png" alt="Hábitos Vitales">
+            </div>
+            <p>Un programa de <a href="https://habitos-vitales.com" target="_blank">Hábitos Vitales</a></p>
+            <div class="footer-links">
+                <a href="aviso-legal.html">Aviso Legal</a>
+                <a href="privacidad.html">Privacidad</a>
+                <a href="condiciones.html">Condiciones</a>
+            </div>
+            <p style="margin-top: 20px; font-size: 12px; opacity: 0.5;">&copy; 2026 NEURON APPS, S.L. Todos los derechos reservados.</p>
+        </footer>
+    </div>
+</body>
+</html>

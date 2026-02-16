@@ -311,6 +311,54 @@
             display: none;
         }
 
+        /* Checkboxes de consentimiento */
+        .consent-section {
+            margin: 25px 0;
+            padding: 20px;
+            background: var(--color-bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--color-border);
+        }
+
+        .consent-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .consent-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .consent-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-top: 2px;
+            accent-color: var(--color-primary);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .consent-item label {
+            font-size: 14px;
+            color: var(--color-text-secondary);
+            cursor: pointer;
+            line-height: 1.5;
+        }
+
+        .consent-item label a {
+            color: var(--color-primary);
+            text-decoration: underline;
+        }
+
+        .consent-error {
+            color: var(--color-error);
+            font-size: 13px;
+            margin-top: 10px;
+            display: none;
+        }
+
         .info-box {
             background: rgba(98, 184, 130, 0.1);
             border: 1px solid rgba(98, 184, 130, 0.3);
@@ -731,6 +779,19 @@
                         </label>
                     </div>
 
+                    <!-- Consentimientos legales -->
+                    <div class="consent-section">
+                        <div class="consent-item">
+                            <input type="checkbox" id="consent-privacy" name="consent_privacy" required>
+                            <label for="consent-privacy">He leído y acepto la <a href="privacidad.html" target="_blank">Política de Privacidad</a> y las <a href="condiciones.html" target="_blank">Condiciones de Contratación</a>.</label>
+                        </div>
+                        <div class="consent-item">
+                            <input type="checkbox" id="consent-health" name="consent_health" required>
+                            <label for="consent-health">Consiento el tratamiento de mis datos de salud (limitaciones físicas, nivel de actividad) para personalizar mi programa de ejercicios.</label>
+                        </div>
+                        <div class="consent-error" id="consent-error">Debes aceptar ambos consentimientos para continuar.</div>
+                    </div>
+
                     <div class="button-group">
                         <button type="button" class="btn btn-secondary" onclick="prevStep()">Atrás</button>
                         <button type="button" class="btn btn-primary" id="submitBtn" onclick="submitQuiz()"><span>Ver mi programa personalizado</span></button>
@@ -887,6 +948,18 @@
                 alert('Por favor, selecciona una opción para continuar');
                 return;
             }
+
+            // Validar checkboxes de consentimiento
+            const consentPrivacy = document.getElementById('consent-privacy').checked;
+            const consentHealth = document.getElementById('consent-health').checked;
+            const consentError = document.getElementById('consent-error');
+
+            if (!consentPrivacy || !consentHealth) {
+                consentError.style.display = 'block';
+                document.querySelector('.consent-section').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+            consentError.style.display = 'none';
 
             // Verificar token de Turnstile (en local, si no hay token, continuar igual)
             const isLocal = window.location.hostname === 'localhost' ||
