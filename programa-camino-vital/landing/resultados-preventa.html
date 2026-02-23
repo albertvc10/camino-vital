@@ -683,18 +683,17 @@
 <body>
     <div class="container">
         <div class="header">
-            <span class="early-bird-badge">Plazas Limitadas</span>
             <div class="success-icon"><svg class="icon-svg icon-svg-success" style="width:50px;height:50px" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg></div>
-            <div class="tagline">Programa personalizado</div>
-            <h1>¡Hemos analizado tu perfil!</h1>
-            <p>Este es el programa perfecto para ti, <span class="user-name" id="userName"></span></p>
+            <div class="tagline">Resultado de tu evaluación</div>
+            <h1>Hemos evaluado tu punto de partida</h1>
+            <p><span class="user-name" id="userName"></span>, según tus respuestas, este es el recorrido más adecuado para ti en este momento.</p>
 
             </div>
 
         <div class="content">
             <div class="program-card">
                 <div class="program-card-header">
-                    <span class="program-badge">Tu programa recomendado</span>
+                    <span class="program-badge">Tu recorrido recomendado</span>
                     <h2>Camino Vital</h2>
                 </div>
 
@@ -723,7 +722,7 @@
             </div>
 
             <div class="personalization-box">
-                <h3>Por qué este programa es perfecto para ti:</h3>
+                <h3>¿Por qué este recorrido encaja contigo?</h3>
                 <ul id="whyPerfect"></ul>
             </div>
 
@@ -731,22 +730,22 @@
                 <div class="benefit-item">
                     <div class="icon"><svg class="icon-svg" style="width:32px;height:32px" viewBox="0 0 24 24"><use href="#icon-refresh"></use></svg></div>
                     <h4>Se adapta a ti</h4>
-                    <p>Si algo es muy fácil o difícil, el programa se ajusta automáticamente según tu feedback</p>
+                    <p>Si algo resulta demasiado fácil o exigente, se ajusta según tu feedback.</p>
                 </div>
                 <div class="benefit-item">
                     <div class="icon"><svg class="icon-svg" style="width:32px;height:32px" viewBox="0 0 24 24"><use href="#icon-home"></use></svg></div>
-                    <h4>Sin equipo necesario</h4>
-                    <p>Todo desde casa con tu propio peso corporal. Sin gimnasio ni material</p>
+                    <h4>Desde casa</h4>
+                    <p>Entrena con tu propio peso corporal. Sin gimnasio ni material.</p>
                 </div>
                 <div class="benefit-item">
                     <div class="icon"><svg class="icon-svg" style="width:32px;height:32px" viewBox="0 0 24 24"><use href="#icon-video"></use></svg></div>
-                    <h4>Vídeos explicativos</h4>
-                    <p>Cada ejercicio tiene su video demostrativo para que lo hagas correctamente</p>
+                    <h4>Vídeos claros y guiados</h4>
+                    <p>Cada ejercicio incluye demostración para que lo realices con seguridad.</p>
                 </div>
                 <div class="benefit-item">
                     <div class="icon"><svg class="icon-svg" style="width:32px;height:32px" viewBox="0 0 24 24"><use href="#icon-message"></use></svg></div>
-                    <h4>Soporte personalizado</h4>
-                    <p>¿Dudas o problemas? Responde cualquier email y te ayudamos</p>
+                    <h4>Acompañamiento cuando lo necesites</h4>
+                    <p>Si surge alguna duda o molestia, puedes escribirnos y lo ajustamos.</p>
                 </div>
             </div>
 
@@ -802,7 +801,7 @@
                 </button>
 
                 <div class="guarantee">
-                    <p><svg class="icon-svg icon-svg-success" style="width:18px;height:18px;display:inline;vertical-align:middle" viewBox="0 0 24 24"><use href="#icon-lock"></use></svg> Garantía de 14 días: Si sientes que no es para ti, te devolvemos el dinero. Sin preguntas.</p>
+                    <p><svg class="icon-svg icon-svg-success" style="width:18px;height:18px;display:inline;vertical-align:middle" viewBox="0 0 24 24"><use href="#icon-lock"></use></svg> Garantía de 14 días. Si sientes que no es para ti, te devolvemos el dinero.</p>
                 </div>
 
                 <p class="stripe-note">
@@ -863,13 +862,14 @@
             if ((tiempo === 'menos_3meses' || tiempo === '3-6meses') &&
                 (movilidad === 'normal' || movilidad === 'buena')) {
                 return {
-                    nivel: 'Intermedio',
+                    nivel: 'Progresión activa',
                     duration: '12 semanas',
-                    focus: 'Fuerza funcional',
+                    focus: 'Autonomía + Fuerza',
                     reasons: [
-                        'Has estado activo recientemente, puedes empezar con más intensidad',
-                        'Tu movilidad es buena, podemos trabajar ejercicios más desafiantes',
-                        'Progresarás más rápido con ejercicios de nivel intermedio'
+                        'Comenzarás desde tu situación actual, sin exigencias innecesarias',
+                        'Avanzarás de forma progresiva y estructurada',
+                        'Construirás confianza antes de aumentar intensidad',
+                        'El recorrido se ajusta según tu evolución y disponibilidad'
                     ],
                     exercises: [
                         {
@@ -899,13 +899,14 @@
                 };
             } else {
                 return {
-                    nivel: 'Iniciacion',
+                    nivel: 'Inicio progresivo',
                     duration: '12 semanas',
-                    focus: 'Movilidad + Seguridad',
+                    focus: 'Autonomía + Movilidad + Seguridad',
                     reasons: [
-                        'Empezarás con ejercicios seguros y progresivos adaptados a tu situación',
-                        'El programa respeta tu punto de partida sin exigencias excesivas',
-                        'Ganarás confianza gradualmente antes de aumentar la intensidad'
+                        'Comenzarás desde tu situación actual, sin exigencias innecesarias',
+                        'Avanzarás de forma progresiva y estructurada',
+                        'Construirás confianza antes de aumentar intensidad',
+                        'El recorrido se ajusta según tu evolución y disponibilidad'
                     ],
                     exercises: [
                         {

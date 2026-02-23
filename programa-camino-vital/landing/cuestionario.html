@@ -502,8 +502,8 @@
 
         <div class="quiz-header">
             <div class="tagline">Cuestionario personalizado</div>
-            <h1>Descubre tu programa ideal</h1>
-            <p>Solo 2 minutos para crear tu plan a medida</p>
+            <h1>Descubre tu punto de partida real</h1>
+            <p id="header-subtitle">En pocos pasos podremos evaluar cómo estás hoy y orientarte hacia el recorrido más adecuado para ti.</p>
         </div>
 
         <div class="quiz-content">
@@ -512,12 +512,12 @@
                 <div class="step active" data-step="1">
                     <div class="step-header">
                         <h2>Empecemos por conocerte</h2>
-                        <p>Solo necesitamos tu email para enviarte tu programa personalizado</p>
+                        <p>Para enviarte tu resultado personalizado, necesitamos tu nombre y tu mejor email.</p>
                     </div>
 
                     <div class="form-group">
                         <label for="nombre">Tu nombre</label>
-                        <input type="text" id="nombre" name="nombre" required placeholder="Ej: Maria Garcia">
+                        <input type="text" id="nombre" name="nombre" required placeholder="Tu nombre">
                         <div class="error-message" id="error-nombre">Por favor, introduce tu nombre</div>
                     </div>
 
@@ -530,29 +530,29 @@
                     <div class="form-group">
                         <label for="email_confirm">Confirma tu email</label>
                         <input type="email" id="email_confirm" required placeholder="Escribe tu email de nuevo">
-                        <p class="input-hint">Revisa bien tu email - te enviaremos el programa aquí</p>
+                        <p class="input-hint">Revisa bien tu email — te enviaremos tu evaluación aquí.</p>
                         <div class="error-message" id="error-email-confirm">Los emails no coinciden</div>
                     </div>
 
                     <div class="info-box">
                         <span class="info-box-icon"><svg class="icon-svg icon-svg-success" style="width:20px;height:20px" viewBox="0 0 24 24"><use href="#icon-lock"></use></svg></span>
-                        <span>Tu información está segura. Solo la usaremos para enviarte tu programa.</span>
+                        <span>Tu información será utilizada únicamente para enviarte tu resultado y la información relacionada con tu recorrido.</span>
                     </div>
 
                     <div class="button-group">
-                        <button type="button" class="btn btn-primary" onclick="nextStep()"><span>Siguiente</span></button>
+                        <button type="button" class="btn btn-primary" onclick="nextStep()"><span>Continuar con mi diagnóstico</span></button>
                     </div>
                 </div>
 
                 <!-- PASO 2: Tiempo sin ejercicio -->
                 <div class="step" data-step="2">
                     <div class="encouragement-box">
-                        <p>¡Muy bien! Ya casi tenemos tu perfil completo</p>
+                        <p>Vamos a ajustar tu punto de partida</p>
                     </div>
 
                     <div class="step-header">
-                        <h2>¿Cuánto tiempo llevas sin hacer ejercicio regular?</h2>
-                        <p>No te preocupes, no hay respuesta incorrecta. Esto nos ayuda a calibrar tu punto de partida.</p>
+                        <h2>¿Hace cuánto que no mantienes una rutina de movimiento constante?</h2>
+                        <p>No hay respuesta correcta o incorrecta. Esto nos ayuda a entender cómo ha sido tu relación reciente con el movimiento y desde dónde empezar.</p>
                     </div>
 
                     <div class="radio-group">
@@ -560,7 +560,7 @@
                             <input type="radio" name="tiempo_sin_ejercicio" value="menos_3meses" required>
                             <div class="radio-label">
                                 <strong>Menos de 3 meses</strong>
-                                <span>Hice ejercicio hace poco pero lo dejé</span>
+                                <span>He estado activo recientemente, pero he perdido regularidad.</span>
                             </div>
                         </label>
 
@@ -568,7 +568,7 @@
                             <input type="radio" name="tiempo_sin_ejercicio" value="3-6meses">
                             <div class="radio-label">
                                 <strong>Entre 3 y 6 meses</strong>
-                                <span>Hace medio año aproximadamente</span>
+                                <span>Hace un tiempo que no mantengo constancia.</span>
                             </div>
                         </label>
 
@@ -576,7 +576,7 @@
                             <input type="radio" name="tiempo_sin_ejercicio" value="6-12meses">
                             <div class="radio-label">
                                 <strong>Entre 6 meses y 1 año</strong>
-                                <span>Llevo casi un año sin actividad regular</span>
+                                <span>Llevo meses sin una rutina estable.</span>
                             </div>
                         </label>
 
@@ -584,7 +584,7 @@
                             <input type="radio" name="tiempo_sin_ejercicio" value="1-2anos">
                             <div class="radio-label">
                                 <strong>Entre 1 y 2 años</strong>
-                                <span>Hace bastante que no hago nada</span>
+                                <span>Hace bastante que no tengo un hábito regular.</span>
                             </div>
                         </label>
 
@@ -592,14 +592,14 @@
                             <input type="radio" name="tiempo_sin_ejercicio" value="mas_2anos">
                             <div class="radio-label">
                                 <strong>Más de 2 años</strong>
-                                <span>Llevo mucho tiempo sin moverme regularmente</span>
+                                <span>Hace mucho que no practico actividad de forma constante.</span>
                             </div>
                         </label>
                     </div>
 
                     <div class="button-group">
                         <button type="button" class="btn btn-secondary" onclick="prevStep()">Atrás</button>
-                        <button type="button" class="btn btn-primary" onclick="nextStep()"><span>Siguiente</span></button>
+                        <button type="button" class="btn btn-primary" onclick="nextStep()"><span>Continuar con la evaluación</span></button>
                     </div>
                 </div>
 
@@ -610,47 +610,47 @@
                     </div>
 
                     <div class="step-header">
-                        <h2>¿Cómo describirías tu nivel actual de movilidad?</h2>
-                        <p>Piensa en tareas del día a día: agacharte, subir escaleras, cargar peso...</p>
+                        <h2>¿Cómo describirías tu movilidad en tu día a día?</h2>
+                        <p>Piensa en situaciones reales: agacharte, subir escaleras, caminar con ritmo, cargar algo ligero…</p>
                     </div>
 
                     <div class="radio-group">
                         <label class="radio-option">
                             <input type="radio" name="nivel_movilidad" value="muy_limitada" required>
                             <div class="radio-label">
-                                <strong>Muy limitada</strong>
-                                <span>Me cuesta mucho realizar tareas básicas del día a día</span>
+                                <strong>Bastante reducida</strong>
+                                <span>Me cuesta más de lo que me gustaría realizar movimientos cotidianos.</span>
                             </div>
                         </label>
 
                         <label class="radio-option">
                             <input type="radio" name="nivel_movilidad" value="limitada">
                             <div class="radio-label">
-                                <strong>Algo limitada</strong>
-                                <span>Siento rigidez o inseguridad en algunos movimientos</span>
+                                <strong>Con algunas limitaciones</strong>
+                                <span>Siento rigidez o cierta inseguridad en determinados movimientos.</span>
                             </div>
                         </label>
 
                         <label class="radio-option">
                             <input type="radio" name="nivel_movilidad" value="normal">
                             <div class="radio-label">
-                                <strong>Normal</strong>
-                                <span>Me muevo sin problemas, solo falta de forma física</span>
+                                <strong>Estable, pero mejorable</strong>
+                                <span>Me muevo con normalidad, aunque noto que podría tener más soltura o resistencia.</span>
                             </div>
                         </label>
 
                         <label class="radio-option">
                             <input type="radio" name="nivel_movilidad" value="buena">
                             <div class="radio-label">
-                                <strong>Buena</strong>
-                                <span>Me siento ágil, solo quiero mantenerme activo</span>
+                                <strong>Fluida</strong>
+                                <span>Me siento ágil y con buena movilidad en general.</span>
                             </div>
                         </label>
                     </div>
 
                     <div class="button-group">
                         <button type="button" class="btn btn-secondary" onclick="prevStep()">Atrás</button>
-                        <button type="button" class="btn btn-primary" onclick="nextStep()"><span>Siguiente</span></button>
+                        <button type="button" class="btn btn-primary" onclick="nextStep()"><span>Continuar con la evaluación</span></button>
                     </div>
                 </div>
 
@@ -661,80 +661,80 @@
                     </div>
 
                     <div class="step-header">
-                        <h2>¿Tienes alguna limitación física que debamos conocer?</h2>
-                        <p>Esto nos ayuda a adaptar los ejercicios para que sean seguros para ti</p>
+                        <h2>¿Hay alguna molestia o limitación que debamos tener en cuenta?</h2>
+                        <p>Esto nos permite adaptar los ejercicios para que el recorrido sea seguro y adecuado para ti.</p>
                     </div>
 
                     <div class="radio-group">
                         <label class="radio-option">
                             <input type="radio" name="limitaciones" value="ninguna" required>
                             <div class="radio-label">
-                                <strong>Ninguna</strong>
-                                <span>No tengo limitaciones específicas</span>
+                                <strong>Ninguna en particular</strong>
+                                <span>No tengo molestias relevantes actualmente.</span>
                             </div>
                         </label>
 
                         <label class="radio-option">
                             <input type="radio" name="limitaciones" value="rodillas">
                             <div class="radio-label">
-                                <strong>Problemas de rodillas</strong>
-                                <span>Dolor, inestabilidad o lesiones previas</span>
+                                <strong>Rodillas</strong>
+                                <span>Dolor, molestias o lesiones previas en esta zona.</span>
                             </div>
                         </label>
 
                         <label class="radio-option">
                             <input type="radio" name="limitaciones" value="espalda">
                             <div class="radio-label">
-                                <strong>Problemas de espalda</strong>
-                                <span>Lumbar, cervical o dorsal</span>
+                                <strong>Espalda</strong>
+                                <span>Zona lumbar, dorsal o cervical.</span>
                             </div>
                         </label>
 
                         <label class="radio-option">
                             <input type="radio" name="limitaciones" value="hombros">
                             <div class="radio-label">
-                                <strong>Problemas de hombros</strong>
-                                <span>Dolor o limitación en movimientos de brazos</span>
+                                <strong>Hombros</strong>
+                                <span>Molestias o limitación al mover los brazos.</span>
                             </div>
                         </label>
 
                         <label class="radio-option">
                             <input type="radio" name="limitaciones" value="equilibrio">
                             <div class="radio-label">
-                                <strong>Problemas de equilibrio</strong>
-                                <span>Inseguridad al mantenerme de pie</span>
+                                <strong>Equilibrio</strong>
+                                <span>Inseguridad o sensación de inestabilidad al estar de pie o caminar.</span>
                             </div>
                         </label>
 
                         <label class="radio-option">
                             <input type="radio" name="limitaciones" value="otras">
                             <div class="radio-label">
-                                <strong>Otras</strong>
-                                <span>Especificaré en el siguiente campo</span>
+                                <strong>Otra situación específica</strong>
+                                <span>Prefiero detallarlo en el siguiente campo.</span>
                             </div>
                         </label>
                     </div>
 
                     <div class="form-group" style="margin-top: 25px;">
-                        <label for="limitaciones_detalle">Si marcaste "Otras" o quieres añadir detalles (opcional)</label>
-                        <textarea id="limitaciones_detalle" name="limitaciones_detalle" placeholder="Ej: Tengo artrosis en las manos, me han operado la cadera recientemente..."></textarea>
+                        <label for="limitaciones_detalle">Si marcaste "Otra situación específica" o quieres añadir información (opcional)</label>
+                        <textarea id="limitaciones_detalle" name="limitaciones_detalle" placeholder="Ejemplo: intervención reciente, operación previa, molestias recurrentes…"></textarea>
                     </div>
 
                     <div class="button-group">
                         <button type="button" class="btn btn-secondary" onclick="prevStep()">Atrás</button>
-                        <button type="button" class="btn btn-primary" onclick="nextStep()"><span>Siguiente</span></button>
+                        <button type="button" class="btn btn-primary" onclick="nextStep()"><span>Continuar con la evaluación</span></button>
                     </div>
                 </div>
 
                 <!-- PASO 5: Objetivo principal -->
                 <div class="step" data-step="5">
                     <div class="encouragement-box">
-                        <p>¡Último paso! Ya casi tienes tu programa personalizado</p>
+                        <p>¡Último paso! Ya casi tienes tu plan personalizado</p>
                     </div>
 
                     <div class="step-header">
-                        <h2>¿Cuál es tu principal objetivo?</h2>
-                        <p>Elige el que más resuene contigo. Esto nos ayuda a enfocar tu programa.</p>
+                        <h2>¿Qué te gustaría mejorar a partir de ahora?</h2>
+                        <p>Elige lo que más resuene contigo. Esto nos ayuda a enfocar tu recorrido.</p>
                     </div>
 
                     <div class="radio-group">
@@ -742,7 +742,7 @@
                             <input type="radio" name="objetivo_principal" value="autonomia" required>
                             <div class="radio-label">
                                 <strong>Mantener mi autonomía con el paso del tiempo</strong>
-                                <span>Quiero seguir siendo independiente durante años</span>
+                                <span>Quiero seguir moviéndome con independencia durante los próximos años.</span>
                             </div>
                         </label>
 
@@ -750,15 +750,15 @@
                             <input type="radio" name="objetivo_principal" value="fuerza">
                             <div class="radio-label">
                                 <strong>Ganar fuerza para el día a día</strong>
-                                <span>Quiero que las tareas cotidianas me cuesten menos</span>
+                                <span>Quiero que las tareas cotidianas me resulten más fáciles.</span>
                             </div>
                         </label>
 
                         <label class="radio-option">
                             <input type="radio" name="objetivo_principal" value="movilidad">
                             <div class="radio-label">
-                                <strong>Mejorar mi movilidad y flexibilidad</strong>
-                                <span>Quiero moverme con más fluidez y menos rigidez</span>
+                                <strong>Mejorar mi movilidad y fluidez</strong>
+                                <span>Quiero moverme con menos rigidez y mayor soltura.</span>
                             </div>
                         </label>
 
@@ -766,7 +766,7 @@
                             <input type="radio" name="objetivo_principal" value="confianza">
                             <div class="radio-label">
                                 <strong>Recuperar confianza en mi cuerpo</strong>
-                                <span>Quiero sentirme seguro al moverme</span>
+                                <span>Quiero sentirme más seguro al moverme.</span>
                             </div>
                         </label>
 
@@ -774,7 +774,7 @@
                             <input type="radio" name="objetivo_principal" value="todo">
                             <div class="radio-label">
                                 <strong>Todo lo anterior</strong>
-                                <span>Quiero una mejora integral de mi salud física</span>
+                                <span>Quiero mejorar mi salud física de forma global.</span>
                             </div>
                         </label>
                     </div>
@@ -787,14 +787,14 @@
                         </div>
                         <div class="consent-item">
                             <input type="checkbox" id="consent-health" name="consent_health" required>
-                            <label for="consent-health">Consiento el tratamiento de mis datos de salud (limitaciones físicas, nivel de actividad) para personalizar mi programa de ejercicios.</label>
+                            <label for="consent-health">Consiento el tratamiento de mis datos relacionados con salud y nivel de actividad para personalizar mi recorrido.</label>
                         </div>
                         <div class="consent-error" id="consent-error">Debes aceptar ambos consentimientos para continuar.</div>
                     </div>
 
                     <div class="button-group">
                         <button type="button" class="btn btn-secondary" onclick="prevStep()">Atrás</button>
-                        <button type="button" class="btn btn-primary" id="submitBtn" onclick="submitQuiz()"><span>Ver mi programa personalizado</span></button>
+                        <button type="button" class="btn btn-primary" id="submitBtn" onclick="submitQuiz()"><span>Ver mi plan personalizado</span></button>
                     </div>
                 </div>
             </form>
