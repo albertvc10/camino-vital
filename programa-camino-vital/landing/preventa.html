@@ -200,7 +200,7 @@
             font-size: 17px;
             margin-bottom: 14px;
             color: var(--color-text-secondary);
-            text-align: left;
+            text-align: center;
         }
         .deterioro-lines p.emphasis {
             color: var(--color-text-primary);
@@ -238,40 +238,14 @@
             font-size: 18px;
             margin-top: 25px;
         }
-        .deterioro-layout {
-            display: flex;
-            align-items: flex-start;
-            gap: 40px;
-            max-width: 900px;
+        .deterioro-lines {
+            max-width: 700px;
             margin: 0 auto;
         }
-        .deterioro-image {
-            flex: 0 0 280px;
-            border-radius: var(--border-radius-card);
-            overflow: hidden;
-            position: sticky;
-            top: 100px;
+        .deterioro-lines .deterioro-list {
+            text-align: left;
+            display: inline-block;
         }
-        .deterioro-image img {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-        .deterioro-lines {
-            flex: 1;
-        }
-        @media (max-width: 768px) {
-            .deterioro-layout {
-                flex-direction: column;
-            }
-            .deterioro-image {
-                flex: none;
-                max-width: 300px;
-                margin: 0 auto 30px;
-                position: static;
-            }
-        }
-
         /* ── Adapta section ── */
         .adapta-intro {
             text-align: center;
@@ -795,13 +769,10 @@
                 <h1>Camino Vital</h1>
 
                 <p class="hero-line">Envejecer no tiene por qué significar empezar a sentirte menos capaz.</p>
-                <p class="hero-line">Cuando tu respuesta física baja, tu autonomía empieza a resentirse.</p>
-                <p class="hero-line-secondary">Y eso no ocurre de golpe.</p>
-                <p class="hero-line-secondary">El declive empieza cuando dejas de trabajar tu cuerpo con intención.</p>
 
-                <p class="hero-description">Camino Vital es un recorrido guiado de 12 semanas de entrenamiento adaptado en casa, diseñado para ayudarte a mantener tu fortaleza funcional y sostener tu autonomía antes de que el deterioro se haga evidente en tu día a día.</p>
+                <p class="hero-description">Camino Vital es un recorrido guiado de 12 semanas diseñado para ayudarte a sostener tu capacidad física y tu autonomía con el paso del tiempo.</p>
 
-                <p class="hero-pre-cta">Descubre cómo estás realmente hoy.</p>
+                <p class="hero-pre-cta">Descubre cómo estás hoy.</p>
 
                 <a href="#" onclick="startQuiz(); return false;" class="btn-primary">
                     Comprobar mi capacidad hoy
@@ -822,12 +793,7 @@
             <div class="section-container">
                 <h2>El deterioro progresivo</h2>
 
-                <div class="deterioro-layout">
-                    <div class="deterioro-image">
-                        <img src="assets/deterioro-contraste.png" alt="El contraste entre autonomía y dependencia">
-                    </div>
-
-                    <div class="deterioro-lines">
+                <div class="deterioro-lines">
                     <p>La mayoría de personas no pierde autonomía de un día para otro.</p>
                     <p>Empieza cuando su base física deja de mejorar…</p>
                     <p>y pasa simplemente a mantenerse.</p>
@@ -848,7 +814,6 @@
 
                     <p class="warning-text">Lo que hoy haces con naturalidad puede convertirse en algo que requiera más esfuerzo del que te gustaría aceptar.</p>
                     <p class="final">Si prefieres anticiparte antes de tener que reaccionar, este es el momento de evaluar tu situación actual.</p>
-                    </div>
                 </div>
             </div>
         </section>
