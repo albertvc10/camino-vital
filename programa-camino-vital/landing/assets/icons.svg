@@ -223,6 +223,32 @@
     <polyline points="6 9 12 15 18 9"/>
   </symbol>
 
+  <!-- Escaleras / Subir -->
+  <symbol id="icon-stairs" viewBox="0 0 24 24">
+    <path d="M22 22H2V12h6V6h6V2h6v20z" fill="none"/>
+    <line x1="2" y1="22" x2="8" y2="22"/>
+    <line x1="8" y1="22" x2="8" y2="12"/>
+    <line x1="8" y1="12" x2="14" y2="12"/>
+    <line x1="14" y1="12" x2="14" y2="6"/>
+    <line x1="14" y1="6" x2="20" y2="6"/>
+    <line x1="20" y1="6" x2="20" y2="2"/>
+  </symbol>
+
+  <!-- Peso / Cargar -->
+  <symbol id="icon-weight" viewBox="0 0 24 24">
+    <path d="M6 18H4a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h2"/>
+    <path d="M18 18h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-2"/>
+    <rect x="6" y="8" width="12" height="12" rx="1"/>
+    <path d="M12 8V5"/>
+    <circle cx="12" cy="4" r="1"/>
+  </symbol>
+
+  <!-- Energia / Esfuerzo -->
+  <symbol id="icon-energy" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="10"/>
+    <path d="M12 6v6l4 2"/>
+  </symbol>
+
   <!-- ═══════════════════════════════════════ -->
   <!-- FIGURAS FITNESS (ilustraciones)        -->
   <!-- ═══════════════════════════════════════ -->

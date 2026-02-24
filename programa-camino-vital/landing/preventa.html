@@ -193,58 +193,153 @@
         }
         .deterioro-section h2 {
             color: var(--color-text-primary);
-            margin-bottom: 40px;
+            margin-bottom: 20px;
             text-align: center;
         }
-        .deterioro-lines p {
-            font-size: 17px;
-            margin-bottom: 14px;
-            color: var(--color-text-secondary);
-            text-align: center;
-        }
-        .deterioro-lines p.emphasis {
-            color: var(--color-text-primary);
-            font-size: 19px;
-            margin-top: 30px;
-        }
-        .deterioro-lines p.final {
-            color: var(--color-primary);
-            font-weight: 600;
-            font-size: 20px;
-            margin-top: 20px;
-        }
-        .deterioro-list {
-            list-style: none;
-            padding: 0;
-            margin: 20px 0;
-            text-align: left;
-        }
-        .deterioro-list li {
-            font-size: 17px;
-            color: var(--color-text-secondary);
-            margin-bottom: 12px;
-            padding-left: 24px;
-            position: relative;
-        }
-        .deterioro-list li::before {
-            content: "•";
-            color: var(--color-primary);
-            font-weight: bold;
-            position: absolute;
-            left: 0;
-        }
-        .deterioro-lines .warning-text {
-            color: var(--color-text-primary);
+        .deterioro-intro {
             font-size: 18px;
-            margin-top: 25px;
+            color: var(--color-text-secondary);
+            max-width: 600px;
+            margin: 0 auto 50px;
         }
-        .deterioro-lines {
-            max-width: 700px;
-            margin: 0 auto;
+        /* Timeline graph */
+        .deterioro-timeline {
+            max-width: 600px;
+            margin: 0 auto 40px;
         }
-        .deterioro-lines .deterioro-list {
-            text-align: left;
-            display: inline-block;
+        .deterioro-graph {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        .deterioro-graph .graph-line {
+            fill: none;
+            stroke: var(--color-primary);
+            stroke-width: 3;
+            stroke-linecap: round;
+        }
+        .deterioro-graph .graph-area {
+            fill: url(#graphGradient);
+        }
+        .deterioro-graph .graph-dot {
+            fill: var(--color-error);
+        }
+        .deterioro-graph .graph-axis {
+            stroke: rgba(255,255,255,0.25);
+            stroke-width: 1.5;
+        }
+        .deterioro-graph .graph-axis-arrow {
+            fill: rgba(255,255,255,0.25);
+        }
+        .deterioro-graph .graph-divider {
+            stroke: rgba(255,255,255,0.1);
+            stroke-width: 1;
+            stroke-dasharray: 5 5;
+        }
+        .deterioro-graph .graph-connector {
+            stroke: var(--color-error);
+            stroke-width: 2;
+            stroke-dasharray: 4 4;
+        }
+        .deterioro-graph .graph-label-bg {
+            fill: rgba(231, 76, 60, 0.2);
+            stroke: rgba(231, 76, 60, 0.5);
+            stroke-width: 1;
+        }
+        .deterioro-graph .graph-label-text {
+            fill: #E74C3C;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        .deterioro-graph .axis-label {
+            fill: rgba(255,255,255,0.5);
+            font-size: 11px;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        .deterioro-graph .phase-label {
+            fill: rgba(255,255,255,0.9);
+            font-size: 14px;
+            font-weight: 600;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        .deterioro-graph .phase-label.warning {
+            fill: #E74C3C;
+        }
+        .deterioro-graph .phase-sublabel {
+            fill: rgba(255,255,255,0.5);
+            font-size: 11px;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        /* Consequence cards */
+        .deterioro-consequences {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: 750px;
+            margin: 0 auto 40px;
+        }
+        .consequence-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--color-border);
+            border-radius: var(--border-radius-card);
+            padding: 25px 20px;
+            text-align: center;
+        }
+        .consequence-card .icon-svg {
+            width: 36px;
+            height: 36px;
+            stroke: var(--color-error);
+            margin-bottom: 15px;
+        }
+        .consequence-card h4 {
+            font-size: 15px;
+            color: var(--color-text-primary);
+            margin-bottom: 8px;
+        }
+        .consequence-card p {
+            font-size: 14px;
+            color: var(--color-text-secondary);
+            margin: 0;
+            line-height: 1.5;
+        }
+        .deterioro-key-message {
+            font-size: 19px;
+            color: var(--color-text-secondary);
+            max-width: 550px;
+            margin: 0 auto 30px;
+            line-height: 1.6;
+        }
+        .deterioro-key-message strong {
+            color: var(--color-text-primary);
+        }
+        .deterioro-warning {
+            font-size: 17px;
+            color: var(--color-text-secondary);
+            margin-bottom: 25px;
+        }
+        .deterioro-cta {
+            font-size: 18px;
+            color: var(--color-primary);
+            font-weight: 500;
+        }
+        @media (max-width: 768px) {
+            .deterioro-timeline {
+                padding: 0 10px;
+            }
+            .deterioro-graph .axis-label {
+                font-size: 9px;
+            }
+            .deterioro-graph .phase-label {
+                font-size: 11px;
+            }
+            .deterioro-graph .phase-sublabel {
+                font-size: 9px;
+            }
+            .deterioro-consequences {
+                grid-template-columns: 1fr;
+                max-width: 350px;
+            }
         }
         /* ── Adapta section ── */
         .adapta-intro {
@@ -669,7 +764,7 @@
             .section { padding: 50px 16px; }
             h1 { font-size: 36px; }
             h2 { font-size: 26px; }
-            .hero { padding: 60px 16px 80px; }
+            .hero { padding: 60px 16px 120px; }
             .hero-line { font-size: 17px; }
             .hero-line-secondary { font-size: 16px; }
             .btn-primary { padding: 16px 32px; font-size: 16px; width: 100%; text-align: center; }
@@ -788,33 +883,95 @@
             </div>
         </section>
 
-        <!-- 2. EL DETERIORO PROGRESIVO (NUEVO) -->
+        <!-- 2. EL DETERIORO PROGRESIVO (VISUAL) -->
         <section class="section deterioro-section">
             <div class="section-container">
                 <h2>El deterioro progresivo</h2>
+                <p class="deterioro-intro">La pérdida de autonomía no ocurre de un día para otro. Es un proceso gradual que se normaliza con el tiempo.</p>
 
-                <div class="deterioro-lines">
-                    <p>La mayoría de personas no pierde autonomía de un día para otro.</p>
-                    <p>Empieza cuando su base física deja de mejorar…</p>
-                    <p>y pasa simplemente a mantenerse.</p>
-                    <p>Luego, poco a poco, empieza a bajar.</p>
-                    <p>No es algo brusco.</p>
-                    <p>Es algo que se normaliza con el tiempo.</p>
-                    <p>Y cuando te das cuenta de que ya no estás como hace unos años,</p>
-                    <p>ese proceso lleva ya un buen tiempo ocurriendo.</p>
+                <!-- Timeline graph - Todo integrado en SVG -->
+                <div class="deterioro-timeline">
+                    <svg class="deterioro-graph" viewBox="0 0 520 260" preserveAspectRatio="xMidYMid meet">
+                        <defs>
+                            <linearGradient id="graphGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" style="stop-color:rgba(223, 202, 97, 0.3)"/>
+                                <stop offset="100%" style="stop-color:rgba(223, 202, 97, 0)"/>
+                            </linearGradient>
+                            <linearGradient id="declineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" style="stop-color:rgba(231, 76, 60, 0.2)"/>
+                                <stop offset="100%" style="stop-color:rgba(231, 76, 60, 0)"/>
+                            </linearGradient>
+                        </defs>
 
-                    <p class="emphasis">Quizás todavía no lo notes…</p>
-                    <p>Pero si no haces nada, con el tiempo puede suceder que:</p>
+                        <!-- Eje Y con label -->
+                        <line class="graph-axis" x1="50" y1="25" x2="50" y2="170"/>
+                        <text class="axis-label" x="20" y="100" text-anchor="middle" transform="rotate(-90, 20, 100)">Tu capacidad física</text>
 
-                    <ul class="deterioro-list">
-                        <li>Lo que antes hacías sin pensar ahora requiera más esfuerzo.</li>
-                        <li>Subir escaleras o pendientes deje de ser tan automático.</li>
-                        <li>Cargar bolsas o pequeños pesos genere más tensión de la que esperabas.</li>
-                    </ul>
+                        <!-- Eje X con label -->
+                        <line class="graph-axis" x1="50" y1="170" x2="475" y2="170"/>
+                        <polygon class="graph-axis-arrow" points="475,166 475,174 485,170"/>
+                        <text class="axis-label" x="480" y="185">Tiempo</text>
 
-                    <p class="warning-text">Lo que hoy haces con naturalidad puede convertirse en algo que requiera más esfuerzo del que te gustaría aceptar.</p>
-                    <p class="final">Si prefieres anticiparte antes de tener que reaccionar, este es el momento de evaluar tu situación actual.</p>
+                        <!-- Divisores verticales de fases -->
+                        <line class="graph-divider" x1="190" y1="35" x2="190" y2="170"/>
+                        <line class="graph-divider" x1="330" y1="35" x2="330" y2="170"/>
+
+                        <!-- Area de mejora (verde sutil) -->
+                        <path class="graph-area" d="M 55 145 Q 100 130, 190 100 L 190 170 L 55 170 Z" style="fill: rgba(98, 184, 130, 0.15);"/>
+
+                        <!-- Area de mantenimiento -->
+                        <path class="graph-area" d="M 190 100 Q 250 92, 330 88 L 330 170 L 190 170 Z"/>
+
+                        <!-- Area de declive (rojo sutil) -->
+                        <path d="M 330 88 Q 390 110, 465 155 L 465 170 L 330 170 Z" style="fill: url(#declineGradient);"/>
+
+                        <!-- Línea del gráfico principal -->
+                        <path class="graph-line" d="M 55 145 Q 100 130, 190 100 Q 250 92, 330 88 Q 390 110, 465 155" style="stroke-width: 3.5;"/>
+
+                        <!-- Punto "Aquí lo notas" -->
+                        <circle class="graph-dot" cx="410" cy="128" r="9"/>
+
+                        <!-- Conector y etiqueta -->
+                        <line class="graph-connector" x1="410" y1="119" x2="410" y2="60"/>
+                        <rect class="graph-label-bg" x="345" y="38" width="108" height="28" rx="6"/>
+                        <text class="graph-label-text" x="399" y="57" text-anchor="middle">Aquí lo notas</text>
+
+                        <!-- Labels de las 3 fases - en fila horizontal -->
+                        <text class="phase-label" x="122" y="200" text-anchor="middle">Mejoras</text>
+                        <text class="phase-sublabel" x="122" y="216" text-anchor="middle">Tu base crece</text>
+
+                        <text class="phase-label" x="260" y="200" text-anchor="middle">Te mantienes</text>
+                        <text class="phase-sublabel" x="260" y="216" text-anchor="middle">Sin cambios visibles</text>
+
+                        <text class="phase-label warning" x="398" y="200" text-anchor="middle">Empiezas a bajar</text>
+                        <text class="phase-sublabel" x="398" y="216" text-anchor="middle">Ya lleva tiempo</text>
+                    </svg>
                 </div>
+
+                <p class="deterioro-key-message">Cuando te das cuenta de que ya no estás como hace unos años,<br><strong>ese proceso ya lleva tiempo ocurriendo.</strong></p>
+
+                <p class="deterioro-warning">Quizás todavía no lo notes. Pero si no haces nada:</p>
+
+                <!-- Consequence cards -->
+                <div class="deterioro-consequences">
+                    <div class="consequence-card">
+                        <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-stairs"></use></svg>
+                        <h4>Subir escaleras</h4>
+                        <p>Deja de ser automático</p>
+                    </div>
+                    <div class="consequence-card">
+                        <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-weight"></use></svg>
+                        <h4>Cargar peso</h4>
+                        <p>Genera más tensión</p>
+                    </div>
+                    <div class="consequence-card">
+                        <svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-energy"></use></svg>
+                        <h4>Tareas cotidianas</h4>
+                        <p>Requieren más esfuerzo</p>
+                    </div>
+                </div>
+
+                <p class="deterioro-cta">Si prefieres anticiparte, este es el momento de evaluar tu situación.</p>
             </div>
         </section>
 
