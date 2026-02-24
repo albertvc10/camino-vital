@@ -325,16 +325,12 @@
         }
         @media (max-width: 768px) {
             .deterioro-timeline {
-                padding: 0 10px;
+                padding: 0;
+                max-width: 100%;
+                overflow-x: auto;
             }
-            .deterioro-graph .axis-label {
-                font-size: 9px;
-            }
-            .deterioro-graph .phase-label {
-                font-size: 11px;
-            }
-            .deterioro-graph .phase-sublabel {
-                font-size: 9px;
+            .deterioro-graph {
+                min-width: 450px;
             }
             .deterioro-consequences {
                 grid-template-columns: 1fr;
