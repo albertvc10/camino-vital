@@ -103,18 +103,26 @@
     },
     {
       "parameters": {
-        "jsCode": "// Pass-through - the response is handled by the next node\nreturn { json: $input.first().json };"
+        "operation": "executeQuery",
+        "query": "SELECT html_template FROM email_templates WHERE nombre = 'pagina_ya_configurado' AND activo = true;",
+        "options": {}
       },
-      "id": "7facebef-b0fd-46f0-91a9-224fb5b7af94",
+      "id": "obtener-template-ya-config",
       "name": "Obtener Template Ya Configurado",
-      "type": "n8n-nodes-base.code",
+      "type": "n8n-nodes-base.postgres",
       "position": [2800, 640],
-      "typeVersion": 2
+      "typeVersion": 2.4,
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
     },
     {
       "parameters": {
         "respondWith": "text",
-        "responseBody": "<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Sesiones Ya Configuradas</title>\n  <style>\n    body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; text-align: center; }\n    .card { background: #e8f5e9; border-radius: 12px; padding: 40px; }\n    h1 { color: #2e7d32; }\n    p { color: #666; font-size: 18px; }\n  </style>\n</head>\n<body>\n  <div class=\"card\">\n    <h1>✅ ¡Ya tienes tus sesiones configuradas!</h1>\n    <p>Tu programa ya está en marcha. Revisa tu email para ver tu próxima sesión de ejercicios.</p>\n    <p style=\"margin-top: 30px; font-size: 14px; color: #999;\">Puedes cerrar esta ventana.</p>\n  </div>\n</body>\n</html>",
+        "responseBody": "={{ $json.html_template }}",
         "options": {
           "responseHeaders": {
             "entries": [
@@ -134,8 +142,36 @@
     },
     {
       "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT html_template FROM email_templates WHERE nombre = 'pagina_seleccion_procesando' AND activo = true;",
+        "options": {}
+      },
+      "id": "obtener-template-procesando",
+      "name": "Obtener Template Procesando",
+      "type": "n8n-nodes-base.postgres",
+      "position": [1680, -120],
+      "typeVersion": 2.4,
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Renderizar template de procesando con datos del usuario\nconst template = $json.html_template;\nconst userData = $node['Añadir Config a Usuario'].json;\n\nconst renderedHTML = template\n  .replace(/\\{\\{sesiones_objetivo_semana\\}\\}/g, userData.sesiones_objetivo_semana || '');\n\nreturn {\n  json: {\n    html_rendered: renderedHTML,\n    userData: userData\n  }\n};"
+      },
+      "id": "renderizar-procesando",
+      "name": "Renderizar Procesando",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1872, -120]
+    },
+    {
+      "parameters": {
         "respondWith": "text",
-        "responseBody": "=<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\">\n  <title>¡Perfecto!</title>\n  <style>\n    body {\n      font-family: Arial, sans-serif;\n      max-width: 600px;\n      margin: 50px auto;\n      padding: 20px;\n      text-align: center;\n      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n      min-height: 100vh;\n      display: flex;\n      align-items: center;\n      justify-content: center;\n    }\n    .card {\n      background: white;\n      border-radius: 12px;\n      padding: 40px;\n      box-shadow: 0 10px 40px rgba(0,0,0,0.2);\n    }\n    h1 {\n      color: #4CAF50;\n      margin: 0 0 20px 0;\n      font-size: 32px;\n    }\n    p {\n      font-size: 18px;\n      line-height: 1.6;\n      color: #555;\n    }\n    .icon {\n      font-size: 64px;\n      margin-bottom: 20px;\n    }\n    .highlight {\n      background: #e8f5e9;\n      padding: 15px;\n      border-radius: 8px;\n      margin: 20px 0;\n      color: #2e7d32;\n      font-weight: bold;\n    }\n    .loader {\n      display: inline-block;\n      width: 20px;\n      height: 20px;\n      border: 3px solid #4CAF50;\n      border-radius: 50%;\n      border-top-color: transparent;\n      animation: spin 1s linear infinite;\n      margin-right: 10px;\n      vertical-align: middle;\n    }\n    @keyframes spin {\n      to { transform: rotate(360deg); }\n    }\n  </style>\n</head>\n<body>\n  <div class=\"card\">\n    <div class=\"icon\">🎉</div>\n    <h1>¡Perfecto!</h1>\n    <p>Has elegido hacer <strong>{{ $json.sesiones_objetivo_semana }} sesiones esta semana</strong></p>\n    <div class=\"highlight\">\n      <span class=\"loader\"></span>\n      Estamos preparando tu primera sesión personalizada...<br><br>\n      📧 <strong>Recibirás un email en 1-2 minutos</strong>\n    </div>\n    <p style=\"margin-top: 30px; font-size: 16px; color: #666;\">\n      Puedes cerrar esta ventana.<br>\n      Tu sesión llegará a tu correo muy pronto.\n    </p>\n    <p style=\"margin-top: 30px; color: #888; font-size: 14px;\">\n      ¡Bienvenido a Camino Vital! 💪\n    </p>\n  </div>\n</body>\n</html>",
+        "responseBody": "={{ $json.html_rendered }}",
         "options": {
           "responseHeaders": {
             "entries": [
@@ -150,7 +186,7 @@
       "id": "responder-procesando",
       "name": "Responder Procesando",
       "type": "n8n-nodes-base.respondToWebhook",
-      "position": [1728, 16],
+      "position": [2064, -120],
       "typeVersion": 1.1
     },
     {
@@ -167,7 +203,7 @@
       "id": "04db5472-b6b1-49cc-b02f-74ade2035091",
       "name": "Generar Sesión con IA",
       "type": "n8n-nodes-base.httpRequest",
-      "position": [1920, 16],
+      "position": [2256, -120],
       "typeVersion": 4.2
     },
     {
@@ -179,7 +215,7 @@
       "id": "e3c660d2-0199-4f97-a185-2fb1a56fc0ea",
       "name": "Obtener Sesión Completa",
       "type": "n8n-nodes-base.postgres",
-      "position": [2128, 16],
+      "position": [2464, -120],
       "typeVersion": 2.4,
       "credentials": {
         "postgres": {
@@ -197,7 +233,7 @@
       "id": "bfc07d5c-8deb-4508-9c47-1701dab8e682",
       "name": "Obtener Template Email",
       "type": "n8n-nodes-base.postgres",
-      "position": [2336, 16],
+      "position": [2672, -120],
       "typeVersion": 2.4,
       "credentials": {
         "postgres": {
@@ -208,12 +244,12 @@
     },
     {
       "parameters": {
-        "jsCode": "// Preparar email usando template de BD (dark mode unificado)\n\nconst usuario = $node[\"Añadir Config a Usuario\"].json;\nconst sesion = $node[\"Obtener Sesión Completa\"].json;\nconst template = $node[\"Obtener Template Email\"].json.html_template;\nconst config = usuario.config;\n\nconsole.log('📧 Preparando email con template de BD');\nconsole.log('🎯 Sesión ID:', sesion.sesion_id);\n\nconst webhookUrl = config.WEBHOOK_URL || 'http://localhost:5678';\nconst sesionUrl = `${webhookUrl}/webhook/view-session/sesion/${sesion.sesion_id}?token=${usuario.auth_token}`;\n\n// Calcular contenido según tipo de sesión\nlet totalEjercicios = 'N/A';\nlet enfoqueTexto = sesion.enfoque || 'Mixto';\n\nif (sesion.enfoque === 'fuerza' && sesion.calentamiento && sesion.trabajo_principal) {\n  const calentamiento = typeof sesion.calentamiento === 'string' ? JSON.parse(sesion.calentamiento) : sesion.calentamiento;\n  const trabajoPrincipal = typeof sesion.trabajo_principal === 'string' ? JSON.parse(sesion.trabajo_principal) : sesion.trabajo_principal;\n  totalEjercicios = `${(calentamiento?.length || 0) + (trabajoPrincipal?.length || 0)} ejercicios personalizados`;\n  enfoqueTexto = 'Fuerza Funcional';\n} else if (sesion.enfoque === 'cardio') {\n  totalEjercicios = 'Actividad cardiovascular guiada';\n  enfoqueTexto = 'Cardio y Resistencia';\n}\n\n// Reemplazar variables en template de BD\nconst emailHTML = template\n  .replace(/\\{\\{nombre\\}\\}/g, usuario.nombre || '')\n  .replace(/\\{\\{sesiones_objetivo\\}\\}/g, usuario.sesiones_objetivo_semana || '')\n  .replace(/\\{\\{introduccion\\}\\}/g, sesion.introduccion_personalizada || 'Sesión diseñada para tu nivel y objetivos.')\n  .replace(/\\{\\{duracion\\}\\}/g, sesion.duracion_estimada || '25-30 minutos')\n  .replace(/\\{\\{enfoque\\}\\}/g, enfoqueTexto)\n  .replace(/\\{\\{contenido\\}\\}/g, totalEjercicios)\n  .replace(/\\{\\{nivel\\}\\}/g, usuario.nivel_actual || '')\n  .replace(/\\{\\{sesion_url\\}\\}/g, sesionUrl);\n\nreturn {\n  json: {\n    user_id: usuario.id,\n    user_email: usuario.email,\n    user_nombre: usuario.nombre,\n    sesion_id: sesion.sesion_id,\n    sesiones_objetivo: usuario.sesiones_objetivo_semana,\n    semana: usuario.semana_actual,\n    sesion_numero: 1,\n    email_html: emailHTML,\n    asunto: `🎯 Tu Sesión 1 de ${usuario.sesiones_objetivo_semana}: ${sesion.titulo}`,\n    webhook_url: webhookUrl\n  }\n};"
+        "jsCode": "// Preparar email usando template de BD (dark mode unificado)\n\nconst usuario = $node[\"Añadir Config a Usuario\"].json;\nconst sesion = $node[\"Obtener Sesión Completa\"].json;\nconst template = $node[\"Obtener Template Email\"].json.html_template;\nconst config = usuario.config;\n\nconsole.log('Preparando email con template de BD');\nconsole.log('Sesión ID:', sesion.sesion_id);\n\nconst webhookUrl = config.WEBHOOK_URL || 'http://localhost:5678';\nconst sesionUrl = `${webhookUrl}/webhook/view-session/sesion/${sesion.sesion_id}?token=${usuario.auth_token}`;\n\n// Calcular contenido según tipo de sesión\nlet totalEjercicios = 'N/A';\nlet enfoqueTexto = sesion.enfoque || 'Mixto';\n\nif (sesion.enfoque === 'fuerza' && sesion.calentamiento && sesion.trabajo_principal) {\n  const calentamiento = typeof sesion.calentamiento === 'string' ? JSON.parse(sesion.calentamiento) : sesion.calentamiento;\n  const trabajoPrincipal = typeof sesion.trabajo_principal === 'string' ? JSON.parse(sesion.trabajo_principal) : sesion.trabajo_principal;\n  totalEjercicios = `${(calentamiento?.length || 0) + (trabajoPrincipal?.length || 0)} ejercicios personalizados`;\n  enfoqueTexto = 'Fuerza Funcional';\n} else if (sesion.enfoque === 'cardio') {\n  totalEjercicios = 'Actividad cardiovascular guiada';\n  enfoqueTexto = 'Cardio y Resistencia';\n}\n\n// Reemplazar variables en template de BD\nconst emailHTML = template\n  .replace(/\\{\\{nombre\\}\\}/g, usuario.nombre || '')\n  .replace(/\\{\\{sesiones_objetivo\\}\\}/g, usuario.sesiones_objetivo_semana || '')\n  .replace(/\\{\\{introduccion\\}\\}/g, sesion.introduccion_personalizada || 'Sesión diseñada para tu nivel y objetivos.')\n  .replace(/\\{\\{duracion\\}\\}/g, sesion.duracion_estimada || '25-30 minutos')\n  .replace(/\\{\\{enfoque\\}\\}/g, enfoqueTexto)\n  .replace(/\\{\\{contenido\\}\\}/g, totalEjercicios)\n  .replace(/\\{\\{nivel\\}\\}/g, usuario.nivel_actual || '')\n  .replace(/\\{\\{sesion_url\\}\\}/g, sesionUrl);\n\nreturn {\n  json: {\n    user_id: usuario.id,\n    user_email: usuario.email,\n    user_nombre: usuario.nombre,\n    sesion_id: sesion.sesion_id,\n    sesiones_objetivo: usuario.sesiones_objetivo_semana,\n    semana: usuario.semana_actual,\n    sesion_numero: 1,\n    email_html: emailHTML,\n    asunto: `Tu Sesión 1 de ${usuario.sesiones_objetivo_semana}: ${sesion.titulo}`,\n    webhook_url: webhookUrl\n  }\n};"
       },
       "id": "752bb13b-18f5-43f5-bc31-4b30910735b4",
       "name": "Preparar Email Sesión",
       "type": "n8n-nodes-base.code",
-      "position": [2544, 16],
+      "position": [2880, -120],
       "typeVersion": 2
     },
     {
@@ -231,7 +267,7 @@
       "name": "Enviar vía UTIL Email",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2752, 16]
+      "position": [3088, -120]
     }
   ],
   "connections": {
@@ -301,7 +337,7 @@
         ],
         [
           {
-            "node": "Responder Procesando",
+            "node": "Obtener Template Procesando",
             "type": "main",
             "index": 0
           }
@@ -313,6 +349,28 @@
         [
           {
             "node": "Responder Ya Configurado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Template Procesando": {
+      "main": [
+        [
+          {
+            "node": "Renderizar Procesando",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Renderizar Procesando": {
+      "main": [
+        [
+          {
+            "node": "Responder Procesando",
             "type": "main",
             "index": 0
           }
@@ -382,8 +440,8 @@
   },
   "staticData": null,
   "pinData": {},
-  "versionId": "v3",
-  "versionCounter": 165,
+  "versionId": "v4",
+  "versionCounter": 166,
   "triggerCount": 1,
   "tags": [
     {

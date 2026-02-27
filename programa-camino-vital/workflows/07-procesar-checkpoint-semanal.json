@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-01-22T19:51:39.921Z",
+  "updatedAt": "2026-02-13T12:00:00.000Z",
   "createdAt": "2026-01-19T20:03:07.656Z",
   "id": "v8HjVPF07oBYmLBX",
   "name": "Camino Vital - 07 Procesar Checkpoint Semanal",
@@ -128,8 +128,26 @@
     },
     {
       "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT html_template FROM email_templates WHERE nombre = 'checkpoint_ya_procesado' AND activo = true;",
+        "options": {}
+      },
+      "id": "obtener-template-ya-procesado",
+      "name": "Obtener Template Ya Procesado",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1200, 200],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
         "respondWith": "text",
-        "responseBody": "=<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Ya procesado</title></head><body style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #232323; color: #E8E8E8; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0;\"><div style=\"background: #1C1C1C; padding: 40px; border-radius: 18px; text-align: center; max-width: 400px;\"><div style=\"font-size: 48px; margin-bottom: 20px;\">✅</div><h1 style=\"color: #62B882; margin: 0 0 15px 0;\">¡Ya procesado!</h1><p style=\"color: #B5B5B5; margin: 0;\">Tu checkpoint de esta semana ya fue registrado. Revisa tu email para ver tu primera sesión de la nueva semana.</p></div></body></html>",
+        "responseBody": "={{ $json.html_template }}",
         "options": {
           "responseCode": 200,
           "responseHeaders": {
@@ -146,7 +164,7 @@
       "name": "Responder Ya Procesado",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [1260, 200]
+      "position": [1380, 200]
     },
     {
       "parameters": {
@@ -215,7 +233,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Preparar email de programa completado\nconst template = $json.html_template;\nconst usuario = $node['Marcar Programa Completado'].json;\nconst config = $node['Añadir Config'].json.config;\nconst webhookUrl = config.WEBHOOK_URL || 'http://localhost:5678';\n\nconst emailHTML = template\n  .replace(/\\{\\{nombre\\}\\}/g, usuario.nombre || 'Usuario')\n  .replace(/\\{\\{nivel_actual\\}\\}/g, usuario.nivel_actual || '')\n  .replace(/\\{\\{intensidad\\}\\}/g, usuario.intensidad_nivel || '');\n\nreturn {\n  json: {\n    user_id: usuario.id,\n    user_email: usuario.email,\n    user_nombre: usuario.nombre,\n    email_html: emailHTML,\n    asunto: '🏆 ¡Felicidades! Has completado Camino Vital',\n    webhook_url: webhookUrl\n  }\n};"
+        "jsCode": "// Preparar email de programa completado\nconst template = $json.html_template;\nconst usuario = $node['Marcar Programa Completado'].json;\nconst config = $node['Añadir Config'].json.config;\nconst webhookUrl = config.WEBHOOK_URL || 'http://localhost:5678';\n\nconst emailHTML = template\n  .replace(/\\{\\{nombre\\}\\}/g, usuario.nombre || 'Usuario')\n  .replace(/\\{\\{nivel_actual\\}\\}/g, usuario.nivel_actual || '')\n  .replace(/\\{\\{intensidad\\}\\}/g, usuario.intensidad_nivel || '');\n\nreturn {\n  json: {\n    user_id: usuario.id,\n    user_email: usuario.email,\n    user_nombre: usuario.nombre,\n    email_html: emailHTML,\n    asunto: 'Felicidades - Has completado Camino Vital',\n    webhook_url: webhookUrl\n  }\n};"
       },
       "id": "preparar-email-fin",
       "name": "Preparar Email Fin Programa",
@@ -242,8 +260,26 @@
     },
     {
       "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT html_template FROM email_templates WHERE nombre = 'pagina_programa_completado' AND activo = true;",
+        "options": {}
+      },
+      "id": "obtener-pagina-fin",
+      "name": "Obtener Página Fin Programa",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [2360, 350],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
         "respondWith": "text",
-        "responseBody": "=<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>¡Programa Completado!</title></head><body style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #232323; color: #E8E8E8; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0;\"><div style=\"background: #1C1C1C; padding: 40px; border-radius: 18px; text-align: center; max-width: 400px;\"><div style=\"font-size: 64px; margin-bottom: 20px;\">🏆</div><h1 style=\"color: #DFCA61; margin: 0 0 15px 0;\">¡Felicidades!</h1><p style=\"color: #B5B5B5; font-size: 18px; margin: 0 0 20px 0;\">Has completado el programa Camino Vital</p><p style=\"color: #62B882; margin: 0;\">Revisa tu email para más información.</p></div></body></html>",
+        "responseBody": "={{ $json.html_template }}",
         "options": {
           "responseCode": 200,
           "responseHeaders": {
@@ -260,12 +296,40 @@
       "name": "Responder Programa Completado",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [2360, 350]
+      "position": [2540, 350]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT html_template FROM email_templates WHERE nombre = 'pagina_checkpoint_confirmado' AND activo = true;",
+        "options": {}
+      },
+      "id": "obtener-template-confirmacion",
+      "name": "Obtener Template Confirmación",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [1380, 500],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Renderizar template de confirmación con datos del usuario\nconst template = $json.html_template;\nconst userData = $node['Añadir Config'].json;\n\nconst renderedHTML = template\n  .replace(/\\{\\{nombre\\}\\}/g, userData.nombre || '')\n  .replace(/\\{\\{semana_actual\\}\\}/g, userData.semana_actual || '')\n  .replace(/\\{\\{nivel_actual\\}\\}/g, (userData.nivel_actual || '').toUpperCase())\n  .replace(/\\{\\{intensidad_nivel\\}\\}/g, userData.intensidad_nivel || '')\n  .replace(/\\{\\{sesiones_objetivo_semana\\}\\}/g, userData.sesiones_objetivo_semana || '');\n\nreturn {\n  json: {\n    html_rendered: renderedHTML,\n    userData: userData\n  }\n};"
+      },
+      "id": "renderizar-confirmacion",
+      "name": "Renderizar Confirmación",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 500]
     },
     {
       "parameters": {
         "respondWith": "text",
-        "responseBody": "=<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>¡Confirmado!</title></head><body style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #232323; color: #E8E8E8; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0;\"><div style=\"background: #1C1C1C; padding: 40px; border-radius: 18px; text-align: center; max-width: 450px;\"><div style=\"font-size: 64px; margin-bottom: 20px;\">🎉</div><h1 style=\"color: #62B882; margin: 0 0 15px 0;\">¡Perfecto, {{ $json.nombre }}!</h1><p style=\"color: #B5B5B5; font-size: 16px; margin: 0 0 25px 0;\">Tu configuración para la <strong style=\"color: #DFCA61;\">Semana {{ $json.semana_actual }}</strong></p><div style=\"background: rgba(98,184,130,0.1); border-radius: 12px; padding: 20px; margin: 20px 0;\"><p style=\"margin: 5px 0; color: #B5B5B5;\">📊 Nivel: <strong style=\"color: #E8E8E8;\">{{ $json.nivel_actual.toUpperCase() }}</strong></p><p style=\"margin: 5px 0; color: #B5B5B5;\">⚡ Intensidad: <strong style=\"color: #E8E8E8;\">{{ $json.intensidad_nivel }}%</strong></p><p style=\"margin: 5px 0; color: #B5B5B5;\">📅 Sesiones/semana: <strong style=\"color: #E8E8E8;\">{{ $json.sesiones_objetivo_semana }}</strong></p></div><p style=\"color: #62B882; margin: 20px 0 0 0;\">📬 En breve recibirás tu primera sesión por email</p></div></body></html>",
+        "responseBody": "={{ $json.html_rendered }}",
         "options": {
           "responseCode": 200,
           "responseHeaders": {
@@ -282,7 +346,7 @@
       "name": "Responder Confirmación Inmediata",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [1380, 500]
+      "position": [1740, 500]
     },
     {
       "parameters": {
@@ -299,7 +363,7 @@
       "name": "Llamar Generador Sesión IA",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1600, 500]
+      "position": [1960, 500]
     },
     {
       "parameters": {
@@ -311,7 +375,7 @@
       "name": "Obtener Sesión Generada",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [1820, 500],
+      "position": [2180, 500],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -329,7 +393,7 @@
       "name": "Obtener Template Nueva Semana",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [2040, 500],
+      "position": [2400, 500],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -339,13 +403,13 @@
     },
     {
       "parameters": {
-        "jsCode": "// Preparar email usando templates de BD\nconst templates = $json;\nconst sesion = $node['Obtener Sesión Generada'].json;\nconst checkpointData = $node['Añadir Config'].json;\nconst config = checkpointData.config;\n\nconsole.log('📧 Preparando email checkpoint con sesión nueva semana');\n\nconst webhookUrl = config.WEBHOOK_URL || 'http://localhost:5678';\nconst sesionUrl = `${webhookUrl}/webhook/view-session/sesion/${sesion.id}?token=${sesion.auth_token}`;\n\n// Calcular total ejercicios y enfoque\nlet totalEjercicios = 'N/A';\nlet enfoqueTexto = 'Mixto';\n\nif (sesion.enfoque === 'fuerza' && sesion.calentamiento && sesion.trabajo_principal) {\n  const calentamiento = typeof sesion.calentamiento === 'string' ? JSON.parse(sesion.calentamiento) : sesion.calentamiento;\n  const trabajoPrincipal = typeof sesion.trabajo_principal === 'string' ? JSON.parse(sesion.trabajo_principal) : sesion.trabajo_principal;\n  totalEjercicios = `${(calentamiento?.length || 0) + (trabajoPrincipal?.length || 0)} ejercicios personalizados`;\n  enfoqueTexto = 'Fuerza Funcional';\n} else if (sesion.enfoque === 'cardio') {\n  totalEjercicios = 'Actividad cardiovascular guiada';\n  enfoqueTexto = 'Cardio y Resistencia';\n}\n\n// Determinar banner de ajuste usando accion_tomada (nuevo campo)\nlet bannerAjuste = '';\nconst accion = checkpointData.accion_tomada;\nconsole.log('🎯 Acción tomada:', accion);\n\nif (accion && accion !== 'mantener') {\n  let bannerTemplate = '';\n\n  if (accion === 'subir' || accion === 'subir_mucho') {\n    bannerTemplate = templates.banner_subir;\n  } else if (accion === 'bajar' || accion === 'bajar_mucho') {\n    bannerTemplate = templates.banner_bajar;\n  }\n\n  if (bannerTemplate) {\n    bannerAjuste = bannerTemplate\n      .replace(/\\{\\{ajuste_razon\\}\\}/g, checkpointData.ajuste_razon || '')\n      .replace(/\\{\\{ajuste_nivel\\}\\}/g, (checkpointData.nivel_actual || '').toUpperCase())\n      .replace(/\\{\\{ajuste_intensidad\\}\\}/g, checkpointData.ajuste_intensidad || '');\n  }\n}\n\n// Reemplazar variables en el template principal\nconst emailHTML = templates.html_template\n  .replace(/\\{\\{semana\\}\\}/g, sesion.semana || '')\n  .replace(/\\{\\{nombre\\}\\}/g, sesion.user_nombre || '')\n  .replace(/\\{\\{semana_anterior\\}\\}/g, (checkpointData.semana_actual - 1) || '')\n  .replace(/\\{\\{banner_ajuste\\}\\}/g, bannerAjuste)\n  .replace(/\\{\\{titulo\\}\\}/g, sesion.titulo || '')\n  .replace(/\\{\\{descripcion\\}\\}/g, sesion.descripcion || 'Sesión personalizada para tu nivel')\n  .replace(/\\{\\{duracion\\}\\}/g, sesion.duracion_estimada || '30')\n  .replace(/\\{\\{enfoque\\}\\}/g, enfoqueTexto)\n  .replace(/\\{\\{contenido\\}\\}/g, totalEjercicios)\n  .replace(/\\{\\{sesion_url\\}\\}/g, sesionUrl)\n  .replace(/\\{\\{sesiones_objetivo\\}\\}/g, checkpointData.sesiones_objetivo_semana || '');\n\nreturn {\n  json: {\n    user_id: sesion.user_id,\n    user_email: sesion.user_email,\n    user_nombre: sesion.user_nombre,\n    sesion_id: sesion.id,\n    email_html: emailHTML,\n    asunto: `🎯 Semana ${sesion.semana} - Sesión 1: ${sesion.titulo}`,\n    webhook_url: webhookUrl\n  }\n};\n"
+        "jsCode": "// Preparar email usando templates de BD\nconst templates = $json;\nconst sesion = $node['Obtener Sesión Generada'].json;\nconst checkpointData = $node['Añadir Config'].json;\nconst config = checkpointData.config;\n\nconsole.log('Preparando email checkpoint con sesión nueva semana');\n\nconst webhookUrl = config.WEBHOOK_URL || 'http://localhost:5678';\nconst sesionUrl = `${webhookUrl}/webhook/view-session/sesion/${sesion.id}?token=${sesion.auth_token}`;\n\n// Calcular total ejercicios y enfoque\nlet totalEjercicios = 'N/A';\nlet enfoqueTexto = 'Mixto';\n\nif (sesion.enfoque === 'fuerza' && sesion.calentamiento && sesion.trabajo_principal) {\n  const calentamiento = typeof sesion.calentamiento === 'string' ? JSON.parse(sesion.calentamiento) : sesion.calentamiento;\n  const trabajoPrincipal = typeof sesion.trabajo_principal === 'string' ? JSON.parse(sesion.trabajo_principal) : sesion.trabajo_principal;\n  totalEjercicios = `${(calentamiento?.length || 0) + (trabajoPrincipal?.length || 0)} ejercicios personalizados`;\n  enfoqueTexto = 'Fuerza Funcional';\n} else if (sesion.enfoque === 'cardio') {\n  totalEjercicios = 'Actividad cardiovascular guiada';\n  enfoqueTexto = 'Cardio y Resistencia';\n}\n\n// Determinar banner de ajuste usando accion_tomada (nuevo campo)\nlet bannerAjuste = '';\nconst accion = checkpointData.accion_tomada;\nconsole.log('Acción tomada:', accion);\n\nif (accion && accion !== 'mantener') {\n  let bannerTemplate = '';\n\n  if (accion === 'subir' || accion === 'subir_mucho') {\n    bannerTemplate = templates.banner_subir;\n  } else if (accion === 'bajar' || accion === 'bajar_mucho') {\n    bannerTemplate = templates.banner_bajar;\n  }\n\n  if (bannerTemplate) {\n    bannerAjuste = bannerTemplate\n      .replace(/\\{\\{ajuste_razon\\}\\}/g, checkpointData.ajuste_razon || '')\n      .replace(/\\{\\{ajuste_nivel\\}\\}/g, (checkpointData.nivel_actual || '').toUpperCase())\n      .replace(/\\{\\{ajuste_intensidad\\}\\}/g, checkpointData.ajuste_intensidad || '');\n  }\n}\n\n// Reemplazar variables en el template principal\nconst emailHTML = templates.html_template\n  .replace(/\\{\\{semana\\}\\}/g, sesion.semana || '')\n  .replace(/\\{\\{nombre\\}\\}/g, sesion.user_nombre || '')\n  .replace(/\\{\\{semana_anterior\\}\\}/g, (checkpointData.semana_actual - 1) || '')\n  .replace(/\\{\\{banner_ajuste\\}\\}/g, bannerAjuste)\n  .replace(/\\{\\{titulo\\}\\}/g, sesion.titulo || '')\n  .replace(/\\{\\{descripcion\\}\\}/g, sesion.descripcion || 'Sesión personalizada para tu nivel')\n  .replace(/\\{\\{duracion\\}\\}/g, sesion.duracion_estimada || '30')\n  .replace(/\\{\\{enfoque\\}\\}/g, enfoqueTexto)\n  .replace(/\\{\\{contenido\\}\\}/g, totalEjercicios)\n  .replace(/\\{\\{sesion_url\\}\\}/g, sesionUrl)\n  .replace(/\\{\\{sesiones_objetivo\\}\\}/g, checkpointData.sesiones_objetivo_semana || '');\n\nreturn {\n  json: {\n    user_id: sesion.user_id,\n    user_email: sesion.user_email,\n    user_nombre: sesion.user_nombre,\n    sesion_id: sesion.id,\n    email_html: emailHTML,\n    asunto: `Semana ${sesion.semana} - Sesión 1: ${sesion.titulo}`,\n    webhook_url: webhookUrl\n  }\n};\n"
       },
       "id": "preparar-email-sesion",
       "name": "Preparar Email Sesión",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2260, 500]
+      "position": [2620, 500]
     },
     {
       "parameters": {
@@ -362,12 +426,40 @@
       "name": "Enviar Email Sesión (UTIL)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2480, 500]
+      "position": [2840, 500]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT html_template FROM email_templates WHERE nombre = 'pagina_error' AND activo = true;",
+        "options": {}
+      },
+      "id": "obtener-template-error",
+      "name": "Obtener Template Error",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [720, 500],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Renderizar template de error\nconst template = $json.html_template;\n\nconst errorIcon = '<svg width=\"64\" height=\"64\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#EF5350\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><line x1=\"15\" y1=\"9\" x2=\"9\" y2=\"15\"></line><line x1=\"9\" y1=\"9\" x2=\"15\" y2=\"15\"></line></svg>';\n\nconst renderedHTML = template\n  .replace(/\\{\\{titulo\\}\\}/g, 'Error')\n  .replace(/\\{\\{icono\\}\\}/g, errorIcon)\n  .replace(/\\{\\{mensaje\\}\\}/g, 'Hubo un problema procesando tu checkpoint. Por favor, intenta de nuevo o contacta soporte.')\n  .replace(/\\{\\{#if contacto\\}\\}[\\s\\S]*?\\{\\{\\/if\\}\\}/g, '');\n\nreturn {\n  json: {\n    html_rendered: renderedHTML\n  }\n};"
+      },
+      "id": "renderizar-error",
+      "name": "Renderizar Error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 500]
     },
     {
       "parameters": {
         "respondWith": "text",
-        "responseBody": "=<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Error</title></head><body style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #232323; color: #E8E8E8; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0;\"><div style=\"background: #1C1C1C; padding: 40px; border-radius: 18px; text-align: center; max-width: 400px;\"><div style=\"font-size: 48px; margin-bottom: 20px;\">❌</div><h1 style=\"color: #EF5350; margin: 0 0 15px 0;\">Error</h1><p style=\"color: #B5B5B5; margin: 0;\">Hubo un problema procesando tu checkpoint. Por favor, intenta de nuevo o contacta soporte.</p></div></body></html>",
+        "responseBody": "={{ $json.html_rendered }}",
         "options": {
           "responseCode": 500,
           "responseHeaders": {
@@ -384,7 +476,7 @@
       "name": "Responder Error",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [800, 500]
+      "position": [1080, 500]
     }
   ],
   "connections": {
@@ -434,7 +526,7 @@
       "error": [
         [
           {
-            "node": "Responder Error",
+            "node": "Obtener Template Error",
             "type": "main",
             "index": 0
           }
@@ -452,6 +544,28 @@
         ]
       ],
       "error": [
+        [
+          {
+            "node": "Obtener Template Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Template Error": {
+      "main": [
+        [
+          {
+            "node": "Renderizar Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Renderizar Error": {
+      "main": [
         [
           {
             "node": "Responder Error",
@@ -476,7 +590,7 @@
       "main": [
         [
           {
-            "node": "Responder Ya Procesado",
+            "node": "Obtener Template Ya Procesado",
             "type": "main",
             "index": 0
           }
@@ -484,6 +598,17 @@
         [
           {
             "node": "IF: ¿Programa completado (>12 sem)?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Template Ya Procesado": {
+      "main": [
+        [
+          {
+            "node": "Responder Ya Procesado",
             "type": "main",
             "index": 0
           }
@@ -499,6 +624,28 @@
             "index": 0
           }
         ],
+        [
+          {
+            "node": "Obtener Template Confirmación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Template Confirmación": {
+      "main": [
+        [
+          {
+            "node": "Renderizar Confirmación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Renderizar Confirmación": {
+      "main": [
         [
           {
             "node": "Responder Confirmación Inmediata",
@@ -553,6 +700,17 @@
       ]
     },
     "Enviar Email Fin (UTIL)": {
+      "main": [
+        [
+          {
+            "node": "Obtener Página Fin Programa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Página Fin Programa": {
       "main": [
         [
           {
@@ -617,8 +775,8 @@
   "staticData": null,
   "meta": null,
   "pinData": {},
-  "versionId": "v6-config-table",
-  "versionCounter": 44,
+  "versionId": "v7-templates-bd",
+  "versionCounter": 45,
   "triggerCount": 1,
   "tags": [],
   "shared": [

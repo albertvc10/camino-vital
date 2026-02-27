@@ -330,6 +330,61 @@ El nodo "Execute Workflow" de n8n **no funciona bien con nombres que tienen cara
 - Código de "Renderizar Template" actualizado para usar `$json.config.WEBHOOK_URL`
 - **Acción deploy:** Ninguna especial, el código funciona en ambos entornos
 
+**4. Nueva tabla `ejercicios_cardio` (COMPLETADO EN LOCAL)**
+- Tabla para ejercicios de cardio (resistencia e intervalos) separada de ejercicios de fuerza
+- 11 registros: 6 de resistencia + 5 de intervalos (algunos duplicados para cubrir múltiples niveles)
+- **Acción deploy:** Ejecutar migración SQL en producción (ver abajo)
+
+```sql
+-- Crear tabla ejercicios_cardio
+CREATE TABLE IF NOT EXISTS ejercicios_cardio (
+  id SERIAL PRIMARY KEY,
+  nombre VARCHAR(100) NOT NULL,
+  tipo VARCHAR(20) NOT NULL CHECK (tipo IN ('resistencia', 'intervalos')),
+  nivel VARCHAR(20) NOT NULL CHECK (nivel IN ('iniciacion', 'intermedio', 'avanzado')),
+  descripcion TEXT,
+  protocolo VARCHAR(200),
+  objetivo_fisiologico VARCHAR(200),
+  activo BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_ejercicios_cardio_nivel ON ejercicios_cardio(nivel);
+CREATE INDEX IF NOT EXISTS idx_ejercicios_cardio_tipo ON ejercicios_cardio(tipo);
+
+-- RESISTENCIA (6 ejercicios)
+INSERT INTO ejercicios_cardio (nombre, tipo, nivel, descripcion, protocolo, objetivo_fisiologico) VALUES
+('Marcha en el sitio', 'resistencia', 'iniciacion', 'Caminar sin desplazarse elevando ligeramente los pies', '5-10 min continuos', 'Activación cardiovascular inicial'),
+('Paseo corto cómodo', 'resistencia', 'iniciacion', 'Caminar a ritmo conversacional', '10-20 min', 'Base aeróbica mínima'),
+('Marcha sentada', 'resistencia', 'iniciacion', 'Elevar rodillas alternando sentado en silla', '5-10 min', 'Activación circulación sin impacto'),
+('Caminata moderada', 'resistencia', 'intermedio', 'Ritmo ligeramente más rápido pero conversacional', '20-40 min', 'Mejora eficiencia cardiovascular'),
+('Cambios suaves de ritmo', 'resistencia', 'intermedio', 'Acelerar 30 seg cada 3-4 min', '20-30 min totales', 'Preparación para intervalos'),
+('Power walking', 'resistencia', 'avanzado', 'Caminata con braceo activo y zancada firme', '20-40 min', 'Mayor estímulo cardiovascular');
+
+-- INTERVALOS (5 ejercicios - algunos duplicados para cubrir intermedio+avanzado)
+INSERT INTO ejercicios_cardio (nombre, tipo, nivel, descripcion, protocolo, objetivo_fisiologico) VALUES
+('Caminar rápido 30 seg', 'intervalos', 'iniciacion', 'Caminar más rápido de lo habitual', '30 seg rápido / 1-2 min suave x 3-4', 'Introducción al estímulo VO2'),
+('Marcha rodillas altas', 'intervalos', 'intermedio', 'Marchar rápido elevando rodillas sin saltar', '20-30 seg / 1-2 min descanso x 4-6', 'Alta intensidad segura'),
+('Cambios rápidos dirección', 'intervalos', 'intermedio', 'Caminar 10 pasos rápido, girar y repetir', '4-6 bloques', 'Sistema cardiovascular + coordinación'),
+('Marcha rodillas altas', 'intervalos', 'avanzado', 'Marchar rápido elevando rodillas sin saltar', '20-30 seg / 1-2 min descanso x 4-6', 'Alta intensidad segura'),
+('Cambios rápidos dirección', 'intervalos', 'avanzado', 'Caminar 10 pasos rápido, girar y repetir', '4-6 bloques', 'Sistema cardiovascular + coordinación');
+```
+
+**5. Workflow Generador Sesión IA - Integración ejercicios cardio (COMPLETADO EN LOCAL)**
+- **Nuevo nodo "Obtener Ejercicios Cardio"**: Consulta `ejercicios_cardio` filtrada por nivel del usuario
+  - Usa `$("Obtener Datos Usuario").first().json.nivel_actual` para acceder al nivel (evita error de múltiples items)
+- **Nodo "Preparar Prompt Claude" modificado**:
+  - Separa ejercicios de cardio por tipo (resistencia/intervalos)
+  - Prompt de cardio ahora incluye lista de ejercicios disponibles de la BD
+  - Claude elige un ejercicio de resistencia + opcionalmente uno de intervalos (si intensidad > 60%)
+- **Query "Guardar Sesión en DB" actualizada**:
+  - `tipo_actividad` guarda el nombre del ejercicio de resistencia elegido
+  - `actividad_principal` guarda JSON con `ejercicio_resistencia`, `ejercicio_intervalos`, `estructura_sesion`
+- **Probado exitosamente en local**: Sesión ID 213 generada correctamente con "Cambios suaves de ritmo" + "Marcha rodillas altas"
+- **Acción deploy:**
+  1. Primero ejecutar migración SQL para crear `ejercicios_cardio`
+  2. Luego actualizar workflow con deploy-production.sh
+
 ### Checklist pre-deploy
 
 ```bash
@@ -346,8 +401,17 @@ WHERE name LIKE '%01a%' OR name LIKE '%01b%';\""
 ssh root@164.90.222.166 "docker exec n8n_postgres psql -U n8n_admin -d n8n -c \"
 SELECT key, value FROM config;\""
 
-# 5. Ejecutar deploy
+# 5. Crear tabla ejercicios_cardio en producción (IMPORTANTE - ANTES del deploy)
+# Copiar el bloque SQL de la sección 4 arriba y ejecutar:
+ssh root@164.90.222.166 "docker exec -i n8n_postgres psql -U n8n_admin -d n8n" << 'EOF'
+-- Pegar aquí el SQL de CREATE TABLE e INSERT de ejercicios_cardio
+EOF
+
+# 6. Ejecutar deploy de workflows
 bash /root/camino-vital/programa-camino-vital/scripts/deploy-production.sh
+
+# 7. Reiniciar n8n para activar webhooks
+ssh root@164.90.222.166 "docker restart n8n"
 ```
 
 ---
@@ -809,3 +873,81 @@ docker restart n8n
 
 ### Prevención
 Después de cada `n8n import:workflow`, ejecutar el fix de versionado antes de intentar publicar en la UI.
+
+---
+
+## Troubleshooting: Usuario "Stuck" - Checkpoint procesado pero sesión no generada
+
+### Síntomas
+- Usuario completó el checkpoint dominical (seleccionó número de sesiones)
+- La `semana_actual` se incrementó correctamente
+- La generación de sesión falló (ej: Anthropic API saturada, timeout)
+- Usuario no puede volver a marcar checkpoint (ya fue procesado)
+- Usuario no recibe email con la nueva sesión
+
+### Causa
+El workflow 07-procesar-checkpoint actualiza el estado del usuario ANTES de generar la sesión. Si la generación falla después de actualizar el estado, el usuario queda en un estado inconsistente.
+
+### Solución
+
+**Paso 1: Regenerar la sesión manualmente**
+```bash
+# LOCAL
+curl -X POST http://localhost:5678/webhook/generar-sesion-ia \
+  -H "Content-Type: application/json" \
+  -d '{"user_id": USER_ID_AQUI}'
+
+# PRODUCCIÓN
+curl -X POST https://n8n.habitos-vitales.com/webhook/generar-sesion-ia \
+  -H "Content-Type: application/json" \
+  -d '{"user_id": USER_ID_AQUI}'
+```
+
+**Paso 2: Enviar el email de la sesión (el Generador no envía emails)**
+```bash
+# Primero, obtener el session_id de la sesión recién creada
+docker exec n8n_postgres psql -U n8n -d n8n -t -c "
+SELECT id, titulo FROM programa_sesiones
+WHERE user_id = USER_ID_AQUI
+ORDER BY id DESC LIMIT 1;"
+
+# Luego, reenviar el email usando el workflow UTIL
+# LOCAL
+curl -X POST http://localhost:5678/webhook/reenviar-sesion \
+  -H "Content-Type: application/json" \
+  -d '{"session_id": SESSION_ID_AQUI}'
+
+# PRODUCCIÓN
+curl -X POST https://n8n.habitos-vitales.com/webhook/reenviar-sesion \
+  -H "Content-Type: application/json" \
+  -d '{"session_id": SESSION_ID_AQUI}'
+```
+
+### Workflow UTIL - Reenviar Sesion Email
+Este workflow (`/webhook/reenviar-sesion`) permite reenviar el email de cualquier sesión existente:
+- **Input**: `{"session_id": number}`
+- **Output**: `{"success": true, "email": "...", "session_url": "..."}`
+- Obtiene datos de la sesión y usuario de la BD
+- Usa el template `email_sesion_siguiente`
+- Llama al workflow `UTIL - Enviar Email Brevo`
+
+### Script combinado para resolver usuario stuck
+```bash
+# Reemplazar USER_ID y ejecutar
+USER_ID=123
+
+# 1. Generar sesión
+curl -X POST http://localhost:5678/webhook/generar-sesion-ia \
+  -H "Content-Type: application/json" \
+  -d "{\"user_id\": $USER_ID}"
+
+# 2. Obtener session_id (esperar unos segundos para que se cree)
+sleep 5
+SESSION_ID=$(docker exec n8n_postgres psql -U n8n -d n8n -t -c \
+  "SELECT id FROM programa_sesiones WHERE user_id = $USER_ID ORDER BY id DESC LIMIT 1;" | tr -d ' ')
+
+# 3. Enviar email
+curl -X POST http://localhost:5678/webhook/reenviar-sesion \
+  -H "Content-Type: application/json" \
+  -d "{\"session_id\": $SESSION_ID}"
+```
