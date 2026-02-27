@@ -1,0 +1,140 @@
+{
+  "name": "UTIL - Reenviar Sesion Email",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "reenviar-sesion",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-reenviar",
+      "name": "Webhook Reenviar",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "reenviar-sesion"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT \n  ps.id as sesion_id,\n  ps.titulo,\n  ps.enfoque,\n  ps.numero_sesion,\n  ps.semana,\n  ps.introduccion_personalizada,\n  pu.id as user_id,\n  pu.email,\n  pu.nombre,\n  pu.auth_token,\n  pu.semana_actual,\n  pu.sesion_actual_dentro_semana\nFROM programa_sesiones ps\nJOIN programa_users pu ON ps.user_id = pu.id\nWHERE ps.id = {{ $json.body.session_id }};",
+        "options": {}
+      },
+      "id": "obtener-datos",
+      "name": "Obtener Datos Sesion y Usuario",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [200, 0],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT html_template FROM email_templates WHERE nombre = 'email_sesion_siguiente';",
+        "options": {}
+      },
+      "id": "obtener-template",
+      "name": "Obtener Template Email",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [350, 0],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT value FROM config WHERE key = 'WEBHOOK_URL';",
+        "options": {}
+      },
+      "id": "obtener-config",
+      "name": "Obtener Config",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [500, 0],
+      "credentials": {
+        "postgres": {
+          "id": "nLcUOvLreXurFbBs",
+          "name": "PostgreSQL Camino Vital Local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Renderizar template de email\nconst sesion = $node['Obtener Datos Sesion y Usuario'].json;\nconst template = $node['Obtener Template Email'].json.html_template;\nconst config = $node['Obtener Config'].json;\n\nconst webhookUrl = config.value || 'https://n8n.habitos-vitales.com';\n\n// Construir URL de la sesión\nconst sessionUrl = `${webhookUrl}/webhook/view-session/sesion/${sesion.sesion_id}?token=${sesion.auth_token}`;\n\n// Variables para el template\nconst variables = {\n  nombre: sesion.nombre,\n  titulo_sesion: sesion.titulo,\n  numero_sesion: sesion.numero_sesion,\n  semana: sesion.semana,\n  introduccion: sesion.introduccion_personalizada || 'Tu siguiente sesión está lista.',\n  url_sesion: sessionUrl,\n  enlace_sesion: sessionUrl\n};\n\n// Renderizar template\nlet htmlRenderizado = template;\nfor (const [key, value] of Object.entries(variables)) {\n  const regex = new RegExp(`{{\\\\s*${key}\\\\s*}}`, 'gi');\n  htmlRenderizado = htmlRenderizado.replace(regex, value || '');\n}\n\nconsole.log(`📧 Preparando reenvío de sesión ${sesion.sesion_id} a ${sesion.email}`);\n\nreturn {\n  json: {\n    to_email: sesion.email,\n    to_name: sesion.nombre,\n    subject: `Tu sesión ${sesion.numero_sesion} de la semana ${sesion.semana} está lista`,\n    html_content: htmlRenderizado,\n    sesion_id: sesion.sesion_id,\n    session_url: sessionUrl\n  }\n};"
+      },
+      "id": "renderizar-email",
+      "name": "Renderizar Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $node['Obtener Config'].json.value }}/webhook/util/enviar-email",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  user_email: $json.to_email,\n  user_nombre: $json.to_name,\n  asunto: $json.subject,\n  email_html: $json.html_content\n} }}",
+        "options": {}
+      },
+      "id": "enviar-email",
+      "name": "Enviar Email (UTIL)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [800, 0]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  success: true,\n  message: 'Email reenviado correctamente',\n  sesion_id: $node['Renderizar Email'].json.sesion_id,\n  email: $node['Renderizar Email'].json.to_email,\n  session_url: $node['Renderizar Email'].json.session_url\n} }}",
+        "options": {}
+      },
+      "id": "responder-ok",
+      "name": "Responder OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1000, 0]
+    }
+  ],
+  "connections": {
+    "Webhook Reenviar": {
+      "main": [[{"node": "Obtener Datos Sesion y Usuario", "type": "main", "index": 0}]]
+    },
+    "Obtener Datos Sesion y Usuario": {
+      "main": [[{"node": "Obtener Template Email", "type": "main", "index": 0}]]
+    },
+    "Obtener Template Email": {
+      "main": [[{"node": "Obtener Config", "type": "main", "index": 0}]]
+    },
+    "Obtener Config": {
+      "main": [[{"node": "Renderizar Email", "type": "main", "index": 0}]]
+    },
+    "Renderizar Email": {
+      "main": [[{"node": "Enviar Email (UTIL)", "type": "main", "index": 0}]]
+    },
+    "Enviar Email (UTIL)": {
+      "main": [[{"node": "Responder OK", "type": "main", "index": 0}]]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "util-reenviar-sesion-v1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "util-reenviar-sesion",
+  "tags": []
+}
