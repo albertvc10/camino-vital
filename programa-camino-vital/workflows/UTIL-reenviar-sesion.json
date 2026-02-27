@@ -18,7 +18,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "=SELECT \n  ps.id as sesion_id,\n  ps.titulo,\n  ps.enfoque,\n  ps.numero_sesion,\n  ps.semana,\n  ps.introduccion_personalizada,\n  pu.id as user_id,\n  pu.email,\n  pu.nombre,\n  pu.auth_token,\n  pu.semana_actual,\n  pu.sesion_actual_dentro_semana\nFROM programa_sesiones ps\nJOIN programa_users pu ON ps.user_id = pu.id\nWHERE ps.id = {{ $json.body.session_id }};",
+        "query": "=SELECT \n  ps.id as sesion_id,\n  ps.titulo,\n  ps.enfoque,\n  ps.numero_sesion,\n  ps.semana,\n  ps.introduccion_personalizada,\n  ps.duracion_estimada,\n  ps.calentamiento,\n  ps.trabajo_principal,\n  ps.tipo_actividad,\n  ps.calentamiento_texto,\n  ps.actividad_principal,\n  pu.id as user_id,\n  pu.email,\n  pu.nombre,\n  pu.auth_token,\n  pu.nivel_actual,\n  pu.sesiones_objetivo_semana,\n  pu.semana_actual\nFROM programa_sesiones ps\nJOIN programa_users pu ON ps.user_id = pu.id\nWHERE ps.id = {{ $json.body.session_id }};",
         "options": {}
       },
       "id": "obtener-datos",
@@ -36,14 +36,14 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT html_template FROM email_templates WHERE nombre = 'email_sesion_siguiente';",
+        "query": "SELECT html_template FROM email_templates WHERE nombre = 'email_sesion_siguiente' AND activo = true;",
         "options": {}
       },
       "id": "obtener-template",
       "name": "Obtener Template Email",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [350, 0],
+      "position": [400, 0],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -61,7 +61,7 @@
       "name": "Obtener Config",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [500, 0],
+      "position": [600, 0],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -71,40 +71,42 @@
     },
     {
       "parameters": {
-        "jsCode": "// Renderizar template de email\nconst sesion = $node['Obtener Datos Sesion y Usuario'].json;\nconst template = $node['Obtener Template Email'].json.html_template;\nconst config = $node['Obtener Config'].json;\n\nconst webhookUrl = config.value || 'https://n8n.habitos-vitales.com';\n\n// Construir URL de la sesión\nconst sessionUrl = `${webhookUrl}/webhook/view-session/sesion/${sesion.sesion_id}?token=${sesion.auth_token}`;\n\n// Variables para el template\nconst variables = {\n  nombre: sesion.nombre,\n  titulo_sesion: sesion.titulo,\n  numero_sesion: sesion.numero_sesion,\n  semana: sesion.semana,\n  introduccion: sesion.introduccion_personalizada || 'Tu siguiente sesión está lista.',\n  url_sesion: sessionUrl,\n  enlace_sesion: sessionUrl\n};\n\n// Renderizar template\nlet htmlRenderizado = template;\nfor (const [key, value] of Object.entries(variables)) {\n  const regex = new RegExp(`{{\\\\s*${key}\\\\s*}}`, 'gi');\n  htmlRenderizado = htmlRenderizado.replace(regex, value || '');\n}\n\nconsole.log(`📧 Preparando reenvío de sesión ${sesion.sesion_id} a ${sesion.email}`);\n\nreturn {\n  json: {\n    to_email: sesion.email,\n    to_name: sesion.nombre,\n    subject: `Tu sesión ${sesion.numero_sesion} de la semana ${sesion.semana} está lista`,\n    html_content: htmlRenderizado,\n    sesion_id: sesion.sesion_id,\n    session_url: sessionUrl\n  }\n};"
+        "jsCode": "// Preparar email usando template de BD - mismo patrón que 01-bis y 07\nconst sesion = $node['Obtener Datos Sesion y Usuario'].json;\nconst template = $node['Obtener Template Email'].json.html_template;\nconst config = $node['Obtener Config'].json;\n\nconst webhookUrl = config.value || 'http://localhost:5678';\nconst sesionUrl = `${webhookUrl}/webhook/view-session/sesion/${sesion.sesion_id}?token=${sesion.auth_token}`;\n\n// Calcular contenido según tipo de sesión (mismo cálculo que 01-bis)\nlet totalEjercicios = 'N/A';\nlet enfoqueTexto = sesion.enfoque || 'Mixto';\n\nif (sesion.enfoque === 'fuerza' && sesion.calentamiento && sesion.trabajo_principal) {\n  const calentamiento = typeof sesion.calentamiento === 'string' ? JSON.parse(sesion.calentamiento) : sesion.calentamiento;\n  const trabajoPrincipal = typeof sesion.trabajo_principal === 'string' ? JSON.parse(sesion.trabajo_principal) : sesion.trabajo_principal;\n  totalEjercicios = `${(calentamiento?.length || 0) + (trabajoPrincipal?.length || 0)} ejercicios personalizados`;\n  enfoqueTexto = 'Fuerza Funcional';\n} else if (sesion.enfoque === 'cardio') {\n  totalEjercicios = 'Actividad cardiovascular guiada';\n  enfoqueTexto = 'Cardio y Resistencia';\n}\n\n// Reemplazar variables en template de BD (mismas variables que 01-bis)\nconst emailHTML = template\n  .replace(/\\{\\{nombre\\}\\}/g, sesion.nombre || '')\n  .replace(/\\{\\{sesiones_objetivo\\}\\}/g, sesion.sesiones_objetivo_semana || '')\n  .replace(/\\{\\{introduccion\\}\\}/g, sesion.introduccion_personalizada || 'Sesión diseñada para tu nivel y objetivos.')\n  .replace(/\\{\\{duracion\\}\\}/g, sesion.duracion_estimada || '25-30 minutos')\n  .replace(/\\{\\{enfoque\\}\\}/g, enfoqueTexto)\n  .replace(/\\{\\{contenido\\}\\}/g, totalEjercicios)\n  .replace(/\\{\\{nivel\\}\\}/g, sesion.nivel_actual || '')\n  .replace(/\\{\\{sesion_url\\}\\}/g, sesionUrl);\n\nreturn {\n  json: {\n    user_id: sesion.user_id,\n    user_email: sesion.email,\n    user_nombre: sesion.nombre,\n    sesion_id: sesion.sesion_id,\n    sesiones_objetivo: sesion.sesiones_objetivo_semana,\n    semana: sesion.semana_actual,\n    sesion_numero: sesion.numero_sesion,\n    email_html: emailHTML,\n    asunto: `Tu Sesión ${sesion.numero_sesion} de ${sesion.sesiones_objetivo_semana}: ${sesion.titulo}`,\n    webhook_url: webhookUrl,\n    session_url: sesionUrl\n  }\n};"
       },
       "id": "renderizar-email",
       "name": "Renderizar Email",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [650, 0]
+      "position": [800, 0]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $node['Obtener Config'].json.value }}/webhook/util/enviar-email",
+        "url": "={{ $json.webhook_url }}/webhook/util/enviar-email",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ {\n  user_email: $json.to_email,\n  user_nombre: $json.to_name,\n  asunto: $json.subject,\n  email_html: $json.html_content\n} }}",
-        "options": {}
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 30000
+        }
       },
       "id": "enviar-email",
       "name": "Enviar Email (UTIL)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [800, 0]
+      "position": [1000, 0]
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ {\n  success: true,\n  message: 'Email reenviado correctamente',\n  sesion_id: $node['Renderizar Email'].json.sesion_id,\n  email: $node['Renderizar Email'].json.to_email,\n  session_url: $node['Renderizar Email'].json.session_url\n} }}",
+        "responseBody": "={{ {\n  success: true,\n  message: 'Email reenviado correctamente',\n  sesion_id: $node['Renderizar Email'].json.sesion_id,\n  email: $node['Renderizar Email'].json.user_email,\n  session_url: $node['Renderizar Email'].json.session_url\n} }}",
         "options": {}
       },
       "id": "responder-ok",
       "name": "Responder OK",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1000, 0]
+      "position": [1200, 0]
     }
   ],
   "connections": {
@@ -131,7 +133,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "util-reenviar-sesion-v1",
+  "versionId": "util-reenviar-sesion-v2",
   "meta": {
     "templateCredsSetupCompleted": true
   },
