@@ -8,7 +8,10 @@
       "name": "Manual Trigger",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [240, 300],
+      "position": [
+        240,
+        300
+      ],
       "notes": "Ejecutar manualmente el 1 de marzo para activar usuarios de preventa"
     },
     {
@@ -21,7 +24,10 @@
       "name": "Obtener Config",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [460, 300],
+      "position": [
+        460,
+        300
+      ],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -39,7 +45,10 @@
       "name": "Obtener Template Bienvenida",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [680, 300],
+      "position": [
+        680,
+        300
+      ],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -50,14 +59,17 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "-- Buscar usuarios pendientes de activar (preventa)\n-- FILTRO TEMPORAL: Solo emails con '+' para testing\nSELECT \n  id, \n  email, \n  nombre, \n  nivel_actual,\n  etapa,\n  perfil_inicial\nFROM programa_users\nWHERE estado = 'pagado_esperando_inicio'\nAND email LIKE '%+%';",
+        "query": "-- Buscar usuarios pendientes de activar (preventa)\nSELECT \n  id, \n  email, \n  nombre, \n  nivel_actual,\n  etapa,\n  perfil_inicial\nFROM programa_users\nWHERE estado = 'pagado_esperando_inicio';",
         "options": {}
       },
       "id": "buscar-usuarios-pendientes",
       "name": "Buscar Usuarios Pendientes",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [900, 300],
+      "position": [
+        900,
+        300
+      ],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -92,7 +104,10 @@
       "name": "IF ¿Hay usuarios?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [1120, 300]
+      "position": [
+        1120,
+        300
+      ]
     },
     {
       "parameters": {
@@ -102,7 +117,10 @@
       "name": "Log Sin Usuarios",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1340, 400]
+      "position": [
+        1340,
+        400
+      ]
     },
     {
       "parameters": {
@@ -114,7 +132,10 @@
       "name": "Activar Usuario en DB",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.4,
-      "position": [1340, 200],
+      "position": [
+        1340,
+        200
+      ],
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
@@ -130,7 +151,10 @@
       "name": "Renderizar Template",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1560, 200]
+      "position": [
+        1560,
+        200
+      ]
     },
     {
       "parameters": {
@@ -158,7 +182,10 @@
       "name": "Enviar Email Bienvenida",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1780, 200]
+      "position": [
+        1780,
+        200
+      ]
     },
     {
       "parameters": {
@@ -168,7 +195,10 @@
       "name": "Log Éxito",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2000, 200]
+      "position": [
+        2000,
+        200
+      ]
     }
   ],
   "connections": {

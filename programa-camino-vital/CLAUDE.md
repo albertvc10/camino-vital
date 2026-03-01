@@ -130,33 +130,19 @@ ssh root@164.90.222.166 "docker exec -i n8n_postgres psql -U n8n_admin -d n8n < 
 - **SIEMPRE** probar la migración en local antes de aplicar en producción
 - Mantener `migrations/README.md` actualizado con las migraciones aplicadas
 
-## Configuración de Redirección Landing (Preventa → Programa)
+## Landing Pages
 
-### Estado actual (hasta 1 de marzo 2026)
-- `index.html` redirige automáticamente a `preventa.html`
-- Para probar index.html sin redirección: añadir `?test=1` a la URL
+### Estado actual (desde 1 de marzo 2026)
+- `index.html` es la landing principal (programa a 89€) - contiene el mismo diseño que preventa.html
+- `preventa.html` sigue existiendo (programa a 39€) pero ya no se redirige a ella
+- `resultados.html` muestra resultados del cuestionario + pago 89€ (diseño actualizado desde resultados-preventa.html)
+- `resultados-preventa.html` sigue existiendo para el flujo de preventa a 39€
 
-### URLs
-| URL | Comportamiento |
-|-----|----------------|
-| `camino-vital.habitos-vitales.com` | Redirige a preventa.html |
-| `camino-vital.habitos-vitales.com?test=1` | Muestra index.html (testing) |
-| `camino-vital.habitos-vitales.com/preventa.html` | Muestra preventa.html |
-
-### Cómo funciona
-En `index.html` hay un script al inicio del `<body>`:
-```javascript
-// REDIRECT TEMPORAL: Hasta 1 de marzo 2026
-// Para probar index.html: añadir ?test=1 a la URL
-if (!window.location.search.includes('test=1')) {
-    window.location.href = 'preventa.html';
-}
-```
-
-### Acción el 1 de marzo 2026
-1. Eliminar el bloque de script de redirección de `index.html`
-2. Commit + push + deploy
-3. La landing principal pasa a ser index.html (programa a 89€)
+### Flujos
+| Flujo | Landing → Cuestionario → Resultados |
+|-------|--------------------------------------|
+| Programa (89€) | `index.html` → `cuestionario.html` → `resultados.html` |
+| Preventa (39€) | `preventa.html` → `cuestionario.html?source=preventa` → `resultados-preventa.html` |
 
 ---
 
@@ -951,3 +937,43 @@ curl -X POST http://localhost:5678/webhook/reenviar-sesion \
   -H "Content-Type: application/json" \
   -d "{\"session_id\": $SESSION_ID}"
 ```
+
+---
+
+## Generador Sesion IA - Sistema de Variedad de Ejercicios (IMPORTANTE)
+
+### Problema original
+Claude tendía a repetir los mismos ejercicios "seguros" en cada sesión de fuerza, independientemente del feedback. Causa: sin historial en el prompt + sesgo determinista del LLM.
+
+### Solución implementada (4 cambios en el workflow)
+
+**1. Historial de ejercicios en "Obtener Datos Usuario"**
+- Subquery que obtiene los ejercicios usados en las últimas 3 sesiones de fuerza
+- Campo: `historial_ejercicios_fuerza` (JSON array de arrays de nombre_archivo)
+- No crea nueva tabla, es una subquery dentro de la query existente
+
+**2. Orden aleatorio en "Obtener Ejercicios Disponibles"**
+- Eliminada priorización por nivel (`CASE WHEN nivel = ... THEN 0 ELSE 1 END`)
+- Solo `ORDER BY RANDOM()` para que Claude vea los ejercicios en orden diferente cada vez
+- Claude sigue pudiendo elegir ejercicios de cualquier nivel (el filtro de nivel es flexible)
+
+**3. Prompt optimizado en "Preparar Prompt Claude"**
+- Lista de ejercicios recortada: solo nombre, nivel y descripción (sin instrucciones_clave ni precauciones)
+- Inyección de historial: "EJERCICIOS USADOS RECIENTEMENTE (EVITAR REPETIR): ..."
+- Instrucción de variedad: "Al menos el 70% deben ser distintos a los de las últimas sesiones"
+- Ahorro de tokens: ~50% menos en la sección de ejercicios del prompt
+
+**4. Enriquecimiento post-IA en "Parsear Respuesta Claude"**
+- Después de que Claude devuelve la sesión, se rellenan `instrucciones_clave` y `precauciones` desde la BD
+- Función `enriquecerEjercicios()` busca en `$('Obtener Ejercicios Disponibles').all()` por `nombre_archivo`
+- Garantiza que la sesión siempre tiene instrucciones completas aunque Claude no las reciba en el prompt
+
+### Resultado
+- Antes: 6-7 ejercicios únicos en 4 sesiones consecutivas
+- Después: 10 ejercicios únicos en 4 sesiones consecutivas
+
+### Importante para futuros cambios
+- Si se añaden ejercicios a `ejercicios_biblioteca`, automáticamente entran en el pool
+- El historial solo mira las últimas 3 sesiones de fuerza (no cardio)
+- El enriquecimiento depende de que `nombre_archivo` coincida exactamente entre lo que devuelve Claude y lo que hay en BD
+- Los cambios están en la BD local (workflow modificado via SQL), pendiente de exportar a JSON y deploy

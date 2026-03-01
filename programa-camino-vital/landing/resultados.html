@@ -229,55 +229,6 @@
             font-size: 16px;
         }
 
-        /* Exercise Examples */
-        .examples-section {
-            margin-bottom: 40px;
-        }
-
-        .examples-section h3 {
-            color: var(--color-text-primary);
-            margin-bottom: 20px;
-            font-size: 20px;
-        }
-
-        .exercise-cards {
-            display: grid;
-            gap: 16px;
-        }
-
-        .exercise-card {
-            background: var(--color-bg-dark);
-            border-radius: 14px;
-            padding: 22px;
-            border: 1px solid var(--color-border);
-            border-left: 4px solid var(--color-success);
-            transition: all var(--transition-fast);
-        }
-
-        .exercise-card:hover {
-            transform: translateY(-2px);
-            border-color: rgba(98, 184, 130, 0.3);
-        }
-
-        .exercise-card h4 {
-            color: var(--color-text-primary);
-            margin-bottom: 12px;
-            font-size: 17px;
-        }
-
-        .exercise-card p {
-            color: var(--color-text-secondary);
-            margin: 6px 0;
-            font-size: 14px;
-        }
-
-        .exercise-meta {
-            font-size: 13px;
-            color: var(--color-primary);
-            margin-top: 12px;
-            font-weight: 500;
-        }
-
         /* Benefits Grid */
         .benefits-grid {
             display: grid;
@@ -315,89 +266,33 @@
             line-height: 1.5;
         }
 
-        /* Testimonial */
-        .testimonial {
-            background: var(--color-bg-dark);
-            padding: 30px;
-            border-radius: 14px;
-            margin-bottom: 40px;
-            border: 1px solid var(--color-border);
-            position: relative;
-        }
-
-        .testimonial::before {
-            content: '"';
-            font-size: 60px;
-            color: var(--color-primary);
-            opacity: 0.3;
-            position: absolute;
-            top: 10px;
-            left: 20px;
-            line-height: 1;
-        }
-
-        .testimonial-text {
-            font-style: italic;
-            color: var(--color-text-secondary);
-            font-size: 16px;
-            line-height: 1.7;
-            padding-left: 30px;
-        }
-
-        .testimonial-author {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-top: 20px;
-            padding-left: 30px;
-        }
-
-        .testimonial-avatar {
-            width: 45px;
-            height: 45px;
-            background: linear-gradient(135deg, var(--color-primary), var(--color-success));
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--color-bg-card);
-        }
-
-        .testimonial-name {
-            font-style: normal;
-            font-weight: 600;
-            color: var(--color-primary);
-            font-size: 15px;
-        }
-
         /* Pricing Section */
         .pricing-section {
-            background: linear-gradient(135deg, rgba(223, 202, 97, 0.1) 0%, rgba(98, 184, 130, 0.05) 100%);
-            padding: 50px 40px;
+            background: linear-gradient(135deg, rgba(223, 202, 97, 0.08) 0%, rgba(98, 184, 130, 0.04) 100%);
+            padding: 40px 35px;
             border-radius: var(--border-radius-card);
             text-align: center;
             margin-bottom: 40px;
-            border: 2px solid rgba(223, 202, 97, 0.3);
+            border: 2px solid rgba(223, 202, 97, 0.25);
         }
 
         .pricing-title {
             color: var(--color-primary);
-            font-size: 24px;
-            margin-bottom: 10px;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 5px;
         }
 
         .price {
             font-size: 64px;
             color: var(--color-primary);
             font-weight: 700;
-            margin: 20px 0;
+            margin: 10px 0;
         }
 
-        .price-note {
+        .price-detail {
             color: var(--color-text-secondary);
-            font-size: 18px;
+            font-size: 16px;
             margin-bottom: 35px;
         }
 
@@ -414,6 +309,7 @@
             box-shadow: var(--shadow-button);
             transition: all var(--transition-fast);
             text-decoration: none;
+            margin-top: 10px;
         }
 
         .cta-button:hover {
@@ -422,25 +318,80 @@
         }
 
         .guarantee {
-            background: rgba(98, 184, 130, 0.1);
-            border: 2px dashed var(--color-success);
-            padding: 20px 25px;
-            border-radius: 12px;
-            margin-top: 30px;
+            background: rgba(98, 184, 130, 0.08);
+            border: 1px dashed rgba(98, 184, 130, 0.4);
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-top: 25px;
         }
 
         .guarantee p {
             color: var(--color-success);
-            font-weight: 600;
-            font-size: 15px;
+            font-weight: 500;
+            font-size: 13px;
+            margin: 0;
+            line-height: 1.5;
         }
 
         .stripe-note {
-            margin-top: 20px;
+            margin-top: 15px;
+            margin-bottom: 0;
             color: var(--color-text-secondary);
-            font-size: 13px;
+            font-size: 12px;
+            opacity: 0.7;
         }
 
+        /* Check list y pricing includes */
+        .check-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .check-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 10px 0;
+            color: var(--color-text-secondary);
+            font-size: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .check-list li:last-child {
+            border-bottom: none;
+        }
+        .check-list li .icon-svg {
+            width: 20px;
+            height: 20px;
+            stroke: var(--color-success);
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .pricing-includes {
+            text-align: left;
+            margin: 25px auto;
+            max-width: 340px;
+            background: rgba(0,0,0,0.2);
+            padding: 20px 25px;
+            border-radius: 12px;
+        }
+        .price-box {
+            margin: 30px 0 20px;
+            padding: 25px 0;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        .price-current {
+            font-size: 56px;
+            color: var(--color-primary);
+            font-weight: 700;
+            line-height: 1;
+            margin: 0 0 15px;
+        }
+        .price-note {
+            font-size: 14px;
+            color: var(--color-text-secondary);
+            margin: 0;
+            line-height: 1.5;
+        }
         /* Support Section */
         .support-section {
             text-align: center;
@@ -531,11 +482,81 @@
                 font-size: 16px;
                 width: 100%;
             }
+
+            .price-current {
+                font-size: 48px;
+            }
+
+            .pricing-includes {
+                padding: 15px 20px;
+            }
+
+            .check-list li {
+                font-size: 14px;
+            }
+
         }
 
         @media (max-width: 480px) {
             .program-details {
                 grid-template-columns: 1fr;
+            }
+        }
+
+        /* ── WhatsApp Floating Button ── */
+        .whatsapp-float {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            width: 60px;
+            height: 60px;
+            background: #25D366;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4);
+            z-index: 1000;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        .whatsapp-float:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(37, 211, 102, 0.5);
+        }
+        .whatsapp-float svg {
+            width: 28px;
+            height: 28px;
+        }
+        .whatsapp-float svg path {
+            fill: white;
+        }
+        .whatsapp-float .whatsapp-tooltip {
+            position: absolute;
+            right: 70px;
+            background: var(--color-bg-card);
+            color: var(--color-text-primary);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .whatsapp-float:hover .whatsapp-tooltip {
+            opacity: 1;
+        }
+        @media (max-width: 768px) {
+            .whatsapp-float {
+                bottom: 20px;
+                right: 20px;
+                width: 55px;
+                height: 55px;
+            }
+            .whatsapp-float .whatsapp-tooltip {
+                display: none;
             }
         }
     </style>
@@ -544,36 +565,37 @@
     <div class="container">
         <div class="header">
             <div class="success-icon"><svg class="icon-svg icon-svg-success" style="width:50px;height:50px" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg></div>
-            <div class="tagline">Programa personalizado</div>
-            <h1>Hemos analizado tu perfil!</h1>
-            <p>Este es el programa perfecto para ti, <span class="user-name" id="userName"></span></p>
-        </div>
+            <div class="tagline">Resultado de tu evaluación</div>
+            <h1>Hemos evaluado tu punto de partida</h1>
+            <p><span class="user-name" id="userName"></span>, según tus respuestas, este es el recorrido más adecuado para ti en este momento.</p>
+
+            </div>
 
         <div class="content">
             <div class="program-card">
                 <div class="program-card-header">
-                    <span class="program-badge">Tu programa recomendado</span>
-                    <h2>Base Vital</h2>
+                    <span class="program-badge">Tu recorrido recomendado</span>
+                    <h2>Camino Vital</h2>
                 </div>
 
                 <div class="program-details">
                     <div class="detail-item">
-                        <div class="detail-icon"><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-bar-chart"></use></svg></div>
+                        <div class="detail-icon"><svg class="icon-svg" style="width:28px;height:28px" viewBox="0 0 24 24"><use href="#icon-bar-chart"></use></svg></div>
                         <div class="detail-label">Nivel</div>
                         <div class="detail-value" id="userLevel"></div>
                     </div>
                     <div class="detail-item">
-                        <div class="detail-icon"><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-clock"></use></svg></div>
-                        <div class="detail-label">Duracion</div>
+                        <div class="detail-icon"><svg class="icon-svg" style="width:28px;height:28px" viewBox="0 0 24 24"><use href="#icon-clock"></use></svg></div>
+                        <div class="detail-label">Duración</div>
                         <div class="detail-value" id="userDuration"></div>
                     </div>
                     <div class="detail-item">
-                        <div class="detail-icon"><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-email"></use></svg></div>
+                        <div class="detail-icon"><svg class="icon-svg" style="width:28px;height:28px" viewBox="0 0 24 24"><use href="#icon-email"></use></svg></div>
                         <div class="detail-label">Frecuencia</div>
                         <div class="detail-value">2-5 sesiones/semana</div>
                     </div>
                     <div class="detail-item">
-                        <div class="detail-icon"><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-target"></use></svg></div>
+                        <div class="detail-icon"><svg class="icon-svg" style="width:28px;height:28px" viewBox="0 0 24 24"><use href="#icon-target"></use></svg></div>
                         <div class="detail-label">Enfoque</div>
                         <div class="detail-value" id="userFocus"></div>
                     </div>
@@ -581,57 +603,57 @@
             </div>
 
             <div class="personalization-box">
-                <h3>Por que este programa es perfecto para ti:</h3>
+                <h3>¿Por qué este recorrido encaja contigo?</h3>
                 <ul id="whyPerfect"></ul>
-            </div>
-
-            <div class="examples-section">
-                <h3>Ejemplos de ejercicios que recibiras:</h3>
-                <div class="exercise-cards" id="exerciseExamples"></div>
             </div>
 
             <div class="benefits-grid">
                 <div class="benefit-item">
                     <div class="icon"><svg class="icon-svg" style="width:32px;height:32px" viewBox="0 0 24 24"><use href="#icon-refresh"></use></svg></div>
                     <h4>Se adapta a ti</h4>
-                    <p>Si algo es muy facil o dificil, el programa se ajusta automaticamente segun tu feedback</p>
+                    <p>Si algo resulta demasiado fácil o exigente, se ajusta según tu feedback.</p>
                 </div>
                 <div class="benefit-item">
                     <div class="icon"><svg class="icon-svg" style="width:32px;height:32px" viewBox="0 0 24 24"><use href="#icon-home"></use></svg></div>
-                    <h4>Sin equipo necesario</h4>
-                    <p>Todo desde casa con tu propio peso corporal. Sin gimnasio ni material</p>
+                    <h4>Desde casa</h4>
+                    <p>Entrena con tu propio peso corporal. Sin gimnasio ni material.</p>
                 </div>
                 <div class="benefit-item">
                     <div class="icon"><svg class="icon-svg" style="width:32px;height:32px" viewBox="0 0 24 24"><use href="#icon-video"></use></svg></div>
-                    <h4>Videos explicativos</h4>
-                    <p>Cada ejercicio tiene su video demostrativo para que lo hagas correctamente</p>
+                    <h4>Vídeos claros y guiados</h4>
+                    <p>Cada ejercicio incluye demostración para que lo realices con seguridad.</p>
                 </div>
                 <div class="benefit-item">
                     <div class="icon"><svg class="icon-svg" style="width:32px;height:32px" viewBox="0 0 24 24"><use href="#icon-message"></use></svg></div>
-                    <h4>Soporte personalizado</h4>
-                    <p>Dudas o problemas? Responde cualquier email y te ayudamos</p>
-                </div>
-            </div>
-
-            <div class="testimonial">
-                <p class="testimonial-text" id="testimonialText"></p>
-                <div class="testimonial-author">
-                    <div class="testimonial-avatar" id="testimonialAvatar"></div>
-                    <span class="testimonial-name" id="testimonialName"></span>
+                    <h4>Acompañamiento cuando lo necesites</h4>
+                    <p>Si surge alguna duda o molestia, puedes escribirnos y lo ajustamos.</p>
                 </div>
             </div>
 
             <div class="pricing-section">
-                <h3 class="pricing-title">Acceso completo a Base Vital</h3>
-                <div class="price">89€</div>
-                <div class="price-note">Pago unico • <span id="priceDuration"></span></div>
+                <h3 class="pricing-title">Camino Vital</h3>
+
+                <div class="pricing-includes">
+                    <ul class="check-list">
+                        <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Ciclo guiado de 12 semanas</li>
+                        <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Adaptación a tu estado, objetivo y disponibilidad</li>
+                        <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Acompañamiento cercano durante el recorrido</li>
+                        <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Acceso completo al programa</li>
+                        <li><svg class="icon-svg" viewBox="0 0 24 24"><use href="#icon-checkmark"></use></svg>Entrega por email</li>
+                    </ul>
+                </div>
+
+                <div class="price-box">
+                    <div class="price-current">89&euro;</div>
+                    <p class="price-note">Pago único</p>
+                </div>
 
                 <button class="cta-button" id="ctaButton" onclick="redirectToCheckout()">
                     <span>Empezar mi programa ahora</span>
                 </button>
 
                 <div class="guarantee">
-                    <p><svg class="icon-svg icon-svg-success" style="width:18px;height:18px;display:inline;vertical-align:middle" viewBox="0 0 24 24"><use href="#icon-lock"></use></svg> Garantia de 7 dias: Si sientes que no es para ti, te devolvemos el dinero. Sin preguntas.</p>
+                    <p><svg class="icon-svg icon-svg-success" style="width:18px;height:18px;display:inline;vertical-align:middle" viewBox="0 0 24 24"><use href="#icon-lock"></use></svg> Garantía de 14 días. Si sientes que no es para ti, te devolvemos el dinero.</p>
                 </div>
 
                 <p class="stripe-note">
@@ -640,8 +662,8 @@
             </div>
 
             <div class="support-section">
-                <p><strong>Aun tienes dudas?</strong></p>
-                <p>Escribenos a <span class="contact-info"></span></p>
+                <p><strong>¿Aún tienes dudas?</strong></p>
+                <p>Escríbenos a <span class="contact-info"></span></p>
             </div>
         </div>
     </div>
@@ -651,7 +673,7 @@
         const quizData = JSON.parse(localStorage.getItem('quizData') || '{}');
 
         if (!quizData.email) {
-            window.location.href = 'cuestionario.html';
+            window.location.href = 'index.html';
         }
 
         // Determinar nivel basado en respuestas
@@ -662,13 +684,14 @@
             if ((tiempo === 'menos_3meses' || tiempo === '3-6meses') &&
                 (movilidad === 'normal' || movilidad === 'buena')) {
                 return {
-                    nivel: 'Intermedio',
+                    nivel: 'Progresión activa',
                     duration: '12 semanas',
-                    focus: 'Fuerza funcional',
+                    focus: 'Autonomía + Fuerza',
                     reasons: [
-                        'Has estado activo recientemente, puedes empezar con mas intensidad',
-                        'Tu movilidad es buena, podemos trabajar ejercicios mas desafiantes',
-                        'Progresaras mas rapido con ejercicios de nivel intermedio'
+                        'Comenzarás desde tu situación actual, sin exigencias innecesarias',
+                        'Avanzarás de forma progresiva y estructurada',
+                        'Construirás confianza antes de aumentar intensidad',
+                        'El recorrido se ajusta según tu evolución y disponibilidad'
                     ],
                     exercises: [
                         {
@@ -678,33 +701,34 @@
                             note: 'Fortalece piernas y core'
                         },
                         {
-                            name: 'Zancadas estaticas',
-                            description: 'Manteniendo posicion estable',
+                            name: 'Zancadas estáticas',
+                            description: 'Manteniendo posición estable',
                             reps: '8 cada pierna',
                             note: 'Mejora equilibrio y fuerza'
                         },
                         {
                             name: 'Plancha de rodillas',
-                            description: 'Activacion del core',
+                            description: 'Activación del core',
                             reps: '20-30 segundos',
                             note: 'Fortalece la zona media'
                         }
                     ],
                     testimonial: {
-                        text: 'Empece en nivel intermedio y en 12 semanas note una mejora increible. Ahora puedo hacer cosas que antes evitaba por miedo a hacerme dano.',
-                        name: 'Carlos, 52 anos',
+                        text: 'Empecé en nivel intermedio y en 12 semanas noté una mejora increíble. Ahora puedo hacer cosas que antes evitaba por miedo a hacerme daño.',
+                        name: 'Carlos, 52 años',
                         avatar: 'C'
                     }
                 };
             } else {
                 return {
-                    nivel: 'Iniciacion',
+                    nivel: 'Inicio progresivo',
                     duration: '12 semanas',
-                    focus: 'Movilidad + Seguridad',
+                    focus: 'Autonomía + Movilidad + Seguridad',
                     reasons: [
-                        'Empezaras con ejercicios seguros y progresivos adaptados a tu situacion',
-                        'El programa respeta tu punto de partida sin exigencias excesivas',
-                        'Ganaras confianza gradualmente antes de aumentar la intensidad'
+                        'Comenzarás desde tu situación actual, sin exigencias innecesarias',
+                        'Avanzarás de forma progresiva y estructurada',
+                        'Construirás confianza antes de aumentar intensidad',
+                        'El recorrido se ajusta según tu evolución y disponibilidad'
                     ],
                     exercises: [
                         {
@@ -714,9 +738,9 @@
                             note: 'Sin forzar, movimientos lentos'
                         },
                         {
-                            name: 'Circulos de hombros',
-                            description: 'Rotaciones hacia adelante y atras',
-                            reps: '10 cada direccion',
+                            name: 'Círculos de hombros',
+                            description: 'Rotaciones hacia adelante y atrás',
+                            reps: '10 cada dirección',
                             note: 'Despierta la zona superior'
                         },
                         {
@@ -727,8 +751,8 @@
                         }
                     ],
                     testimonial: {
-                        text: 'Despues de 3 anos sin hacer nada, tenia miedo de hacerme dano. Con el nivel iniciacion empece suave y ahora me siento capaz de hacer cosas que pense que habia perdido.',
-                        name: 'Maria, 58 anos',
+                        text: 'Después de 3 años sin hacer nada, tenía miedo de hacerme daño. Con el nivel iniciación empecé suave y ahora me siento capaz de hacer cosas que pensé que había perdido.',
+                        name: 'María, 58 años',
                         avatar: 'M'
                     }
                 };
@@ -741,7 +765,6 @@
         document.getElementById('userName').textContent = quizData.nombre;
         document.getElementById('userLevel').textContent = programData.nivel;
         document.getElementById('userDuration').textContent = programData.duration;
-        document.getElementById('priceDuration').textContent = programData.duration;
         document.getElementById('userFocus').textContent = programData.focus;
 
         // Razones por las que es perfecto
@@ -751,25 +774,6 @@
             li.textContent = reason;
             whyPerfect.appendChild(li);
         });
-
-        // Ejemplos de ejercicios
-        const exerciseExamples = document.getElementById('exerciseExamples');
-        programData.exercises.forEach(exercise => {
-            const card = document.createElement('div');
-            card.className = 'exercise-card';
-            card.innerHTML = `
-                <h4>${exercise.name}</h4>
-                <p><strong>Descripcion:</strong> ${exercise.description}</p>
-                <p><strong>Repeticiones:</strong> ${exercise.reps}</p>
-                <p class="exercise-meta">${exercise.note}</p>
-            `;
-            exerciseExamples.appendChild(card);
-        });
-
-        // Testimonial
-        document.getElementById('testimonialText').textContent = programData.testimonial.text;
-        document.getElementById('testimonialName').textContent = programData.testimonial.name;
-        document.getElementById('testimonialAvatar').textContent = programData.testimonial.avatar;
 
         // Funcion para redirigir a checkout de Stripe
         async function redirectToCheckout() {
@@ -782,6 +786,7 @@
                            window.location.hostname === '127.0.0.1' ||
                            window.location.protocol === 'file:';
 
+            // URLs de Stripe - Programa 89€
             const stripeURL = isLocal
                 ? 'https://buy.stripe.com/test_fZubJ00D941Zabpej1eZ204' // TEST mode LOCAL - Programa 89€
                 : 'https://buy.stripe.com/8x2eVc90gfr2clj3KN2Ry01'; // PRODUCTION - Programa 89€
@@ -789,17 +794,37 @@
             console.log('Entorno:', isLocal ? 'LOCAL (Stripe TEST)' : 'PRODUCCION');
             console.log('Stripe URL:', stripeURL);
 
-            // Redirigir a Stripe Checkout directamente
+            // Redirigir a Stripe Checkout
             try {
                 window.location.href = `${stripeURL}?prefilled_email=${encodeURIComponent(quizData.email)}&client_reference_id=${encodeURIComponent(quizData.email)}`;
             } catch (error) {
                 console.error('Error:', error);
                 ctaButton.classList.remove('loading');
-                alert('Hubo un error. Por favor, intentalo de nuevo o contacta con hola@habitos-vitales.com');
+                alert('Hubo un error. Por favor, inténtalo de nuevo o contacta con hola@habitos-vitales.com');
             }
         }
     </script>
+
+    <!-- WhatsApp Floating Button -->
+    <a href="#" id="whatsappFloat" class="whatsapp-float" target="_blank" rel="noopener">
+        <svg viewBox="0 0 448 512">
+            <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/>
+        </svg>
+        <span class="whatsapp-tooltip">¿Tienes dudas? Escríbenos</span>
+    </a>
+
     <script src="assets/config.js"></script>
     <script src="assets/icons.js"></script>
+    <script>
+        // Set WhatsApp link from config
+        document.addEventListener('DOMContentLoaded', function() {
+            var whatsappLink = getWhatsAppLink();
+            if (whatsappLink) {
+                document.getElementById('whatsappFloat').href = whatsappLink;
+            } else {
+                document.getElementById('whatsappFloat').style.display = 'none';
+            }
+        });
+    </script>
 </body>
 </html>
