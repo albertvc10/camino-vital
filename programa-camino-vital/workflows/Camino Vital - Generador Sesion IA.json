@@ -2,105 +2,121 @@
   "name": "Camino Vital - Generador Sesion IA",
   "nodes": [
     {
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "generar-sesion-ia",
-        "responseMode": "responseNode",
-        "options": {}
-      },
       "id": "webhook-generar-sesion",
       "name": "Webhook Generar Sesión",
       "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2,
       "position": [
         -400,
         0
       ],
-      "webhookId": "generar-sesion-ia"
+      "webhookId": "generar-sesion-ia",
+      "parameters": {
+        "path": "generar-sesion-ia",
+        "options": {},
+        "httpMethod": "POST",
+        "responseMode": "responseNode"
+      },
+      "typeVersion": 2
     },
     {
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "=SELECT \n  id,\n  email,\n  nombre,\n  nivel_actual,\n  intensidad_nivel,\n  volumen_extra,\n  semana_actual,\n  sesiones_objetivo_semana,\n  sesion_actual_dentro_semana,\n  perfil_inicial\nFROM programa_users\nWHERE id = {{ $json.body.user_id }};",
-        "options": {}
-      },
       "id": "obtener-usuario",
       "name": "Obtener Datos Usuario",
       "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.4,
       "position": [
         -200,
         0
       ],
+      "parameters": {
+        "query": "SELECT \n  u.id,\n  u.email,\n  u.nombre,\n  u.nivel_actual,\n  u.intensidad_nivel,\n  u.volumen_extra,\n  u.semana_actual,\n  u.sesiones_objetivo_semana,\n  u.sesion_actual_dentro_semana,\n  u.perfil_inicial,\n  COALESCE((\n    SELECT json_agg(ejercicios ORDER BY sesion_id DESC)\n    FROM (\n      SELECT s.id as sesion_id, \n        (SELECT json_agg(e->>'nombre_archivo') \n         FROM jsonb_array_elements(COALESCE(s.calentamiento, '[]'::jsonb) || COALESCE(s.trabajo_principal, '[]'::jsonb)) e\n        ) as ejercicios\n      FROM programa_sesiones s\n      WHERE s.user_id = u.id AND s.enfoque = 'fuerza'\n      ORDER BY s.id DESC LIMIT 3\n    ) sub\n  )::text, '[]') as historial_ejercicios_fuerza\nFROM programa_users u\nWHERE u.id = {{ $json.body.user_id }};",
+        "options": {},
+        "operation": "executeQuery"
+      },
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
           "name": "PostgreSQL Camino Vital Local"
         }
-      }
+      },
+      "typeVersion": 2.4
     },
     {
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "=-- Extraer limitaciones del perfil_inicial\nWITH limitaciones_usuario AS (\n  SELECT \n    COALESCE(\n      string_to_array(\n        NULLIF(perfil_inicial->>'limitaciones', ''),\n        ','\n      ),\n      ARRAY[]::text[]\n    ) as limitaciones_array\n  FROM programa_users\n  WHERE id = {{ $json.id }}\n)\nSELECT \n  e.id,\n  e.nombre_archivo,\n  e.nombre_espanol,\n  e.nivel,\n  e.areas_cuerpo,\n  e.tipo_ejercicio,\n  e.posicion,\n  e.requiere_equipo,\n  e.equipo_necesario,\n  e.evitar_si_limitacion,\n  e.objetivos,\n  e.descripcion_corta,\n  e.instrucciones_clave,\n  e.precauciones,\n  e.beneficios\nFROM ejercicios_biblioteca e, limitaciones_usuario lu\nWHERE\n    CASE\n      WHEN '{{ $json.nivel_actual }}' = 'iniciacion' THEN e.nivel IN ('iniciacion', 'intermedio')\n      WHEN '{{ $json.nivel_actual }}' = 'intermedio' THEN e.nivel IN ('iniciacion', 'intermedio', 'avanzado')\n      WHEN '{{ $json.nivel_actual }}' = 'avanzado' THEN e.nivel IN ('intermedio', 'avanzado')\n      ELSE e.nivel = '{{ $json.nivel_actual }}'\n    END\nORDER BY\n    CASE WHEN e.nivel = '{{ $json.nivel_actual }}' THEN 0 ELSE 1 END,\n    RANDOM()\n  LIMIT 50;",
-        "options": {}
-      },
       "id": "obtener-ejercicios",
       "name": "Obtener Ejercicios Disponibles",
       "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.4,
       "position": [
         0,
         0
       ],
+      "parameters": {
+        "query": "=-- Extraer limitaciones del perfil_inicial\nWITH limitaciones_usuario AS (\n  SELECT \n    COALESCE(\n      string_to_array(\n        NULLIF(perfil_inicial->>'limitaciones', ''),\n        ','\n      ),\n      ARRAY[]::text[]\n    ) as limitaciones_array\n  FROM programa_users\n  WHERE id = {{ $json.id }}\n)\nSELECT \n  e.id,\n  e.nombre_archivo,\n  e.nombre_espanol,\n  e.nivel,\n  e.areas_cuerpo,\n  e.tipo_ejercicio,\n  e.posicion,\n  e.requiere_equipo,\n  e.equipo_necesario,\n  e.evitar_si_limitacion,\n  e.objetivos,\n  e.descripcion_corta,\n  e.instrucciones_clave,\n  e.precauciones,\n  e.beneficios\nFROM ejercicios_biblioteca e, limitaciones_usuario lu\nWHERE\n    CASE\n      WHEN '{{ $json.nivel_actual }}' = 'iniciacion' THEN e.nivel IN ('iniciacion', 'intermedio')\n      WHEN '{{ $json.nivel_actual }}' = 'intermedio' THEN e.nivel IN ('iniciacion', 'intermedio', 'avanzado')\n      WHEN '{{ $json.nivel_actual }}' = 'avanzado' THEN e.nivel IN ('intermedio', 'avanzado')\n      ELSE e.nivel = '{{ $json.nivel_actual }}'\n    END\nORDER BY\n    CASE WHEN e.nivel = '{{ $json.nivel_actual }}' THEN 0 ELSE 1 END,\n    RANDOM()\n  LIMIT 50;",
+        "options": {},
+        "operation": "executeQuery"
+      },
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
           "name": "PostgreSQL Camino Vital Local"
         }
-      }
+      },
+      "typeVersion": 2.4
     },
     {
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "=SELECT \n  id,\n  nombre,\n  tipo,\n  nivel,\n  descripcion,\n  protocolo,\n  objetivo_fisiologico\nFROM ejercicios_cardio\nWHERE activo = true\n  AND (\n    CASE\n      WHEN '{{ $(\"Obtener Datos Usuario\").first().json.nivel_actual }}' = 'iniciacion' THEN nivel IN ('iniciacion', 'intermedio')\n      WHEN '{{ $(\"Obtener Datos Usuario\").first().json.nivel_actual }}' = 'intermedio' THEN nivel IN ('iniciacion', 'intermedio', 'avanzado')\n      WHEN '{{ $(\"Obtener Datos Usuario\").first().json.nivel_actual }}' = 'avanzado' THEN nivel IN ('intermedio', 'avanzado')\n      ELSE nivel = '{{ $(\"Obtener Datos Usuario\").first().json.nivel_actual }}'\n    END\n  )\nORDER BY tipo, nivel;",
-        "options": {}
-      },
       "id": "obtener-ejercicios-cardio",
       "name": "Obtener Ejercicios Cardio",
       "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.4,
       "position": [
         0,
         200
       ],
+      "parameters": {
+        "query": "=SELECT \n  id,\n  nombre,\n  tipo,\n  nivel,\n  descripcion,\n  protocolo,\n  objetivo_fisiologico\nFROM ejercicios_cardio\nWHERE activo = true\n  AND (\n    CASE\n      WHEN '{{ $(\"Obtener Datos Usuario\").first().json.nivel_actual }}' = 'iniciacion' THEN nivel IN ('iniciacion', 'intermedio')\n      WHEN '{{ $(\"Obtener Datos Usuario\").first().json.nivel_actual }}' = 'intermedio' THEN nivel IN ('iniciacion', 'intermedio', 'avanzado')\n      WHEN '{{ $(\"Obtener Datos Usuario\").first().json.nivel_actual }}' = 'avanzado' THEN nivel IN ('intermedio', 'avanzado')\n      ELSE nivel = '{{ $(\"Obtener Datos Usuario\").first().json.nivel_actual }}'\n    END\n  )\nORDER BY tipo, nivel;",
+        "options": {},
+        "operation": "executeQuery"
+      },
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
           "name": "PostgreSQL Camino Vital Local"
         }
-      }
+      },
+      "typeVersion": 2.4
     },
     {
-      "parameters": {
-        "jsCode": "// Preparar prompt para Claude con perfil del usuario y ejercicios disponibles\nconst usuario = $node[\"Obtener Datos Usuario\"].json;\nconst ejerciciosFuerza = $('Obtener Ejercicios Disponibles').all();\nconst ejerciciosCardio = $input.all();\n\nconsole.log(`📝 Preparando prompt para ${usuario.nombre}`);\nconsole.log(`📊 Ejercicios fuerza: ${ejerciciosFuerza.length}, Ejercicios cardio: ${ejerciciosCardio.length}`);\nconsole.log(`⚙️ Intensidad: ${usuario.intensidad_nivel}%, Volumen extra: ${usuario.volumen_extra}%`);\n\n// Parsear perfil_inicial\nconst perfil = typeof usuario.perfil_inicial === 'string'\n  ? JSON.parse(usuario.perfil_inicial)\n  : usuario.perfil_inicial;\n\nconst limitaciones = perfil.limitaciones || 'ninguna';\nconst objetivo = perfil.objetivo_principal || 'general';\nconst nivelMovilidad = perfil.nivel_movilidad || 'buena';\n\n// FUNCIÓN: Calcular texto de intensidad para el prompt\nfunction calcularTextoIntensidad(intensidad, volumen) {\n  if (intensidad < 40) {\n    return `\n⚠️ INTENSIDAD MUY REDUCIDA (${intensidad}%)\nAdapta significativamente:\n- Repeticiones: Reduce 30-40% del estándar del nivel\n- Series: 2 series en vez de 3\n- Descansos: 50% más largos (90 segundos en vez de 60)\n- Variaciones: Ejercicios más simples, con apoyo o versiones asistidas\n- Progresión: Muy gradual, priorizar técnica correcta`;\n  } else if (intensidad >= 40 && intensidad < 60) {\n    return `\n💡 INTENSIDAD REDUCIDA (${intensidad}%)\nAdapta moderadamente:\n- Repeticiones: 10-20% menos del estándar\n- Series: 2-3 series\n- Descansos: Generosos (60-75 segundos)\n- Variaciones: Versiones básicas del nivel`;\n  } else if (intensidad >= 60 && intensidad <= 75) {\n    return `\n✅ INTENSIDAD ESTÁNDAR (${intensidad}%)\nPrograma normal del nivel ${usuario.nivel_actual}:\n- Repeticiones: Rango estándar del nivel\n- Series: 3 series\n- Descansos: Moderados (45-60 segundos)\n- Variaciones: Ejercicios base del nivel`;\n  } else if (intensidad > 75 && intensidad < 90) {\n    return `\n🔥 INTENSIDAD ELEVADA (${intensidad}%)\nUsuario progresando bien, aumentar desafío:\n- Repeticiones: 10-15% más que el estándar\n- Series: 3 series completas\n- Descansos: Reducidos (30-45 segundos)\n- Variaciones: Versiones más desafiantes del nivel`;\n  } else {\n    // intensidad >= 90\n    let texto = `\n🚀 INTENSIDAD MÁXIMA (${intensidad}%)\nMáximo desafío del nivel ${usuario.nivel_actual}:\n- Repeticiones: Rango alto (12-15 reps)\n- Series: 3-4 series\n- Descansos: Cortos (30 segundos)\n- Variaciones: Versiones avanzadas del nivel`;\n\n    if (volumen > 0) {\n      texto += `\n\n📈 VOLUMEN EXTRA (+${volumen}%)\nEl usuario ha dominado la intensidad máxima. Añade volumen:\n- Añade 1 serie más a ejercicios principales (4 en vez de 3)\n- O aumenta repeticiones proporcionalmente\n- O incluye variaciones más complejas (unilaterales, explosivos)\n- O reduce descansos aún más (20-30 seg)`;\n    }\n\n    return texto;\n  }\n}\n\nconst textoIntensidad = calcularTextoIntensidad(usuario.intensidad_nivel, usuario.volumen_extra);\n\n// MATRIZ SIMPLIFICADA: SOLO FUERZA Y CARDIO\nconst matrizDistribucion = {\n  'movilidad': {\n    2: ['fuerza', 'fuerza'],\n    3: ['fuerza', 'cardio', 'fuerza'],\n    4: ['fuerza', 'cardio', 'fuerza', 'cardio'],\n    5: ['fuerza', 'cardio', 'fuerza', 'cardio', 'fuerza']\n  },\n  'fuerza': {\n    2: ['fuerza', 'cardio'],\n    3: ['fuerza', 'cardio', 'fuerza'],\n    4: ['fuerza', 'cardio', 'fuerza', 'cardio'],\n    5: ['fuerza', 'cardio', 'fuerza', 'cardio', 'fuerza']\n  },\n  'equilibrio': {\n    2: ['fuerza', 'fuerza'],\n    3: ['fuerza', 'cardio', 'fuerza'],\n    4: ['fuerza', 'cardio', 'fuerza', 'cardio'],\n    5: ['fuerza', 'cardio', 'fuerza', 'cardio', 'fuerza']\n  },\n  'cardio': {\n    2: ['cardio', 'fuerza'],\n    3: ['cardio', 'fuerza', 'cardio'],\n    4: ['cardio', 'fuerza', 'cardio', 'fuerza'],\n    5: ['cardio', 'fuerza', 'cardio', 'fuerza', 'cardio']\n  },\n  'general': {\n    2: ['fuerza', 'cardio'],\n    3: ['fuerza', 'cardio', 'fuerza'],\n    4: ['fuerza', 'cardio', 'fuerza', 'cardio'],\n    5: ['fuerza', 'cardio', 'fuerza', 'cardio', 'fuerza']\n  }\n};\n\n// Determinar tipo de sesión\nconst sesionesSemanales = parseInt(usuario.sesiones_objetivo_semana) || 3;\nconst numeroSesion = parseInt(usuario.sesion_actual_dentro_semana) || 1;\nconst objetivoNormalizado = objetivo.toLowerCase();\nconst objetivoKey = matrizDistribucion[objetivoNormalizado] ? objetivoNormalizado : 'general';\nconst patron = matrizDistribucion[objetivoKey][sesionesSemanales] || matrizDistribucion['general'][3];\nconst tipoSesion = patron[numeroSesion - 1] || 'fuerza';\n\nconsole.log(`🎯 Objetivo: ${objetivo} → Tipo: ${tipoSesion}`);\nconsole.log(`📅 Sesión ${numeroSesion} de ${sesionesSemanales}`);\nconsole.log(`📋 Patrón: [${patron.join(', ')}]`);\n\nlet prompt = '';\nlet infoTipo = {};\n\nif (tipoSesion === 'cardio') {\n  infoTipo = {\n    titulo: 'Cardio y Resistencia',\n    enfoque: 'cardio'\n  };\n\n  // Separar ejercicios de cardio por tipo\n  const ejerciciosResistencia = ejerciciosCardio.filter(e => e.json.tipo === 'resistencia');\n  const ejerciciosIntervalos = ejerciciosCardio.filter(e => e.json.tipo === 'intervalos');\n\n  console.log(`🏃 Ejercicios resistencia: ${ejerciciosResistencia.length}`);\n  console.log(`⚡ Ejercicios intervalos: ${ejerciciosIntervalos.length}`);\n\n  // Formatear lista de ejercicios de resistencia\n  const listaResistencia = ejerciciosResistencia.map((e, idx) =>\n    `${idx + 1}. **${e.json.nombre}** (${e.json.nivel}) - ${e.json.descripcion}\\n   Protocolo: ${e.json.protocolo}\\n   Objetivo: ${e.json.objetivo_fisiologico}`\n  ).join('\\n\\n');\n\n  // Formatear lista de ejercicios de intervalos\n  const listaIntervalos = ejerciciosIntervalos.map((e, idx) =>\n    `${idx + 1}. **${e.json.nombre}** (${e.json.nivel}) - ${e.json.descripcion}\\n   Protocolo: ${e.json.protocolo}\\n   Objetivo: ${e.json.objetivo_fisiologico}`\n  ).join('\\n\\n');\n\n  prompt = `Eres un experto en creación de programas de ejercicio cardiovascular para personas mayores y con movilidad limitada.\n\n**PERFIL DEL USUARIO:**\n- Nombre: ${usuario.nombre}\n- Nivel físico: ${usuario.nivel_actual}\n- Intensidad: ${usuario.intensidad_nivel}%${usuario.volumen_extra > 0 ? ` + ${usuario.volumen_extra}% volumen extra` : ''}\n- Nivel de movilidad: ${nivelMovilidad}\n- Limitaciones físicas: ${limitaciones}\n- Objetivo principal: ${objetivo}\n\n**TIPO DE SESIÓN A CREAR:**\n🎯 **Cardio y Resistencia**\n\n${textoIntensidad} (Sesión ${numeroSesion} de ${sesionesSemanales})\n\n**REGLA FUNDAMENTAL - SIN MATERIAL:**\n⚠️ NUNCA propongas actividades que requieran equipamiento (bicicleta, escaleras, bandas, pesas, etc.)\nSolo puedes proponer actividades que se puedan hacer en casa o al aire libre SIN NINGÚN MATERIAL.\n\n**EJERCICIOS DE RESISTENCIA DISPONIBLES (cardio continuo):**\n${listaResistencia}\n\n**EJERCICIOS DE INTERVALOS DISPONIBLES (trabajo/descanso):**\n${listaIntervalos}\n\n**TU TAREA:**\nCrea un plan de actividad cardiovascular que RESPETE EL PROTOCOLO del ejercicio elegido:\n\n1. **IMPORTANTE: La duración total de la sesión DEBE coincidir con el PROTOCOLO del ejercicio** (ej: si dice \"10-15 min total\", la sesión completa dura 10-15 min)\n2. **Sea seguro** para el nivel ${usuario.nivel_actual} con limitaciones: ${limitaciones}\n3. **NO requiera ningún material ni equipo** - solo el propio cuerpo\n4. **Estructura SIMPLIFICADA según el protocolo:**\n   - Preparación breve (1-2 min de movilidad suave)\n   - Actividad principal (la mayor parte del tiempo según protocolo)\n   - Vuelta a la calma (1-2 min)\n5. **NO añadas intervalos para nivel iniciacion** - mantén la sesión simple\n\n**IMPORTANTE SOBRE LIMITACIONES:**\n${limitaciones !== 'ninguna' ? `El usuario tiene limitaciones en: ${limitaciones}. Adapta la actividad cardiovascular para evitar estrés en estas áreas.` : 'No hay limitaciones específicas reportadas.'}\n\n**FORMATO DE SALIDA:**\nDevuelve ÚNICAMENTE un objeto JSON válido (sin markdown, sin explicaciones adicionales):\n\n{\n  \"titulo\": \"Sesión ${numeroSesion}: Cardio y Resistencia - Nivel ${usuario.nivel_actual}\",\n  \"introduccion_personalizada\": \"Esta sesión está diseñada para ti, ${usuario.nombre}. [Explicar beneficios del cardio y cómo respeta sus limitaciones]\",\n  \"enfoque\": \"cardio\",\n  \"duracion_estimada\": \"[USAR EL PROTOCOLO DEL EJERCICIO ELEGIDO]\",\n  \"ejercicio_resistencia\": {\n    \"nombre\": \"Nombre exacto del ejercicio elegido de la lista\",\n    \"descripcion_adaptada\": \"Descripción personalizada para este usuario\",\n    \"duracion\": \"15-20 minutos\",\n    \"protocolo_adaptado\": \"Protocolo ajustado a la intensidad del usuario\"\n  },\n  \"ejercicio_intervalos\": {\n    \"nombre\": \"Nombre del ejercicio de intervalos (o null si no aplica)\",\n    \"descripcion_adaptada\": \"Descripción personalizada\",\n    \"protocolo_adaptado\": \"Protocolo ajustado (ej: 30 seg trabajo / 1 min descanso x 4)\",\n    \"incluir\": true | false\n  },\n  \"calentamiento_texto\": \"Descripción detallada del calentamiento de 3-5 minutos con ejercicios de movilidad\",\n  \"estructura_sesion\": {\n    \"fases\": [\n      {\n        \"fase\": \"Preparación\",\n        \"duracion\": \"1-2 minutos\",\n        \"intensidad\": \"Baja (3/10)\",\n        \"descripcion\": \"Movilidad articular muy suave para preparar el cuerpo\"\n      },\n      {\n        \"fase\": \"Actividad principal\",\n        \"duracion\": \"[MAYOR PARTE DEL TIEMPO SEGÚN PROTOCOLO]\",\n        \"intensidad\": \"Según nivel del usuario (4-6/10)\",\n        \"descripcion\": \"Ejercicio de resistencia elegido a ritmo constante\"\n      },\n      {\n        \"fase\": \"Vuelta a la calma\",\n        \"duracion\": \"1-2 minutos\",\n        \"intensidad\": \"Muy baja (2-3/10)\",\n        \"descripcion\": \"Reducir ritmo gradualmente y respiraciones profundas\"\n      }\n    ]\n  },\n  \"senales_de_alerta\": [\n    \"Dolor en el pecho o dificultad para respirar\",\n    \"Mareo o náuseas\",\n    \"Dolor articular intenso\"\n  ],\n  \"consejos_seguridad\": [\n    \"Mantén una botella de agua cerca\",\n    \"Si necesitas parar, hazlo sin culpa\"\n  ],\n  \"progresion_sugerida\": \"Cómo aumentar la intensidad en las próximas sesiones\"\n}\n\n**VALIDACIÓN:**\n- SOLO devuelve el JSON, nada más\n- El enfoque DEBE ser: \"cardio\"\n- DEBES elegir ejercicios de las listas proporcionadas\n- Si la intensidad es menor a 60%, NO incluyas intervalos (ejercicio_intervalos.incluir = false)\n- Adapta la actividad a las limitaciones: ${limitaciones}`;\n\n} else {\n  infoTipo = {\n    titulo: 'Fuerza Funcional',\n    enfoque: 'fuerza'\n  };\n\n  const ejerciciosFiltrados = ejerciciosFuerza.slice(0, 50);\n  const listaEjercicios = ejerciciosFiltrados.map((e, idx) => {\n    const instrucciones = e.json.instrucciones_clave || [];\n    const instruccionesStr = instrucciones.length > 0 \n      ? `\\n   Instrucciones clave: ${JSON.stringify(instrucciones)}` \n      : '';\n    const precauciones = e.json.precauciones || [];\n    const precaucionesStr = precauciones.length > 0 \n      ? `\\n   Precauciones: ${JSON.stringify(precauciones)}` \n      : '';\n    return `${idx + 1}. [ARCHIVO: ${e.json.nombre_archivo}] ${e.json.nombre_espanol} - ${e.json.descripcion_corta}${instruccionesStr}${precaucionesStr}`;\n  }).join('\\n');\n\n  console.log(`🎯 Enviando ${ejerciciosFiltrados.length} ejercicios de fuerza`);\n\n  prompt = `Eres un experto en creación de programas de ejercicio de fuerza para personas mayores y con movilidad limitada.\n\n**PERFIL DEL USUARIO:**\n- Nombre: ${usuario.nombre}\n- Nivel físico: ${usuario.nivel_actual}\n- Intensidad: ${usuario.intensidad_nivel}%${usuario.volumen_extra > 0 ? ` + ${usuario.volumen_extra}% volumen extra` : ''}\n- Nivel de movilidad: ${nivelMovilidad}\n- Limitaciones físicas: ${limitaciones}\n- Objetivo principal: ${objetivo}\n\n**TIPO DE SESIÓN A CREAR:**\n🎯 **Fuerza Funcional**\n\n${textoIntensidad} (Sesión ${numeroSesion} de ${sesionesSemanales})\n\nEnfoque: Fortalecer músculos principales del cuerpo con peso corporal. Incluye trabajo de equilibrio (ejercicios unilaterales).\n\n**EJERCICIOS DISPONIBLES:**\n${listaEjercicios}\n\n**⚠️ REGLA CRÍTICA - EJERCICIOS UNILATERALES (aplica a TODA la sesión):**\nSi seleccionas un ejercicio que indica 'Derecha' o 'Izquierda' en el nombre (ej: 'Abducción de cadera derecha', 'Zancadas laterales derecha'), DEBES incluir TAMBIÉN la variante del lado contrario CONSECUTIVAMENTE. Esto aplica tanto al calentamiento como al trabajo principal. NUNCA dejes un ejercicio unilateral sin su pareja del otro lado.\n\n**TU TAREA:**\nCrea una sesión de fuerza de 25-30 minutos que:\n\n1. **Calentamiento (2-4 ejercicios):** SIEMPRE ejercicios de movilidad articular y estiramientos dinámicos\n2. **Trabajo Principal (4-6 ejercicios):** Ejercicios de fuerza que trabajen diferentes áreas del cuerpo\n\n**REGLAS IMPORTANTES:**\n- El calentamiento DEBE ser de movilidad (preparación articular)\n- Balancea las áreas: piernas, core, brazos, equilibrio\n- Adapta repeticiones al nivel ${usuario.nivel_actual}\n- Respeta limitaciones: ${limitaciones}\n- SIEMPRE incluye el campo 'descanso' en cada ejercicio del trabajo_principal (ej: '45 segundos entre series')\n- La introducción debe explicar por qué esta sesión es importante para ${usuario.nombre}\n\n**FORMATO DE SALIDA:**\nDevuelve ÚNICAMENTE un objeto JSON válido:\n\n{\n  \"titulo\": \"Sesión ${numeroSesion}: Fuerza Funcional - Nivel ${usuario.nivel_actual}\",\n  \"introduccion_personalizada\": \"Esta sesión está diseñada para ti, ${usuario.nombre}. Como estás en nivel ${usuario.nivel_actual} con objetivo de ${objetivo}, hoy trabajaremos tu fuerza de forma segura. [Explicar beneficios y cómo respeta limitaciones ${limitaciones}]\",\n  \"enfoque\": \"fuerza\",\n  \"duracion_estimada\": \"25-30 minutos\",\n  \"calentamiento\": [\n    {\n      \"nombre_archivo\": \"archivo_exacto.mov\",\n      \"nombre_espanol\": \"Nombre en español\",\n      \"repeticiones\": \"10 repeticiones lentas\",\n      \"duracion_aprox\": \"2 minutos\",\n      \"instrucciones_clave\": [\"Copia las instrucciones del ejercicio\"],\n      \"precauciones\": [\"Copia las precauciones del ejercicio si las tiene\"]\n    }\n  ],\n  \"trabajo_principal\": [\n    {\n      \"nombre_archivo\": \"archivo_exacto.mov\",\n      \"nombre_espanol\": \"Nombre en español\",\n      \"repeticiones\": \"3 series de 10\" | \"30 segundos por lado\",\n      \"descanso\": \"45 segundos entre series\",\n      \"duracion_aprox\": \"4 minutos\",\n      \"instrucciones_clave\": [\"Copia las instrucciones del ejercicio\"],\n      \"precauciones\": [\"Copia las precauciones del ejercicio si las tiene\"]\n    }\n  ]\n}\n\n**VALIDACIÓN CRÍTICA:**\n- SOLO devuelve el JSON\n- ⚠️ NOMBRE_ARCHIVO: Copia EXACTAMENTE el valor entre [ARCHIVO: xxx.mov] de la lista. NO inventes nombres de archivo. Si el ejercicio dice [ARCHIVO: Punches.mov], usa \"Punches.mov\", NO \"Golpes_de_Boxeo.mov\"\n- Calentamiento = ejercicios de movilidad\n- Trabajo principal = ejercicios de fuerza\n- IMPORTANTE: Copia EXACTAMENTE los arrays instrucciones_clave y precauciones del ejercicio de la lista. NO inventes datos.\n- ⚠️ UNILATERALES: Si incluyes un ejercicio con 'Derecha' o 'Izquierda', DEBES incluir también el lado contrario consecutivamente (tanto en calentamiento como en trabajo_principal)`;\n}\n\nreturn {\n  json: {\n    prompt: prompt,\n    user_id: usuario.id,\n    user_nombre: usuario.nombre,\n    user_email: usuario.email,\n    semana_actual: usuario.semana_actual,\n    sesiones_objetivo: usuario.sesiones_objetivo_semana,\n    tipo_sesion: tipoSesion,\n    numero_sesion: numeroSesion,\n    sesion: infoTipo\n  }\n};"
-      },
       "id": "preparar-prompt",
       "name": "Preparar Prompt Claude",
       "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
       "position": [
         200,
         0
-      ]
+      ],
+      "parameters": {
+        "jsCode": "// Preparar prompt para Claude con perfil del usuario y ejercicios disponibles\nconst usuario = $node[\"Obtener Datos Usuario\"].json;\nconst ejerciciosFuerza = $('Obtener Ejercicios Disponibles').all();\n// Cardio: sub-tipos de caminata definidos directamente en el prompt (sin tabla BD)\nconst ejerciciosCardio = [];\n\nconsole.log(`📝 Preparando prompt para ${usuario.nombre}`);\nconsole.log(`📊 Ejercicios fuerza: ${ejerciciosFuerza.length}, Ejercicios cardio: ${ejerciciosCardio.length}`);\nconsole.log(`⚙️ Intensidad: ${usuario.intensidad_nivel}%, Volumen extra: ${usuario.volumen_extra}%`);\n\n// Parsear perfil_inicial\nconst perfil = typeof usuario.perfil_inicial === 'string'\n  ? JSON.parse(usuario.perfil_inicial)\n  : usuario.perfil_inicial;\n\nconst limitaciones = perfil.limitaciones || 'ninguna';\nconst objetivo = perfil.objetivo_principal || 'general';\nconst nivelMovilidad = perfil.nivel_movilidad || 'buena';\n\n// FUNCIÓN: Calcular texto de intensidad para el prompt\nfunction calcularTextoIntensidad(intensidad, volumen) {\n  if (intensidad < 40) {\n    return `\n⚠️ INTENSIDAD MUY REDUCIDA (${intensidad}%)\nAdapta significativamente:\n- Repeticiones: Reduce 30-40% del estándar del nivel\n- Series: 2 series en vez de 3\n- Descansos: 50% más largos (90 segundos en vez de 60)\n- Variaciones: Ejercicios más simples, con apoyo o versiones asistidas\n- Progresión: Muy gradual, priorizar técnica correcta`;\n  } else if (intensidad >= 40 && intensidad < 60) {\n    return `\n💡 INTENSIDAD REDUCIDA (${intensidad}%)\nAdapta moderadamente:\n- Repeticiones: 10-20% menos del estándar\n- Series: 2-3 series\n- Descansos: Generosos (60-75 segundos)\n- Variaciones: Versiones básicas del nivel`;\n  } else if (intensidad >= 60 && intensidad <= 75) {\n    return `\n✅ INTENSIDAD ESTÁNDAR (${intensidad}%)\nPrograma normal del nivel ${usuario.nivel_actual}:\n- Repeticiones: Rango estándar del nivel\n- Series: 3 series\n- Descansos: Moderados (45-60 segundos)\n- Variaciones: Ejercicios base del nivel`;\n  } else if (intensidad > 75 && intensidad < 90) {\n    return `\n🔥 INTENSIDAD ELEVADA (${intensidad}%)\nUsuario progresando bien, aumentar desafío:\n- Repeticiones: 10-15% más que el estándar\n- Series: 3 series completas\n- Descansos: Reducidos (30-45 segundos)\n- Variaciones: Versiones más desafiantes del nivel`;\n  } else {\n    // intensidad >= 90\n    let texto = `\n🚀 INTENSIDAD MÁXIMA (${intensidad}%)\nMáximo desafío del nivel ${usuario.nivel_actual}:\n- Repeticiones: Rango alto (12-15 reps)\n- Series: 3-4 series\n- Descansos: Cortos (30 segundos)\n- Variaciones: Versiones avanzadas del nivel`;\n\n    if (volumen > 0) {\n      texto += `\n\n📈 VOLUMEN EXTRA (+${volumen}%)\nEl usuario ha dominado la intensidad máxima. Añade volumen:\n- Añade 1 serie más a ejercicios principales (4 en vez de 3)\n- O aumenta repeticiones proporcionalmente\n- O incluye variaciones más complejas (unilaterales, explosivos)\n- O reduce descansos aún más (20-30 seg)`;\n    }\n\n    return texto;\n  }\n}\n\nconst textoIntensidad = calcularTextoIntensidad(usuario.intensidad_nivel, usuario.volumen_extra);\n\n// MATRIZ SIMPLIFICADA: SOLO FUERZA Y CARDIO\nconst matrizDistribucion = {\n  'movilidad': {\n    2: ['fuerza', 'fuerza'],\n    3: ['fuerza', 'cardio', 'fuerza'],\n    4: ['fuerza', 'cardio', 'fuerza', 'cardio'],\n    5: ['fuerza', 'cardio', 'fuerza', 'cardio', 'fuerza']\n  },\n  'fuerza': {\n    2: ['fuerza', 'cardio'],\n    3: ['fuerza', 'cardio', 'fuerza'],\n    4: ['fuerza', 'cardio', 'fuerza', 'cardio'],\n    5: ['fuerza', 'cardio', 'fuerza', 'cardio', 'fuerza']\n  },\n  'equilibrio': {\n    2: ['fuerza', 'fuerza'],\n    3: ['fuerza', 'cardio', 'fuerza'],\n    4: ['fuerza', 'cardio', 'fuerza', 'cardio'],\n    5: ['fuerza', 'cardio', 'fuerza', 'cardio', 'fuerza']\n  },\n  'cardio': {\n    2: ['cardio', 'fuerza'],\n    3: ['cardio', 'fuerza', 'cardio'],\n    4: ['cardio', 'fuerza', 'cardio', 'fuerza'],\n    5: ['cardio', 'fuerza', 'cardio', 'fuerza', 'cardio']\n  },\n  'general': {\n    2: ['fuerza', 'cardio'],\n    3: ['fuerza', 'cardio', 'fuerza'],\n    4: ['fuerza', 'cardio', 'fuerza', 'cardio'],\n    5: ['fuerza', 'cardio', 'fuerza', 'cardio', 'fuerza']\n  }\n};\n\n// Determinar tipo de sesión\nconst sesionesSemanales = parseInt(usuario.sesiones_objetivo_semana) || 3;\nconst numeroSesion = parseInt(usuario.sesion_actual_dentro_semana) || 1;\nconst objetivoNormalizado = objetivo.toLowerCase();\nconst objetivoKey = matrizDistribucion[objetivoNormalizado] ? objetivoNormalizado : 'general';\nconst patron = matrizDistribucion[objetivoKey][sesionesSemanales] || matrizDistribucion['general'][3];\nconst tipoSesion = patron[numeroSesion - 1] || 'fuerza';\n\nconsole.log(`🎯 Objetivo: ${objetivo} → Tipo: ${tipoSesion}`);\nconsole.log(`📅 Sesión ${numeroSesion} de ${sesionesSemanales}`);\nconsole.log(`📋 Patrón: [${patron.join(', ')}]`);\n\nlet prompt = '';\nlet infoTipo = {};\n\nif (tipoSesion === 'cardio') {\n  infoTipo = {\n    titulo: 'Cardio y Resistencia',\n    enfoque: 'cardio'\n  };\n\n  // Los 4 sub-tipos de caminata se definen directamente en el prompt\n  // No se necesita tabla ejercicios_cardio\n\n  prompt = `Eres un experto en creación de programas de ejercicio cardiovascular para personas mayores y con movilidad limitada.\n\n**PERFIL DEL USUARIO:**\n- Nombre: ${usuario.nombre}\n- Nivel físico: ${usuario.nivel_actual}\n- Intensidad: ${usuario.intensidad_nivel}%${usuario.volumen_extra > 0 ? ` + ${usuario.volumen_extra}% volumen extra` : ''}\n- Nivel de movilidad: ${nivelMovilidad}\n- Limitaciones físicas: ${limitaciones}\n- Objetivo principal: ${objetivo}\n\n**TIPO DE SESIÓN A CREAR:**\n🎯 **Cardio - Caminata adaptada**\n\n${textoIntensidad} (Sesión ${numeroSesion} de ${sesionesSemanales})\n\n**REGLA FUNDAMENTAL - SIN MATERIAL:**\n⚠️ NUNCA propongas actividades que requieran equipamiento (bicicleta, escaleras, bandas, pesas, etc.)\nSolo puedes proponer actividades que se puedan hacer en casa o al aire libre SIN NINGÚN MATERIAL.\n\n**TIPOS DE CAMINATA DISPONIBLES (elige UNO como actividad principal):**\n\n1. **Andar suave** - Caminar a ritmo cómodo y conversacional. Pasos cortos y relajados. Ideal para niveles bajos de intensidad o usuarios con limitaciones importantes.\n   - Esfuerzo: 3-4/10\n   - Duración típica: 15-25 minutos\n\n2. **Andar moderado** - Caminar con paso firme y decidido, ritmo activo pero sostenible. Se puede mantener una conversación con frases cortas.\n   - Esfuerzo: 5-6/10\n   - Duración típica: 20-30 minutos\n\n3. **Power walking** - Caminata enérgica con braceo activo y zancada amplia. Ritmo alto sin llegar a correr. Respiración más acelerada.\n   - Esfuerzo: 6-7/10\n   - Duración típica: 20-35 minutos\n\n4. **Andar con cambios de intensidad** - Caminata con bloques alternados de ritmo fuerte y ritmo suave. SIN CORRER. Por ejemplo: 1-2 min rápido / 1-2 min suave. Incluye variaciones como cambios de dirección, elevar rodillas, o braceo intenso en los bloques fuertes.\n   - Esfuerzo: alternando 7/10 y 4/10\n   - Duración típica: 20-35 minutos\n\n**GUÍA DE SELECCIÓN según nivel e intensidad:**\n- Nivel iniciación + intensidad <50%: Andar suave\n- Nivel iniciación + intensidad 50-70%: Andar moderado\n- Nivel iniciación + intensidad >70%: Andar moderado o cambios de intensidad suaves\n- Nivel intermedio + intensidad <50%: Andar moderado\n- Nivel intermedio + intensidad 50-70%: Power walking\n- Nivel intermedio + intensidad >70%: Power walking o cambios de intensidad\n- Nivel avanzado + intensidad <60%: Power walking\n- Nivel avanzado + intensidad >=60%: Cambios de intensidad\n\nEsta guía es orientativa. Usa tu criterio profesional para adaptar según las limitaciones del usuario.\n\n**TU TAREA:**\nCrea un plan de caminata de 20-35 minutos que:\n\n1. **Sea seguro** para el nivel ${usuario.nivel_actual} con limitaciones: ${limitaciones}\n2. **NO requiera ningún material ni equipo** - solo el propio cuerpo\n3. **Incluya calentamiento** (3-5 minutos de movilidad suave)\n4. **ELIGE un tipo de caminata** de los 4 disponibles como actividad principal\n5. **Proporcione guías claras de:**\n   - Duración total y por fases\n   - Intensidad (escala de esfuerzo 1-10)\n   - Cómo debe sentirse el usuario (respiración, sensación corporal)\n   - Señales de que debe parar o reducir intensidad\n\n**IMPORTANTE SOBRE LIMITACIONES:**\n${limitaciones !== 'ninguna' ? `El usuario tiene limitaciones en: ${limitaciones}. Adapta la caminata para evitar estrés en estas áreas. Por ejemplo, si tiene problemas de rodilla, recomienda pasos más cortos y superficies llanas.` : 'No hay limitaciones específicas reportadas.'}\n\n**FORMATO DE SALIDA:**\nDevuelve ÚNICAMENTE un objeto JSON válido (sin markdown, sin explicaciones adicionales):\n\n{\n  \"titulo\": \"Sesión ${numeroSesion}: Cardio - Caminata adaptada\",\n  \"introduccion_personalizada\": \"Breve texto motivacional personalizado para ${usuario.nombre}\",\n  \"enfoque\": \"cardio\",\n  \"duracion_estimada\": \"20-35 minutos\",\n  \"ejercicio_resistencia\": {\n    \"nombre\": \"Nombre exacto del tipo de caminata elegido\",\n    \"descripcion_adaptada\": \"Descripción personalizada de cómo realizar esta caminata\",\n    \"duracion\": \"15-25 minutos\",\n    \"protocolo_adaptado\": \"Instrucciones concretas: ritmo, respiración, braceo, etc.\"\n  },\n  \"ejercicio_intervalos\": {\n    \"nombre\": null,\n    \"descripcion_adaptada\": \"\",\n    \"protocolo_adaptado\": \"\",\n    \"incluir\": false\n  },\n  \"calentamiento_texto\": \"Descripción detallada del calentamiento de 3-5 minutos\",\n  \"estructura_sesion\": {\n    \"fases\": [\n      {\n        \"fase\": \"Calentamiento\",\n        \"duracion\": \"3-5 minutos\",\n        \"intensidad\": \"Baja (3-4/10)\",\n        \"descripcion\": \"Movilidad articular suave...\"\n      },\n      {\n        \"fase\": \"Caminata principal\",\n        \"duracion\": \"15-25 minutos\",\n        \"intensidad\": \"Según tipo elegido\",\n        \"descripcion\": \"Instrucciones detalladas de la caminata...\"\n      },\n      {\n        \"fase\": \"Enfriamiento\",\n        \"duracion\": \"3-5 minutos\",\n        \"intensidad\": \"Baja (3-4/10)\",\n        \"descripcion\": \"Reducir ritmo gradualmente, estiramientos suaves...\"\n      }\n    ]\n  },\n  \"senales_de_alerta\": [\n    \"Dolor en el pecho o dificultad para respirar\",\n    \"Mareo o náuseas\",\n    \"Dolor articular intenso\"\n  ],\n  \"consejos_seguridad\": [\n    \"Lleva agua si sales a caminar\",\n    \"Usa calzado cómodo y adecuado\"\n  ],\n  \"progresion_sugerida\": \"Cómo progresar en las próximas sesiones\"\n}\n\n**NOTA sobre \"Andar con cambios de intensidad\":**\nSi eliges este tipo, la fase principal debe detallar los bloques de trabajo/descanso en la descripción. NO uses el campo ejercicio_intervalos (déjalo con incluir: false). Toda la información va en ejercicio_resistencia y en las fases de estructura_sesion.\n\n**VALIDACIÓN:**\n- SOLO devuelve el JSON, nada más\n- El enfoque DEBE ser: \"cardio\"\n- El nombre en ejercicio_resistencia DEBE ser uno de: \"Andar suave\", \"Andar moderado\", \"Power walking\", \"Andar con cambios de intensidad\"\n- ejercicio_intervalos.incluir DEBE ser false siempre\n- Adapta la caminata a las limitaciones: ${limitaciones}`;\n\n} else {\n  infoTipo = {\n    titulo: 'Fuerza Funcional',\n    enfoque: 'fuerza'\n  };\n\n  const ejerciciosFiltrados = ejerciciosFuerza.slice(0, 50);\n  // Guardar mapa para enriquecer respuesta después\n  const mapaEjercicios = {};\n  ejerciciosFiltrados.forEach(e => {\n    mapaEjercicios[e.json.nombre_archivo] = {\n      instrucciones_clave: e.json.instrucciones_clave || [],\n      precauciones: e.json.precauciones || []\n    };\n  });\n  const listaEjercicios = ejerciciosFiltrados.map((e, idx) => {\n    return `${idx + 1}. [ARCHIVO: ${e.json.nombre_archivo}] ${e.json.nombre_espanol} (${e.json.nivel}) - ${e.json.descripcion_corta}`;\n  }).join('\\n');\n  \n  // Historial de ejercicios recientes\n  let historialTexto = '';\n  try {\n    const histRaw = usuario.historial_ejercicios_fuerza;\n    const historial = typeof histRaw === 'string' ? JSON.parse(histRaw) : histRaw;\n    if (historial && historial.length > 0) {\n      const sesionesHist = historial.map((h, i) => {\n        const ejercicios = Array.isArray(h) ? h : (h.ejercicios || []);\n        return `- Hace ${i + 1} sesion(es): ${ejercicios.join(', ')}`;\n      });\n      historialTexto = `\\n\\n**EJERCICIOS USADOS RECIENTEMENTE (EVITAR REPETIR):**\\n${sesionesHist.join('\\n')}\\nElige ejercicios DIFERENTES. Al menos el 70% deben ser distintos a los de las últimas sesiones.`;\n    }\n  } catch(e) { console.log('No se pudo parsear historial:', e.message); }\n\n  console.log(`🎯 Enviando ${ejerciciosFiltrados.length} ejercicios de fuerza`);\n\n  prompt = `Eres un experto en creación de programas de ejercicio de fuerza para personas mayores y con movilidad limitada.\n\n**PERFIL DEL USUARIO:**\n- Nombre: ${usuario.nombre}\n- Nivel físico: ${usuario.nivel_actual}\n- Intensidad: ${usuario.intensidad_nivel}%${usuario.volumen_extra > 0 ? ` + ${usuario.volumen_extra}% volumen extra` : ''}\n- Nivel de movilidad: ${nivelMovilidad}\n- Limitaciones físicas: ${limitaciones}\n- Objetivo principal: ${objetivo}\n\n**TIPO DE SESIÓN A CREAR:**\n🎯 **Fuerza Funcional**\n\n${textoIntensidad} (Sesión ${numeroSesion} de ${sesionesSemanales})\n\nEnfoque: Fortalecer músculos principales del cuerpo con peso corporal. Incluye trabajo de equilibrio (ejercicios unilaterales).\n\n**EJERCICIOS DISPONIBLES:**\n${listaEjercicios}${historialTexto}\n\n**TU TAREA:**\nCrea una sesión de fuerza de 25-30 minutos que:\n\n1. **Calentamiento (2 ejercicios):** SIEMPRE ejercicios de movilidad articular y estiramientos dinámicos\n2. **Trabajo Principal (4-6 ejercicios):** Ejercicios de fuerza que trabajen diferentes áreas del cuerpo\n\n**REGLAS IMPORTANTES:**\n- El calentamiento DEBE ser de movilidad (preparación articular)\n- Balancea las áreas: piernas, core, brazos, equilibrio\n- Adapta repeticiones al nivel ${usuario.nivel_actual}\n- Respeta limitaciones: ${limitaciones}\n- SIEMPRE incluye el campo 'descanso' en cada ejercicio del trabajo_principal (ej: '45 segundos entre series')\n- La introducción debe explicar por qué esta sesión es importante para ${usuario.nombre}\n- VARIEDAD: Explora TODA la lista de ejercicios disponibles. No te limites siempre a los mismos ejercicios. Cada sesión debe ser diferente, eligiendo combinaciones distintas para mantener la motivación del usuario\n\n**FORMATO DE SALIDA:**\nDevuelve ÚNICAMENTE un JSON válido:\n\n{\n  \"titulo\": \"Sesión ${numeroSesion}: Fuerza Funcional - Nivel ${usuario.nivel_actual}\",\n  \"introduccion_personalizada\": \"Mensaje motivador para ${usuario.nombre}\",\n  \"enfoque\": \"fuerza\",\n  \"duracion_estimada\": \"25-30 minutos\",\n  \"calentamiento\": [\n    {\"nombre_archivo\": \"archivo.mov\", \"nombre_espanol\": \"Nombre\", \"repeticiones\": \"10 reps\", \"duracion_aprox\": \"2 min\"}\n  ],\n  \"trabajo_principal\": [\n    {\"nombre_archivo\": \"archivo.mov\", \"nombre_espanol\": \"Nombre\", \"repeticiones\": \"3x10\", \"descanso\": \"45 seg\", \"duracion_aprox\": \"4 min\"}\n  ]\n}\n\n**VALIDACIÓN:**\n- SOLO JSON\n- nombre_archivo: EXACTAMENTE el valor [ARCHIVO: xxx.mov] de la lista\n- NO incluyas instrucciones_clave ni precauciones (se añaden automáticamente)\n- Calentamiento = movilidad, Trabajo principal = fuerza\n- UNILATERALES: Si incluyes Derecha, incluye Izquierda consecutivamente`;\n}\n\nreturn {\n  json: {\n    prompt: prompt,\n    user_id: usuario.id,\n    user_nombre: usuario.nombre,\n    user_email: usuario.email,\n    semana_actual: usuario.semana_actual,\n    sesiones_objetivo: usuario.sesiones_objetivo_semana,\n    tipo_sesion: tipoSesion,\n    numero_sesion: numeroSesion,\n    sesion: infoTipo,\n    mapaEjercicios: typeof mapaEjercicios !== 'undefined' ? mapaEjercicios : {}\n  }\n};"
+      },
+      "typeVersion": 2
     },
     {
+      "id": "llamar-claude",
+      "name": "Llamar a Claude API",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        400,
+        0
+      ],
       "parameters": {
-        "method": "POST",
         "url": "https://api.anthropic.com/v1/messages",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "anthropicApi",
+        "method": "POST",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        },
+        "jsonBody": "={{ {\n  model: 'claude-sonnet-4-5-20250929',\n  max_tokens: 4096,\n  messages: [\n    {\n      role: 'user',\n      content: $json.prompt\n    }\n  ]\n} }}",
+        "sendBody": true,
         "sendHeaders": true,
+        "specifyBody": "json",
+        "authentication": "predefinedCredentialType",
         "headerParameters": {
           "parameters": [
             {
@@ -113,83 +129,66 @@
             }
           ]
         },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ {\n  model: 'claude-sonnet-4-5-20250929',\n  max_tokens: 4096,\n  messages: [\n    {\n      role: 'user',\n      content: $json.prompt\n    }\n  ]\n} }}",
-        "options": {
-          "response": {
-            "response": {
-              "responseFormat": "json"
-            }
-          }
-        }
+        "nodeCredentialType": "anthropicApi"
       },
-      "id": "llamar-claude",
-      "name": "Llamar a Claude API",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        400,
-        0
-      ],
       "credentials": {
         "anthropicApi": {
           "id": "GGPk1JGIxV4tqjD0",
           "name": "anthropic-api"
         }
-      }
+      },
+      "typeVersion": 4.2
     },
     {
-      "parameters": {
-        "jsCode": "// Parsear respuesta de Claude\nconst datosUsuario = $node[\"Preparar Prompt Claude\"].json;\nconst respuestaClaude = $json;\n\nconsole.log('🔍 Parseando respuesta de Claude...');\n\n// Verificar si es un error de la API (como overloaded_error)\nif (respuestaClaude.type === 'error') {\n  const errorType = respuestaClaude.error?.type || 'unknown';\n  const errorMessage = respuestaClaude.error?.message || 'Error desconocido';\n  console.error(`❌ Error de Claude API: ${errorType} - ${errorMessage}`);\n  \n  if (errorType === 'overloaded_error') {\n    throw new Error('El servicio de IA está temporalmente sobrecargado. Por favor, intenta de nuevo en unos minutos.');\n  }\n  throw new Error(`Error de Claude API: ${errorType} - ${errorMessage}`);\n}\n\n// Extraer el contenido del mensaje\nlet mensajeTexto = respuestaClaude.content[0].text;\nconsole.log('📝 Texto recibido (primeros 200 chars):', mensajeTexto.substring(0, 200));\n\n// Limpiar markdown code blocks si existen (```json ... ```)\nif (mensajeTexto.includes('```')) {\n  console.log('🧹 Limpiando bloques de markdown...');\n  // Extraer contenido entre ```json y ``` o entre ``` y ```\n  const match = mensajeTexto.match(/```(?:json)?\\s*([\\s\\S]*?)```/);\n  if (match) {\n    mensajeTexto = match[1].trim();\n    console.log('✅ Markdown removido');\n  }\n}\n\n// Parsear JSON\nlet sesionGenerada;\ntry {\n  sesionGenerada = JSON.parse(mensajeTexto);\n  console.log('✅ JSON parseado correctamente');\n  console.log('🎯 Enfoque:', sesionGenerada.enfoque);\n} catch (error) {\n  console.error('❌ Error al parsear JSON:', error.message);\n  console.error('📄 Texto que intentó parsear:', mensajeTexto.substring(0, 500));\n  throw new Error(`No se pudo parsear la respuesta de Claude: ${error.message}`);\n}\n\n// Validación básica\nif (!sesionGenerada.enfoque || !sesionGenerada.titulo) {\n  throw new Error('La sesión generada no tiene los campos requeridos');\n}\n\n// Verificar que el tipo coincida\nif (sesionGenerada.enfoque !== datosUsuario.tipo_sesion) {\n  console.warn(`⚠️ Tipo esperado: ${datosUsuario.tipo_sesion}, recibido: ${sesionGenerada.enfoque}`);\n}\n\nreturn {\n  json: {\n    ...datosUsuario,\n    sesion: sesionGenerada,\n    tokens_usados: respuestaClaude.usage\n  }\n};"
-      },
       "id": "parsear-respuesta",
       "name": "Parsear Respuesta Claude",
       "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
       "position": [
         600,
         0
-      ]
+      ],
+      "parameters": {
+        "jsCode": "// Parsear respuesta de Claude\nconst datosUsuario = $node[\"Preparar Prompt Claude\"].json;\nconst respuestaClaude = $json;\n\nconsole.log('🔍 Parseando respuesta de Claude...');\n\n// Extraer el contenido del mensaje\nlet mensajeTexto = respuestaClaude.content[0].text;\nconsole.log('📝 Texto recibido (primeros 200 chars):', mensajeTexto.substring(0, 200));\n\n// Limpiar markdown code blocks si existen (```json ... ```)\nif (mensajeTexto.includes('```')) {\n  console.log('🧹 Limpiando bloques de markdown...');\n  // Extraer contenido entre ```json y ``` o entre ``` y ```\n  const match = mensajeTexto.match(/```(?:json)?\\s*([\\s\\S]*?)```/);\n  if (match) {\n    mensajeTexto = match[1].trim();\n    console.log('✅ Markdown removido');\n  }\n}\n\n// Parsear JSON\nlet sesionGenerada;\ntry {\n  sesionGenerada = JSON.parse(mensajeTexto);\n  console.log('✅ JSON parseado correctamente');\n  console.log('🎯 Enfoque:', sesionGenerada.enfoque);\n} catch (error) {\n  console.error('❌ Error al parsear JSON:', error.message);\n  console.error('📄 Texto que intentó parsear:', mensajeTexto.substring(0, 500));\n  throw new Error(`No se pudo parsear la respuesta de Claude: ${error.message}`);\n}\n\n// Validación básica\nif (!sesionGenerada.enfoque || !sesionGenerada.titulo) {\n  throw new Error('La sesión generada no tiene los campos requeridos');\n}\n\n// Verificar que el tipo coincida\nif (sesionGenerada.enfoque !== datosUsuario.tipo_sesion) {\n  console.warn(`⚠️ Tipo esperado: ${datosUsuario.tipo_sesion}, recibido: ${sesionGenerada.enfoque}`);\n}\n\n// Enriquecer ejercicios con instrucciones_clave y precauciones desde BD\n// Construir mapa de instrucciones desde nodo Ejercicios Disponibles\nconst mapa = {};\ntry {\n  const ejercicios = $('Obtener Ejercicios Disponibles').all();\n  ejercicios.forEach(e => {\n    mapa[e.json.nombre_archivo] = {\n      instrucciones_clave: e.json.instrucciones_clave || [],\n      precauciones: e.json.precauciones || []\n    };\n  });\n  console.log('📚 Mapa de ejercicios cargado:', Object.keys(mapa).length, 'ejercicios');\n} catch(e) { console.log('⚠️ No se pudo cargar mapa de ejercicios:', e.message); }\n\nfunction enriquecerEjercicios(lista) {\n  if (!Array.isArray(lista)) return lista;\n  return lista.map(ej => {\n    const datos = mapa[ej.nombre_archivo] || {};\n    return {\n      ...ej,\n      instrucciones_clave: datos.instrucciones_clave || ej.instrucciones_clave || [],\n      precauciones: datos.precauciones || ej.precauciones || []\n    };\n  });\n}\n\nif (sesionGenerada.calentamiento) {\n  sesionGenerada.calentamiento = enriquecerEjercicios(sesionGenerada.calentamiento);\n}\nif (sesionGenerada.trabajo_principal) {\n  sesionGenerada.trabajo_principal = enriquecerEjercicios(sesionGenerada.trabajo_principal);\n}\n\nreturn {\n  json: {\n    ...datosUsuario,\n    sesion: sesionGenerada,\n    tokens_usados: respuestaClaude.usage\n  }\n};"
+      },
+      "typeVersion": 2
     },
     {
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "=-- Guardar sesión generada en base de datos\n-- Determinar qué columnas llenar según el tipo\nINSERT INTO programa_sesiones (\n  user_id,\n  titulo,\n  introduccion_personalizada,\n  enfoque,\n  duracion_estimada,\n  calentamiento,\n  trabajo_principal,\n  tipo_actividad,\n  calentamiento_texto,\n  actividad_principal,\n  senales_de_alerta,\n  consejos_seguridad,\n  progresion_sugerida,\n  numero_sesion,\n  semana,\n  generada_por\n)\nVALUES (\n  {{ $json.user_id }},\n  '{{ $json.sesion.titulo.replace(/'/g, \"''\") }}',\n  '{{ $json.sesion.introduccion_personalizada.replace(/'/g, \"''\") }}',\n  '{{ $json.sesion.enfoque }}',\n  '{{ $json.sesion.duracion_estimada }}',\n  {{ $json.tipo_sesion === 'fuerza' ? \"'\" + JSON.stringify($json.sesion.calentamiento).replace(/'/g, \"''\") + \"'::jsonb\" : \"NULL\" }},\n  {{ $json.tipo_sesion === 'fuerza' ? \"'\" + JSON.stringify($json.sesion.trabajo_principal).replace(/'/g, \"''\") + \"'::jsonb\" : \"NULL\" }},\n  {{ $json.tipo_sesion === 'cardio' ? \"'\" + ($json.sesion.ejercicio_resistencia?.nombre || 'cardio').replace(/'/g, \"''\") + \"'\" : \"NULL\" }},\n  {{ $json.tipo_sesion === 'cardio' ? \"'\" + $json.sesion.calentamiento_texto.replace(/'/g, \"''\") + \"'\" : \"NULL\" }},\n  {{ $json.tipo_sesion === 'cardio' ? \"'\" + JSON.stringify({ejercicio_resistencia: $json.sesion.ejercicio_resistencia, ejercicio_intervalos: $json.sesion.ejercicio_intervalos, estructura_sesion: $json.sesion.estructura_sesion}).replace(/'/g, \"''\") + \"'::jsonb\" : \"NULL\" }},\n  {{ $json.tipo_sesion === 'cardio' ? \"ARRAY['\" + $json.sesion.senales_de_alerta.map(s => s.replace(/'/g, \"''\")).join(\"','\") + \"']\" : \"NULL\" }},\n  {{ $json.tipo_sesion === 'cardio' ? \"ARRAY['\" + $json.sesion.consejos_seguridad.map(c => c.replace(/'/g, \"''\")).join(\"','\") + \"']\" : \"NULL\" }},\n  {{ $json.tipo_sesion === 'cardio' ? \"'\" + $json.sesion.progresion_sugerida.replace(/'/g, \"''\") + \"'\" : \"NULL\" }},\n  {{ $json.numero_sesion }},\n  {{ $json.semana_actual }},\n  'claude-ia'\n)\nRETURNING id, titulo, enfoque, numero_sesion;",
-        "options": {}
-      },
       "id": "guardar-sesion",
       "name": "Guardar Sesión en DB",
       "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.4,
       "position": [
         800,
         0
       ],
+      "parameters": {
+        "query": "=-- Guardar sesión generada en base de datos\n-- Determinar qué columnas llenar según el tipo\nINSERT INTO programa_sesiones (\n  user_id,\n  titulo,\n  introduccion_personalizada,\n  enfoque,\n  duracion_estimada,\n  calentamiento,\n  trabajo_principal,\n  tipo_actividad,\n  calentamiento_texto,\n  actividad_principal,\n  senales_de_alerta,\n  consejos_seguridad,\n  progresion_sugerida,\n  numero_sesion,\n  semana,\n  generada_por\n)\nVALUES (\n  {{ $json.user_id }},\n  '{{ $json.sesion.titulo.replace(/'/g, \"''\") }}',\n  '{{ $json.sesion.introduccion_personalizada.replace(/'/g, \"''\") }}',\n  '{{ $json.sesion.enfoque }}',\n  '{{ $json.sesion.duracion_estimada }}',\n  {{ $json.tipo_sesion === 'fuerza' ? \"'\" + JSON.stringify($json.sesion.calentamiento).replace(/'/g, \"''\") + \"'::jsonb\" : \"NULL\" }},\n  {{ $json.tipo_sesion === 'fuerza' ? \"'\" + JSON.stringify($json.sesion.trabajo_principal).replace(/'/g, \"''\") + \"'::jsonb\" : \"NULL\" }},\n  {{ $json.tipo_sesion === 'cardio' ? \"'\" + ($json.sesion.ejercicio_resistencia?.nombre || 'cardio').replace(/'/g, \"''\") + \"'\" : \"NULL\" }},\n  {{ $json.tipo_sesion === 'cardio' ? \"'\" + $json.sesion.calentamiento_texto.replace(/'/g, \"''\") + \"'\" : \"NULL\" }},\n  {{ $json.tipo_sesion === 'cardio' ? \"'\" + JSON.stringify({ejercicio_resistencia: $json.sesion.ejercicio_resistencia, ejercicio_intervalos: $json.sesion.ejercicio_intervalos, estructura_sesion: $json.sesion.estructura_sesion}).replace(/'/g, \"''\") + \"'::jsonb\" : \"NULL\" }},\n  {{ $json.tipo_sesion === 'cardio' ? \"ARRAY['\" + $json.sesion.senales_de_alerta.map(s => s.replace(/'/g, \"''\")).join(\"','\") + \"']\" : \"NULL\" }},\n  {{ $json.tipo_sesion === 'cardio' ? \"ARRAY['\" + $json.sesion.consejos_seguridad.map(c => c.replace(/'/g, \"''\")).join(\"','\") + \"']\" : \"NULL\" }},\n  {{ $json.tipo_sesion === 'cardio' ? \"'\" + $json.sesion.progresion_sugerida.replace(/'/g, \"''\") + \"'\" : \"NULL\" }},\n  {{ $json.numero_sesion }},\n  {{ $json.semana_actual }},\n  'claude-ia'\n)\nRETURNING id, titulo, enfoque, numero_sesion;",
+        "options": {},
+        "operation": "executeQuery"
+      },
       "credentials": {
         "postgres": {
           "id": "nLcUOvLreXurFbBs",
           "name": "PostgreSQL Camino Vital Local"
         }
-      }
+      },
+      "typeVersion": 2.4
     },
     {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ {\n  success: true,\n  sesion_id: $json.id,\n  titulo: $json.titulo,\n  enfoque: $json.enfoque,\n  numero_sesion: $json.numero_sesion\n} }}",
-        "options": {}
-      },
       "id": "responder-webhook",
       "name": "Responder Webhook",
       "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
       "position": [
         1000,
         0
-      ]
+      ],
+      "parameters": {
+        "options": {},
+        "respondWith": "json",
+        "responseBody": "={{ {\n  success: true,\n  sesion_id: $json.id,\n  titulo: $json.titulo,\n  enfoque: $json.enfoque,\n  numero_sesion: $json.numero_sesion\n} }}"
+      },
+      "typeVersion": 1
     }
   ],
-  "pinData": {},
   "connections": {
     "Webhook Generar Sesión": {
       "main": [
@@ -280,15 +279,10 @@
       ]
     }
   },
-  "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "workflow-generador-ia-v1",
-  "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "84e52699fab62b1fb2c5be95d249c5bcabdd7574acb0d2876e03aca6f6c8a022"
-  },
+  "staticData": null,
   "id": "A6C46gzu1AMHWDfE",
-  "tags": []
+  "active": true
 }
